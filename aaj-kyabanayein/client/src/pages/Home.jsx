@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuthModal } from "../context/AuthModalContext";
 import BlinkingSlogan from "../components/BlinkingSlogan";
 import BrandLogo from "../components/BrandLogo";
 import RecipeSearch from "../components/RecipeSearch";
@@ -27,6 +28,7 @@ const FEATURE_ICONS = {
 
 export default function Home() {
   const { t } = useLanguage();
+  const { openLogin, openSignup } = useAuthModal();
 
   const features = [
     { to: "/pantry", icon: "pantry", titleKey: "featPantry", descKey: "featPantryDesc" },
@@ -192,19 +194,19 @@ export default function Home() {
             <h2 className="relative font-display text-3xl text-[var(--text-primary)] sm:text-4xl">{t("joinTitle")}</h2>
             <p className="relative mx-auto mt-4 max-w-lg text-[var(--text-secondary)]">{t("joinDesc")}</p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-4">
-              <Link to="/signup" className="premium-btn inline-flex items-center gap-2 px-10 py-3.5 text-sm">
+              <button type="button" onClick={openSignup} className="premium-btn tap-smooth inline-flex items-center gap-2 px-10 py-3.5 text-sm">
                 {t("joinFree")}
                 <IconArrowRight className="h-4 w-4" />
-              </Link>
-              <Link to="/login" className="premium-btn-outline px-10 py-3.5 text-sm">
+              </button>
+              <button type="button" onClick={openLogin} className="premium-btn-outline tap-smooth px-10 py-3.5 text-sm">
                 {t("login")}
-              </Link>
+              </button>
             </div>
             <p className="relative mt-4 text-sm text-[var(--text-secondary)]">
               {t("alreadyAccount")}{" "}
-              <Link to="/login" className="text-[var(--accent-soft)] hover:underline">
+              <button type="button" onClick={openLogin} className="text-[var(--accent-soft)] hover:underline">
                 {t("login")}
-              </Link>
+              </button>
             </p>
           </div>
         </div>

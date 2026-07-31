@@ -15,7 +15,7 @@ export default function MobileNav() {
   const { t } = useLanguage();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#14110e]/90 backdrop-blur-xl md:hidden">
+    <nav className="mobile-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#14110e]/90 backdrop-blur-xl md:hidden">
       <div className="flex justify-around px-1 py-2">
         {links.map(({ to, Icon, key }) => {
           const active = location.pathname === to;

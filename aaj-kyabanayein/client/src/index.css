@@ -383,4 +383,51 @@ body {
 
 @media (max-width: 639px) {
   body { padding-bottom: 4.5rem; }
+  body.cooking-active { padding-bottom: 0; }
+  body.cooking-active .mobile-nav { display: none; }
+}
+
+.tap-smooth {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.tap-smooth:active {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
+
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-modal-in {
+  animation: modal-in 0.25s ease-out;
+}
+
+.auth-modal-overlay {
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cooking-shell {
+  -webkit-overflow-scrolling: touch;
+}
+
+.catalog-card {
+  -webkit-tap-highlight-color: transparent;
 }

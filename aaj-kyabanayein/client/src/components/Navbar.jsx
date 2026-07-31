@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useAuthModal } from "../context/AuthModalContext";
 import { useLanguage } from "../context/LanguageContext";
 import BrandLogo from "./BrandLogo";
 
@@ -13,13 +14,14 @@ const NAV = [
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { openLogin } = useAuthModal();
   const { t, toggle, lang } = useLanguage();
   const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#14110e]/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link to="/" className="flex shrink-0 items-center">
+        <Link to="/" className="tap-smooth flex shrink-0 items-center">
           <BrandLogo light />
         </Link>
 
@@ -28,7 +30,7 @@ export default function Navbar() {
             <NavLink
               key={link.to}
               to={link.to}
-              className={({ isActive }) => `nav-pill ${isActive ? "nav-pill--active" : ""}`}
+              className={({ isActive }) => `nav-pill tap-smooth ${isActive ? "nav-pill--active" : ""}`}
             >
               {t(link.key)}
             </NavLink>
@@ -37,8 +39,9 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={toggle}
-            className="rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-amber-500/30 hover:text-[var(--text-primary)]"
+            className="tap-smooth rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-amber-500/30 hover:text-[var(--text-primary)]"
           >
             {lang === "hi" ? "EN" : "हिं"}
           </button>
@@ -47,16 +50,17 @@ export default function Navbar() {
             <>
               <span className="hidden text-sm text-[var(--text-secondary)] md:block">{user.name}</span>
               <button
+                type="button"
                 onClick={() => { logout(); navigate("/"); }}
-                className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-[var(--text-secondary)] transition hover:border-white/20 hover:text-[var(--text-primary)]"
+                className="tap-smooth rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-[var(--text-secondary)] transition hover:border-white/20 hover:text-[var(--text-primary)]"
               >
                 {t("logout")}
               </button>
             </>
           ) : (
-            <Link to="/login" className="premium-btn px-5 py-2 text-sm">
+            <button type="button" onClick={openLogin} className="premium-btn tap-smooth px-5 py-2 text-sm">
               {t("login")}
-            </Link>
+            </button>
           )}
         </div>
       </div>

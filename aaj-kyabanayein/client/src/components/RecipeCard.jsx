@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { isFavorite, toggleFavorite } from '../lib/guest';
+import RecipeImage from './RecipeImage';
 import { IconClock, IconFlame, IconHeart, IconStar, IconUsers } from './Icons';
 
 function isVeg(diet) {
@@ -60,11 +61,11 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
       className={`recipe-card catalog-card group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#242018]">
-        <img
+        <RecipeImage
           src={recipe.image}
           alt={recipe.name}
+          recipeId={recipe.id}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#14110e]/80 via-transparent to-transparent" />
 

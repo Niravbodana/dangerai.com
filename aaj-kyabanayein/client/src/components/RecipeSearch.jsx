@@ -84,7 +84,7 @@ export default function RecipeSearch({ className = "", large = false }) {
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5"
                   >
-                    <img src={r.image} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                    <img src={r.image} alt={r.name} loading="lazy" className="h-11 w-11 shrink-0 rounded-lg object-cover bg-[#242018]" onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1585937421612-70a008296fbe?w=100&h=100&fit=crop"; }} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{r.name}</p>
                       <p className="text-xs capitalize text-[var(--text-secondary)]">{r.cuisine} · {r.cookTime} min</p>
