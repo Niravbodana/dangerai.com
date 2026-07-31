@@ -17,15 +17,15 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-white/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
+    <header className="sticky top-0 z-50 glass border-b border-white/50">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl glass-strong text-[var(--accent)]">
             <IconChef className="w-5 h-5" />
           </div>
           <div>
-            <span className="font-display text-base font-semibold tracking-tight text-stone-900">{t("appName")}</span>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">{t("free")}</p>
+            <span className="font-display text-base text-[var(--text-primary)]">{t("appName")}</span>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">{t("free")}</p>
           </div>
         </Link>
 
@@ -34,7 +34,7 @@ export default function Navbar() {
             <Link
               key={link.to}
               to={link.to}
-              className="hidden rounded-lg px-3 py-2 text-sm text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:block"
+              className="hidden rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-white/40 hover:text-[var(--text-primary)] sm:block"
             >
               {t(link.key)}
             </Link>
@@ -42,17 +42,17 @@ export default function Navbar() {
 
           <button
             onClick={toggle}
-            className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-500 transition hover:border-stone-300 hover:text-stone-700"
+            className="rounded-lg border border-white/60 bg-white/30 px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] backdrop-blur-sm transition hover:bg-white/50"
           >
             {lang === "hi" ? "EN" : "हिं"}
           </button>
 
           {user ? (
             <>
-              <span className="hidden text-sm text-stone-500 md:block">{user.name}</span>
+              <span className="hidden text-sm text-[var(--text-secondary)] md:block">{user.name}</span>
               <button
                 onClick={() => { logout(); navigate("/"); }}
-                className="rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-600 transition hover:bg-stone-50"
+                className="rounded-lg border border-white/60 bg-white/30 px-3 py-1.5 text-sm text-[var(--text-secondary)] backdrop-blur-sm transition hover:bg-white/50"
               >
                 {t("logout")}
               </button>

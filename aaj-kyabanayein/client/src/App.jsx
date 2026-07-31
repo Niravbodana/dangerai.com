@@ -19,7 +19,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-[var(--bg-primary)]">
+        <div className="app-shell">
           <Navbar />
           <main className="pb-20 md:pb-8">
             <Routes>

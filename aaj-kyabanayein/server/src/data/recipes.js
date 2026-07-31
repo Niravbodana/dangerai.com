@@ -65,9 +65,15 @@ export const RECIPE_CATEGORIES = [
 export const CUISINES = [
   { id: "all", label: "All", labelHi: "सभी" },
   { id: "indian", label: "Indian", labelHi: "भारतीय" },
+  { id: "north-indian", label: "North Indian", labelHi: "उत्तर भारतीय" },
   { id: "south-indian", label: "South Indian", labelHi: "दक्षिण भारतीय" },
+  { id: "chinese", label: "Chinese", labelHi: "चाइनीज़" },
   { id: "italian", label: "Italian", labelHi: "इटालियन" },
   { id: "korean", label: "Korean", labelHi: "कोरियन" },
+  { id: "thai", label: "Thai", labelHi: "थाई" },
+  { id: "mexican", label: "Mexican", labelHi: "मेक्सिकन" },
+  { id: "continental", label: "Continental", labelHi: "कॉन्टिनेंटल" },
+  { id: "healthy", label: "Healthy", labelHi: "स्वस्थ" },
 ];
 
 export const FUTURE_CUISINES = CUISINES;
@@ -81,7 +87,7 @@ export const PRICING_PLANS = [
     period: "forever",
     popular: true,
     features: [
-      "1 Lakh+ recipes",
+      "5.7 Lakh+ recipes",
       "Ratings & Favorites",
       "Step-by-step cooking",
       "Pantry suggestions",

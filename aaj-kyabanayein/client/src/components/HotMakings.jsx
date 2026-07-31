@@ -34,11 +34,11 @@ export default function HotMakings() {
   if (!recipes.length) return null;
 
   return (
-    <section className="section-padding border-t border-stone-200/60 bg-white">
+    <section className="section-padding">
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
               {t('hotSubtitle')}
             </p>
             <h2 className="mt-1 font-display text-3xl font-semibold tracking-tight text-stone-900">

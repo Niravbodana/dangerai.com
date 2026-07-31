@@ -33,7 +33,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
       to={`/recipe/${recipe.id}`}
       className={`recipe-card group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[var(--cream-deep)]/30">
         <img
           src={recipe.image}
           alt={recipe.name}
@@ -52,35 +52,35 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
         <button
           type="button"
           onClick={handleFav}
-          className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-sm transition ${
-            fav ? 'bg-orange-500 text-white' : 'bg-white/90 text-stone-400 hover:text-orange-500'
+          className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition ${
+            fav ? 'bg-[var(--text-primary)] text-[var(--cream-light)]' : 'glass text-[var(--text-secondary)] hover:text-[var(--accent)]'
           }`}
           aria-label={fav ? t('removeFavorite') : t('addFavorite')}
         >
           <IconHeart filled={fav} className="w-4 h-4" />
         </button>
 
-        <span className={`absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-          veg ? 'bg-emerald-600/90 text-white' : 'bg-stone-800/90 text-white'
+        <span className={`absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur-md ${
+          veg ? 'bg-[var(--accent-green)]/85 text-white' : 'bg-[var(--text-primary)]/80 text-[var(--cream-light)]'
         }`}>
           {veg ? t('veg') : t('nonVeg')}
         </span>
       </div>
 
       <div className="p-4">
-        <h3 className="font-semibold text-stone-900 line-clamp-1 tracking-tight">
+        <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 tracking-tight">
           {recipe.nameHi || recipe.name}
         </h3>
-        <p className="mt-0.5 text-sm text-stone-400 line-clamp-1">{recipe.name}</p>
+        <p className="mt-0.5 text-sm text-[var(--text-secondary)] line-clamp-1">{recipe.name}</p>
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 text-xs text-stone-500">
+          <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
             <span className="flex items-center gap-1">
               <IconClock className="w-3.5 h-3.5" />
               {recipe.cookTime || recipe.time} {t('min')}
             </span>
             {rating?.average > 0 && (
-              <span className="flex items-center gap-1 text-amber-600">
+              <span className="flex items-center gap-1 text-[var(--accent)]">
                 <IconStar filled className="w-3.5 h-3.5" />
                 {rating.average}
               </span>

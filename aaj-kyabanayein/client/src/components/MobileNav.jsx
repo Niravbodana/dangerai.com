@@ -15,7 +15,7 @@ export default function MobileNav() {
   const { t } = useLanguage();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200/80 bg-white/90 backdrop-blur-xl md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/50 md:hidden">
       <div className="flex justify-around py-2">
         {links.map(({ to, Icon, key }) => {
           const active = location.pathname === to;
@@ -24,10 +24,10 @@ export default function MobileNav() {
               key={to}
               to={to}
               className={`flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide transition ${
-                active ? 'text-orange-600' : 'text-stone-400'
+                active ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'
               }`}
             >
-              <Icon className={`w-5 h-5 ${active ? 'text-orange-600' : 'text-stone-400'}`} />
+              <Icon className="w-5 h-5" />
               {t(key)}
             </Link>
           );
