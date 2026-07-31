@@ -1,24 +1,27 @@
-const API_BASE = "/api";
+const API_BASE = '/api';
 
-function getToken() {
-  return localStorage.getItem("akb-token");
+export function getToken() {
+  return localStorage.getItem('akb-token');
 }
 
 function authHeaders() {
   const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
 }
 
 async function handleResponse(res) {
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
+  if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
   return data;
 }
 
 export async function register(name, email, password) {
   const res = await fetch(`${API_BASE}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password }),
   });
   return handleResponse(res);
@@ -26,86 +29,132 @@ export async function register(name, email, password) {
 
 export async function login(email, password) {
   const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
   return handleResponse(res);
 }
 
 export async function fetchMe() {
-  const res = await fetch(`${API_BASE}/auth/me`, { headers: { ...authHeaders() } });
+  const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+  if (!res.ok) return null;
   return handleResponse(res);
 }
 
 export async function savePreferences(preferences) {
   const res = await fetch(`${API_BASE}/auth/preferences`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    method: 'PUT',
+    headers: authHeaders(),
     body: JSON.stringify(preferences),
   });
   return handleResponse(res);
 }
 
+export const updatePreferences = savePreferences;
+
 export async function fetchPricing() {
   const res = await fetch(`${API_BASE}/pricing`);
-  if (!res.ok) throw new Error("Pricing fetch failed");
+  if (!res.ok) throw new Error('Pricing fetch failed');
   return res.json();
 }
 
 export async function fetchMealPlan(preferences) {
   const res = await fetch(`${API_BASE}/plan`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    method: 'POST',
+    headers: authHeaders(),
     body: JSON.stringify(preferences),
   });
-  if (!res.ok) throw new Error("Meal plan fetch failed");
+  if (!res.ok) throw new Error('Meal plan fetch failed');
   return res.json();
 }
 
+export const createPlan = fetchMealPlan;
+
+export async function fetchHealthyPlan(diet = 'veg') {
+  const res = await fetch(`${API_BASE}/plan/healthy`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ diet }),
+  });
+  if (!res.ok) throw new Error('Healthy plan fetch failed');
+  return res.json();
+}
+
+export const createHealthyPlan = fetchHealthyPlan;
+
 export async function fetchRecipe(id) {
   const res = await fetch(`${API_BASE}/recipes/${id}`);
-  if (!res.ok) throw new Error("Recipe not found");
+  if (!res.ok) throw new Error('Recipe not found');
   return res.json();
 }
 
 export async function fetchRecipes(params = {}) {
   const query = new URLSearchParams(params).toString();
   const res = await fetch(`${API_BASE}/recipes?${query}`);
-  if (!res.ok) throw new Error("Recipes fetch failed");
+  if (!res.ok) throw new Error('Recipes fetch failed');
   return res.json();
 }
 
 export async function fetchRecipeCategories() {
   const res = await fetch(`${API_BASE}/recipes/categories`);
-  if (!res.ok) throw new Error("Categories fetch failed");
+  if (!res.ok) throw new Error('Categories fetch failed');
   return res.json();
+}
+
+export const fetchCategories = fetchRecipeCategories;
+
+export async function fetchRecipeRating(id) {
+  const res = await fetch(`${API_BASE}/recipes/${id}/rating`);
+  if (!res.ok) return { average: 0, count: 0 };
+  return res.json();
+}
+
+export async function rateRecipe(id, score, guestId) {
+  const res = await fetch(`${API_BASE}/recipes/${id}/rate`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ score, guestId }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchFavorites(guestId) {
+  const res = await fetch(`${API_BASE}/favorites?guestId=${guestId}`);
+  if (!res.ok) return { favorites: [], ids: [] };
+  return res.json();
+}
+
+export async function addFavorite(recipeId, guestId) {
+  await fetch(`${API_BASE}/favorites/${recipeId}`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ guestId }),
+  });
+}
+
+export async function removeFavorite(recipeId, guestId) {
+  await fetch(`${API_BASE}/favorites/${recipeId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+    body: JSON.stringify({ guestId }),
+  });
 }
 
 export async function fetchPantryItems() {
   const res = await fetch(`${API_BASE}/pantry/items`);
-  if (!res.ok) throw new Error("Pantry items fetch failed");
+  if (!res.ok) throw new Error('Pantry items fetch failed');
   return res.json();
 }
 
 export async function suggestFromPantry(body) {
   const res = await fetch(`${API_BASE}/pantry/suggest`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    method: 'POST',
+    headers: authHeaders(),
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error("Pantry suggest failed");
+  if (!res.ok) throw new Error('Pantry suggest failed');
   return res.json();
 }
 
-export async function fetchHealthyPlan(diet = "veg") {
-  const res = await fetch(`${API_BASE}/plan/healthy`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ diet }),
-  });
-  if (!res.ok) throw new Error("Healthy plan fetch failed");
-  return res.json();
-}
-
-export { getToken };
+export const pantrySuggest = suggestFromPantry;

@@ -1,7 +1,9 @@
 import { Router } from "express";
 import {
+  CUISINES,
   getCategoryCounts,
-  FUTURE_CUISINES,
+  isNonVegRecipe,
+  isVegRecipe,
   PRICING_PLANS,
   RECIPE_CATEGORIES,
   RECIPES,
@@ -23,12 +25,14 @@ import { findUserById } from "../services/userStore.js";
 const router = Router();
 
 router.get("/recipes/categories", (_req, res) => {
+  const counts = getCategoryCounts();
   res.json({
     success: true,
     categories: RECIPE_CATEGORIES,
-    counts: getCategoryCounts(),
+    counts: counts.categories,
+    cuisineCounts: counts.cuisines,
     totalRecipes: RECIPES.length,
-    cuisines: FUTURE_CUISINES,
+    cuisines: CUISINES,
   });
 });
 
@@ -42,9 +46,12 @@ router.get("/recipes/:id", (req, res) => {
 });
 
 router.get("/recipes", (req, res) => {
-  const { category, mealType, diet, search, page = 1, limit = 24 } = req.query;
+  const { category, mealType, diet, cuisine, search, page = 1, limit = 24 } = req.query;
   let filtered = RECIPES;
 
+  if (cuisine && cuisine !== "all") {
+    filtered = filtered.filter((r) => r.cuisine === cuisine);
+  }
   if (category && category !== "all") {
     if (category === "snack") {
       filtered = filtered.filter((r) => r.mealType === "snack");
@@ -53,8 +60,8 @@ router.get("/recipes", (req, res) => {
     }
   }
   if (mealType) filtered = filtered.filter((r) => r.mealType === mealType);
-  if (diet === "veg") filtered = filtered.filter((r) => r.diet.includes("veg"));
-  if (diet === "non-veg") filtered = filtered.filter((r) => r.diet.includes("non-veg"));
+  if (diet === "veg") filtered = filtered.filter(isVegRecipe);
+  if (diet === "non-veg") filtered = filtered.filter(isNonVegRecipe);
   if (search) {
     const q = search.toLowerCase();
     filtered = filtered.filter(

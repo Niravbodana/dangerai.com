@@ -1,34 +1,33 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
-const TABS = [
-  { to: "/", label: "Home", icon: "🏠" },
-  { to: "/recipes", label: "Recipes", icon: "📖" },
-  { to: "/pantry", label: "Pantry", icon: "🥬" },
-  { to: "/planner", label: "Plan", icon: "🍳" },
-  { to: "/healthy-week", label: "Healthy", icon: "💚" },
+const links = [
+  { to: '/', icon: '🏠', key: 'home' },
+  { to: '/recipes', icon: '📖', key: 'recipes' },
+  { to: '/favorites', icon: '❤️', key: 'favorites' },
+  { to: '/planner', icon: '📅', key: 'planner' },
+  { to: '/pantry', icon: '🥫', key: 'pantry' },
 ];
 
 export default function MobileNav() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { t } = useLanguage();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-orange-100 bg-white/95 backdrop-blur sm:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] bg-white/95 backdrop-blur md:hidden">
       <div className="flex justify-around py-2">
-        {TABS.map((tab) => {
-          const active = pathname === tab.to || (tab.to !== "/" && pathname.startsWith(tab.to));
-          return (
-            <Link
-              key={tab.to}
-              to={tab.to}
-              className={`flex flex-col items-center px-2 py-1 text-xs ${
-                active ? "font-semibold text-orange-600" : "text-gray-500"
-              }`}
-            >
-              <span className="text-lg">{tab.icon}</span>
-              {tab.label}
-            </Link>
-          );
-        })}
+        {links.map(({ to, icon, key }) => (
+          <Link
+            key={to}
+            to={to}
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 text-xs ${
+              location.pathname === to ? 'text-[var(--primary)] font-medium' : 'text-slate-500'
+            }`}
+          >
+            <span className="text-lg">{icon}</span>
+            {t(key)}
+          </Link>
+        ))}
       </div>
     </nav>
   );

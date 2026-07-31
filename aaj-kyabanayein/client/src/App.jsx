@@ -1,35 +1,44 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import MobileNav from "./components/MobileNav";
-import { AuthProvider } from "./context/AuthContext";
-import CookingMode from "./pages/CookingMode";
-import HealthyWeek from "./pages/HealthyWeek";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Pantry from "./pages/Pantry";
-import Planner from "./pages/Planner";
-import Pricing from "./pages/Pricing";
-import RecipeDetail from "./pages/RecipeDetail";
-import Recipes from "./pages/Recipes";
-import Signup from "./pages/Signup";
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
+import Navbar from './components/Navbar';
+import MobileNav from './components/MobileNav';
+import Home from './pages/Home';
+import Recipes from './pages/Recipes';
+import RecipeDetail from './pages/RecipeDetail';
+import CookingMode from './pages/CookingMode';
+import Favorites from './pages/Favorites';
+import Planner from './pages/Planner';
+import Pantry from './pages/Pantry';
+import HealthyWeek from './pages/HealthyWeek';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Pricing from './pages/Pricing';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/recipe/:id" element={<RecipeDetail />} />
-          <Route path="/cook/:id" element={<CookingMode />} />
-          <Route path="/recipes" element={<Recipes />} />
-          <Route path="/pantry" element={<Pantry />} />
-          <Route path="/healthy-week" element={<HealthyWeek />} />
-        </Routes>
-        <MobileNav />
-      </BrowserRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-[var(--bg-primary)]">
+          <Navbar />
+          <main className="pb-20 md:pb-8">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/recipes" element={<Recipes />} />
+              <Route path="/recipe/:id" element={<RecipeDetail />} />
+              <Route path="/cook/:id" element={<CookingMode />} />
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/planner" element={<Planner />} />
+              <Route path="/pantry" element={<Pantry />} />
+              <Route path="/healthy-week" element={<HealthyWeek />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/pricing" element={<Pricing />} />
+            </Routes>
+          </main>
+          <MobileNav />
+        </div>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
