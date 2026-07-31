@@ -36,6 +36,15 @@ export async function login(email, password) {
   return handleResponse(res);
 }
 
+export async function loginWithGoogle(credential) {
+  const res = await fetch(`${API_BASE}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential }),
+  });
+  return handleResponse(res);
+}
+
 export async function fetchMe() {
   const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
   if (!res.ok) return null;

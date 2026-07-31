@@ -33,13 +33,21 @@ export function findUserById(id) {
   return users.find((u) => u.id === id);
 }
 
-export function createUser({ name, email, passwordHash }) {
+export function findUserByGoogleId(googleId) {
+  const users = readUsers();
+  return users.find((u) => u.googleId === googleId);
+}
+
+export function createUser({ name, email, passwordHash, googleId = null, authProvider = "email", picture = null }) {
   const users = readUsers();
   const user = {
     id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     name,
     email: email.toLowerCase(),
-    passwordHash,
+    passwordHash: passwordHash || null,
+    googleId,
+    authProvider,
+    picture,
     plan: "free",
     preferences: {
       diet: "veg",
@@ -53,6 +61,18 @@ export function createUser({ name, email, passwordHash }) {
   users.push(user);
   writeUsers(users);
   return user;
+}
+
+export function linkGoogleAccount(userId, { googleId, picture = null }) {
+  const users = readUsers();
+  const index = users.findIndex((u) => u.id === userId);
+  if (index === -1) return null;
+
+  users[index].googleId = googleId;
+  users[index].authProvider = users[index].passwordHash ? "email+google" : "google";
+  if (picture) users[index].picture = picture;
+  writeUsers(users);
+  return users[index];
 }
 
 export function updateUserPreferences(userId, preferences) {
@@ -83,5 +103,7 @@ export function toPublicUser(user) {
     plan: user.plan,
     preferences: user.preferences,
     createdAt: user.createdAt,
+    authProvider: user.authProvider || (user.googleId ? "google" : "email"),
+    picture: user.picture || null,
   };
 }

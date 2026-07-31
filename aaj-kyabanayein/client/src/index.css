@@ -421,6 +421,36 @@ body {
   animation: fade-in 0.2s ease-out;
 }
 
+.google-signin-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.google-signin-wrap > div {
+  width: 100% !important;
+}
+
+.google-signin-btn {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: background 0.2s ease;
+}
+
+.google-signin-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }

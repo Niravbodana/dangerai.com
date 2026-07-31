@@ -1,5 +1,6 @@
 import { Routes, Route, useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { AuthModalProvider, useAuthModal } from './context/AuthModalContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -64,7 +65,9 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+  const tree = (
     <LanguageProvider>
       <AuthProvider>
         <AuthModalProvider>
@@ -72,5 +75,13 @@ export default function App() {
         </AuthModalProvider>
       </AuthProvider>
     </LanguageProvider>
+  );
+
+  if (!googleClientId) return tree;
+
+  return (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      {tree}
+    </GoogleOAuthProvider>
   );
 }

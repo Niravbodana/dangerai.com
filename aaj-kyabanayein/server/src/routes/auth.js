@@ -5,10 +5,13 @@ import { signToken } from "../middleware/auth.js";
 import {
   createUser,
   findUserByEmail,
+  findUserByGoogleId,
   findUserById,
+  linkGoogleAccount,
   toPublicUser,
   updateUserPreferences,
 } from "../services/userStore.js";
+import { verifyGoogleIdToken } from "../services/googleAuth.js";
 
 const router = Router();
 
@@ -66,6 +69,13 @@ router.post("/login", async (req, res) => {
     });
   }
 
+  if (!user.passwordHash) {
+    return res.status(401).json({
+      success: false,
+      message: "Is account ke liye Google se login karein",
+    });
+  }
+
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     return res.status(401).json({
@@ -82,6 +92,57 @@ router.post("/login", async (req, res) => {
     token,
     user: toPublicUser(user),
   });
+});
+
+router.post("/google", async (req, res) => {
+  const { credential } = req.body;
+
+  if (!credential) {
+    return res.status(400).json({
+      success: false,
+      message: "Google credential missing hai",
+    });
+  }
+
+  try {
+    const profile = await verifyGoogleIdToken(credential);
+
+    let user = findUserByGoogleId(profile.googleId);
+    if (!user) {
+      const existing = findUserByEmail(profile.email);
+      if (existing) {
+        user = linkGoogleAccount(existing.id, {
+          googleId: profile.googleId,
+          picture: profile.picture,
+        });
+        if (profile.name && !existing.name) {
+          user.name = profile.name;
+        }
+      } else {
+        user = createUser({
+          name: profile.name,
+          email: profile.email,
+          googleId: profile.googleId,
+          authProvider: "google",
+          picture: profile.picture,
+        });
+      }
+    }
+
+    const token = signToken(user.id);
+    res.json({
+      success: true,
+      message: "Google se login ho gaya!",
+      token,
+      user: toPublicUser(user),
+    });
+  } catch (err) {
+    console.error("Google auth error:", err.message);
+    res.status(401).json({
+      success: false,
+      message: err.message || "Google login fail ho gaya",
+    });
+  }
 });
 
 router.get("/me", authMiddleware, (req, res) => {

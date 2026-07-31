@@ -3,6 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
 import BrandLogo from "./BrandLogo";
+import GoogleSignInButton, { AuthDivider } from "./GoogleSignInButton";
+
+function useGoogleAuth(onSuccess) {
+  const { loginWithGoogle } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState("");
+
+  const handleGoogleSuccess = async (credential) => {
+    setGoogleError("");
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle(credential);
+      onSuccess();
+    } catch (err) {
+      setGoogleError(err.message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  return { googleLoading, googleError, setGoogleError, handleGoogleSuccess };
+}
 
 function LoginForm({ onSuccess }) {
   const { login } = useAuth();
@@ -11,10 +33,12 @@ function LoginForm({ onSuccess }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { googleLoading, googleError, setGoogleError, handleGoogleSuccess } = useGoogleAuth(onSuccess);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setGoogleError("");
     setLoading(true);
     try {
       await login(email, password);
@@ -30,16 +54,24 @@ function LoginForm({ onSuccess }) {
     <>
       <h2 className="font-display text-2xl text-[var(--text-primary)]">Welcome back</h2>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">Log in to save favorites and meal plans.</p>
-      {error && (
-        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>
+      {(error || googleError) && (
+        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+          {error || googleError}
+        </div>
       )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password" />
-        <button type="submit" disabled={loading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
+        <button type="submit" disabled={loading || googleLoading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
           {loading ? "Logging in..." : "Log In"}
         </button>
       </form>
+      <AuthDivider />
+      <GoogleSignInButton
+        loading={googleLoading}
+        onSuccess={handleGoogleSuccess}
+        onError={setGoogleError}
+      />
       <p className="mt-5 text-center text-sm text-[var(--text-secondary)]">
         No account?{" "}
         <button type="button" onClick={openSignup} className="font-semibold text-[var(--accent-soft)] hover:underline">
@@ -58,10 +90,12 @@ function SignupForm({ onSuccess }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { googleLoading, googleError, setGoogleError, handleGoogleSuccess } = useGoogleAuth(onSuccess);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setGoogleError("");
     setLoading(true);
     try {
       await register(name, email, password);
@@ -77,17 +111,25 @@ function SignupForm({ onSuccess }) {
     <>
       <h2 className="font-display text-2xl text-[var(--text-primary)]">Join Rasoira</h2>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">Account free for now — save recipes & meal plans.</p>
-      {error && (
-        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>
+      {(error || googleError) && (
+        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+          {error || googleError}
+        </div>
       )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="glass-input" placeholder="Your name" />
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password (6+ chars)" />
-        <button type="submit" disabled={loading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
+        <button type="submit" disabled={loading || googleLoading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
           {loading ? "Creating..." : "Join — Free for Now"}
         </button>
       </form>
+      <AuthDivider />
+      <GoogleSignInButton
+        loading={googleLoading}
+        onSuccess={handleGoogleSuccess}
+        onError={setGoogleError}
+      />
       <p className="mt-5 text-center text-sm text-[var(--text-secondary)]">
         Have an account?{" "}
         <button type="button" onClick={openLogin} className="font-semibold text-[var(--accent-soft)] hover:underline">
