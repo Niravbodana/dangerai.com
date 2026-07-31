@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import BrandLogo from "../components/BrandLogo";
 
 export default function Login() {
   const { login } = useAuth();
@@ -28,6 +29,7 @@ export default function Login() {
     <div className="min-h-screen">
       <div className="mx-auto flex max-w-md flex-col px-4 py-16">
         <div className="glass-strong rounded-2xl p-8">
+          <BrandLogo className="mb-6 h-9 w-auto" />
           <h1 className="font-display text-2xl text-[var(--text-primary)]">Login</h1>
           <p className="mb-6 mt-1 text-sm text-[var(--text-secondary)]">
             Optional — preferences account me save karne ke liye

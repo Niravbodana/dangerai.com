@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import BrandLogo from "./BrandLogo";
 
 const NAV = [
   { to: "/recipes", key: "recipes" },
@@ -19,7 +20,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 glass border-b border-white/50">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link to="/" className="flex items-center">
-          <img src="/logo-wordmark.svg" alt="Rasoira — Ghar Ka Khana" className="h-9 w-auto sm:h-10" />
+          <BrandLogo />
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">

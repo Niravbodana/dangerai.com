@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     appName: "Rasoira",
-    appTagline: "Ghar ka khana",
+    appTagline: "Ghar Ka Khana",
     free: "100% Free",
     veg: "Veg",
     nonVeg: "Non-Veg",
@@ -64,7 +64,7 @@ export const translations = {
   },
   hi: {
     appName: "Rasoira",
-    appTagline: "Ghar ka khana",
+    appTagline: "Ghar Ka Khana",
     free: "100% मुफ्त",
     veg: "शाकाहारी",
     nonVeg: "मांसाहारी",

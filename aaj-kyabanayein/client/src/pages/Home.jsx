@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import BlinkingSlogan from "../components/BlinkingSlogan";
+import BrandLogo from "../components/BrandLogo";
 import HotMakings from "../components/HotMakings";
 import CuisineExplorer from "../components/CuisineExplorer";
 import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry } from "../components/Icons";
@@ -37,9 +38,7 @@ export default function Home() {
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:py-28">
           <div className="max-w-xl glass-strong rounded-3xl p-8 sm:p-10">
             <span className="premium-pill mb-5">{t("free")}</span>
-            <h1 className="font-display text-4xl text-[var(--text-primary)] sm:text-5xl">
-              {t("appName")}
-            </h1>
+            <BrandLogo className="h-11 w-auto sm:h-14" />
             <BlinkingSlogan />
             <p className="mb-8 text-base leading-relaxed text-[var(--text-secondary)]">{t("heroDesc")}</p>
             <div className="flex flex-wrap gap-3">
