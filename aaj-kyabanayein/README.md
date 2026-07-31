@@ -1,6 +1,6 @@
-# Aaj Kya Banayein
+# Rasoira
 
-Roz ki tension — aaj kya banayein? Free meal planner for Indian home cooks.
+Ghar ka khana — free meal planner for Indian home cooks. 5.7 Lakh+ recipes, Hot Makings, pantry suggestions, and step-by-step cooking.
 
 **Stack:** Node.js (Express) + React (Vite) + Tailwind CSS
 

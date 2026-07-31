@@ -1,7 +1,7 @@
 {
   "name": "aaj-kyabanayein-server",
   "version": "1.0.0",
-  "description": "Aaj Kya Banayein - Meal Planner API",
+  "description": "Rasoira - Meal Planner API",
   "main": "src/index.js",
   "type": "module",
   "scripts": {

@@ -21,7 +21,7 @@ export default function Footer() {
           </div>
         </div>
         <p className="mt-8 text-center text-xs text-[var(--text-secondary)]">
-          {year} AajKyaBanayein — {t("completelyFree")}
+          {year} Rasoira — {t("completelyFree")}
         </p>
       </div>
     </footer>

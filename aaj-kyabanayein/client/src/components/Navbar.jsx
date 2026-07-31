@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { IconChef } from "./Icons";
 
 const NAV = [
   { to: "/recipes", key: "recipes" },
@@ -20,12 +19,10 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 glass border-b border-white/50">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl glass-strong text-[var(--accent)]">
-            <IconChef className="w-5 h-5" />
-          </div>
+          <img src="/logo.svg" alt="Rasoira" className="h-10 w-10" />
           <div>
             <span className="font-display text-base text-[var(--text-primary)]">{t("appName")}</span>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">{t("free")}</p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">{t("appTagline")}</p>
           </div>
         </Link>
 

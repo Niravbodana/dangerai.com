@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <defs>
+    <linearGradient id="bowl2" x1="8" y1="44" x2="56" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3D3830"/>
+      <stop offset="1" stop-color="#5A5248"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 12C12 12 10 24 12 28" stroke="#D4A84B" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+  <path d="M24 8C24 8 22 22 24 26" stroke="#D4A84B" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M36 12C36 12 34 24 36 28" stroke="#D4A84B" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+  <path d="M8 36C8 36 10 52 32 52C54 52 56 36 56 36C56 36 54 28 32 28C10 28 8 36 8 36Z" fill="url(#bowl2)"/>
+  <ellipse cx="32" cy="36" rx="20" ry="4" stroke="#B8860B" stroke-width="1.5" fill="none" opacity="0.4"/>
+  <text x="72" y="46" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="600" fill="#3D3830" letter-spacing="-0.5">Rasoira</text>
+  <text x="74" y="62" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#8A8278" letter-spacing="0.2em">GHAR KA KHANA</text>
+</svg>

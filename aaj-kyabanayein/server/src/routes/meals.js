@@ -146,7 +146,7 @@ router.post("/plan", optionalAuth, (req, res) => {
 router.get("/health", (_req, res) => {
   res.json({
     success: true,
-    message: "AajKyaBanayein API is running",
+    message: "Rasoira API is running",
     totalRecipes: RECIPES.length,
   });
 });

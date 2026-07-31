@@ -1,7 +1,7 @@
 export const translations = {
   en: {
-    appName: "AajKyaBanayein",
-    tagline: "Cook healthy at home",
+    appName: "Rasoira",
+    appTagline: "Ghar ka khana",
     free: "100% Free",
     veg: "Veg",
     nonVeg: "Non-Veg",
@@ -63,8 +63,8 @@ export const translations = {
     similarRecipes: "Similar hot recipes",
   },
   hi: {
-    appName: "AajKyaBanayein",
-    tagline: "Ghar pe healthy khana",
+    appName: "Rasoira",
+    appTagline: "Ghar ka khana",
     free: "100% मुफ्त",
     veg: "शाकाहारी",
     nonVeg: "मांसाहारी",

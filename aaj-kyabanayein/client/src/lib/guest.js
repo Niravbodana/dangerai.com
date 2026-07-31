@@ -35,6 +35,6 @@ export const isFavorite = isLocalFavorite;
 export const toggleFavorite = toggleLocalFavorite;
 
 export function shareOnWhatsApp(recipe) {
-  const text = `${recipe.nameHi} (${recipe.name})\n\nAajKyaBanayein — step by step recipe\n${window.location.origin}/recipe/${recipe.id}`;
+  const text = `${recipe.nameHi} (${recipe.name})\n\nRasoira — ghar ka khana, step by step recipe\n${window.location.origin}/recipe/${recipe.id}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
 }
