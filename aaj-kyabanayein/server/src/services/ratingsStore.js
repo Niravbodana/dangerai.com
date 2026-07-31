@@ -53,3 +53,7 @@ export function getTopRated(limit = 10) {
     .sort((a, b) => b.average - a.average)
     .slice(0, limit);
 }
+
+export function getAllRatings() {
+  return read();
+}

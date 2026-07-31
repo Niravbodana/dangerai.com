@@ -78,7 +78,7 @@ export default function Planner() {
 
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">🍳 Weekly Meal Plan</h1>
+          <h1 className="font-display text-3xl font-semibold text-stone-900">Weekly Meal Plan</h1>
           <p className="mt-1 text-gray-600">
             {user ? `Namaste ${user.name}! ` : ""}
             Pura hafta ka plan — bilkul free
@@ -93,7 +93,7 @@ export default function Planner() {
               disabled={loading}
               className="w-full rounded-2xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
             >
-              {loading ? "Ban raha hai..." : "🔄 Naya Plan Generate Karo"}
+              {loading ? "Ban raha hai..." : "Naya Plan Generate Karo"}
             </button>
             {user ? (
               <button
@@ -101,7 +101,7 @@ export default function Planner() {
                 disabled={saving}
                 className="w-full rounded-2xl border border-green-300 bg-green-50 py-3 font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
               >
-                {saving ? "Save ho raha hai..." : "💾 Account me Save Karo"}
+                {saving ? "Save ho raha hai..." : "Account me Save Karo"}
               </button>
             ) : (
               <p className="text-center text-xs text-gray-400">
@@ -119,7 +119,7 @@ export default function Planner() {
             {data?.plans?.map((day) => (
               <div key={day.date}>
                 <h2 className="mb-4 text-xl font-bold text-gray-900">
-                  📅 {day.dayLabel}
+                  {day.dayLabel}
                   <span className="ml-2 text-sm font-normal text-gray-400">{day.date}</span>
                 </h2>
                 <div className="space-y-4">

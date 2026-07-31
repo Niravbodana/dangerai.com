@@ -21,6 +21,7 @@ import {
 } from "../services/pantryService.js";
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
 import { findUserById } from "../services/userStore.js";
+import { getTrendingRecipes } from "../services/trendingService.js";
 
 const router = Router();
 
@@ -34,6 +35,12 @@ router.get("/recipes/categories", (_req, res) => {
     totalRecipes: RECIPES.length,
     cuisines: CUISINES,
   });
+});
+
+router.get("/recipes/trending", (req, res) => {
+  const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 12));
+  const recipes = getTrendingRecipes(limit);
+  res.json({ success: true, recipes, total: recipes.length });
 });
 
 router.get("/recipes/:id", (req, res) => {

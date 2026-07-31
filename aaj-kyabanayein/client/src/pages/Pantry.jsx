@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { fetchPantryItems, suggestFromPantry } from "../api";
-import Navbar from "../components/Navbar";
 import RecipeCard from "../components/RecipeCard";
 
 export default function Pantry() {
@@ -42,11 +41,9 @@ export default function Pantry() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fffbf7]">
-      <Navbar />
-
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">🏠 Ghar Me Kya Pada Hai?</h1>
+        <h1 className="font-display text-3xl font-semibold text-stone-900">Ghar Me Kya Pada Hai?</h1>
         <p className="mb-6 text-gray-600">
           Jo samaan ghar me hai select karo — hum batayenge kya bana sakte ho
         </p>
@@ -55,8 +52,8 @@ export default function Pantry() {
           <h3 className="mb-3 font-semibold text-gray-800">Diet</h3>
           <div className="mb-4 flex gap-2">
             {[
-              { value: "veg", label: "🥬 Veg" },
-              { value: "non-veg", label: "🍗 Non-Veg" },
+              { value: "veg", label: "Veg" },
+              { value: "non-veg", label: "Non-Veg" },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -109,7 +106,7 @@ export default function Pantry() {
             disabled={loading || selected.length === 0}
             className="mt-5 w-full rounded-2xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
           >
-            {loading ? "Dhoondh rahe hain..." : "🔍 Batao Kya Banayein!"}
+            {loading ? "Dhoondh rahe hain..." : "Batao Kya Banayein"}
           </button>
         </div>
 

@@ -119,7 +119,7 @@ export default function CookingMode() {
             onClick={() => setStarted(true)}
             className="mt-8 w-full rounded-2xl bg-orange-500 py-4 text-xl font-bold text-white shadow-lg transition hover:bg-orange-600"
           >
-            🍳 Start Cooking!
+            Start Cooking
           </button>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function CookingMode() {
                   onClick={startTimer}
                   className="rounded-xl bg-orange-500 px-6 py-2 font-semibold text-white"
                 >
-                  ⏱ Timer Start ({currentStep.duration} min)
+                  Timer Start ({currentStep.duration} min)
                 </button>
               )}
             </div>
@@ -199,7 +199,7 @@ export default function CookingMode() {
             disabled={stepIndex === 0}
             className="flex-1 rounded-xl border border-gray-200 py-3 font-medium text-gray-600 disabled:opacity-30"
           >
-            ← Pehle
+            Pehle
           </button>
 
           {isDone ? (
@@ -207,14 +207,14 @@ export default function CookingMode() {
               onClick={() => navigate("/recipes")}
               className="flex-1 rounded-xl bg-green-500 py-3 font-bold text-white"
             >
-              🎉 Done! Recipes dekho
+              Done — Recipes dekho
             </button>
           ) : (
             <button
               onClick={goNext}
               className="flex-1 rounded-xl bg-orange-500 py-3 font-bold text-white"
             >
-              Ho gaya → Agla Step
+              Agla Step
             </button>
           )}
         </div>

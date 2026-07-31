@@ -14,7 +14,7 @@ export default function GroceryList({ items }) {
   return (
     <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-900">🛒 Bazaar List</h3>
+        <h3 className="text-lg font-semibold text-stone-900">Bazaar List</h3>
         <span className="text-sm text-gray-500">
           {doneCount}/{items.length} liya
         </span>

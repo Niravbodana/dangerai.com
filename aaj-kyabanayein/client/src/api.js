@@ -141,6 +141,12 @@ export async function removeFavorite(recipeId, guestId) {
   });
 }
 
+export async function fetchTrendingRecipes(limit = 12) {
+  const res = await fetch(`${API_BASE}/recipes/trending?limit=${limit}`);
+  if (!res.ok) throw new Error('Trending fetch failed');
+  return res.json();
+}
+
 export async function fetchPantryItems() {
   const res = await fetch(`${API_BASE}/pantry/items`);
   if (!res.ok) throw new Error('Pantry items fetch failed');
