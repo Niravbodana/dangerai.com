@@ -29,6 +29,7 @@ app.get("/", (_req, res) => {
       "POST /api/plan",
       "POST /api/auth/register",
       "POST /api/auth/login",
+      "POST /api/auth/google",
       "GET /api/auth/me",
       "PUT /api/auth/preferences",
     ],

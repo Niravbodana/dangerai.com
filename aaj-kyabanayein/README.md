@@ -32,6 +32,22 @@ aaj-kyabanayein/
         └── components/
 ```
 
+### Google Login (optional)
+
+1. Create a **Web application** OAuth client in [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Add authorized JavaScript origin: `http://localhost:3000` (and your production URL)
+3. Copy Client ID to both env files:
+
+```bash
+# server/.env
+GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
+
+# client/.env
+VITE_GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
+```
+
+Restart both server and client after setting env vars. Login/signup modal will show **Continue with Google** below the email form.
+
 ## Run Locally
 
 ### Backend
