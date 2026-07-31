@@ -1,0 +1,19 @@
+{
+  "name": "aaj-kyabanayein-server",
+  "version": "1.0.0",
+  "description": "Aaj Kya Banayein - Meal Planner API",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "generate-recipes": "node src/scripts/generateRecipes.js",
+    "postinstall": "node src/scripts/generateRecipes.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
