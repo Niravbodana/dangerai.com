@@ -43,7 +43,7 @@ function LoginForm({ onSuccess }) {
       <p className="mt-5 text-center text-sm text-[var(--text-secondary)]">
         No account?{" "}
         <button type="button" onClick={openSignup} className="font-semibold text-[var(--accent-soft)] hover:underline">
-          Sign up free
+          Sign up — free for now
         </button>
       </p>
     </>
@@ -76,7 +76,7 @@ function SignupForm({ onSuccess }) {
   return (
     <>
       <h2 className="font-display text-2xl text-[var(--text-primary)]">Join Rasoira</h2>
-      <p className="mt-1 text-sm text-[var(--text-secondary)]">Free account — save recipes & meal plans.</p>
+      <p className="mt-1 text-sm text-[var(--text-secondary)]">Account free for now — save recipes & meal plans.</p>
       {error && (
         <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>
       )}
@@ -85,7 +85,7 @@ function SignupForm({ onSuccess }) {
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password (6+ chars)" />
         <button type="submit" disabled={loading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
-          {loading ? "Creating..." : "Join Free"}
+          {loading ? "Creating..." : "Join — Free for Now"}
         </button>
       </form>
       <p className="mt-5 text-center text-sm text-[var(--text-secondary)]">

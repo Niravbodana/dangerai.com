@@ -84,10 +84,10 @@ export const FUTURE_CUISINES = CUISINES;
 export const PRICING_PLANS = [
   {
     id: "free",
-    name: "100% Free",
-    nameHi: "पूरी तरह मुफ्त",
+    name: "Free for Now",
+    nameHi: "अभी के लिए मुफ्त",
     price: 0,
-    period: "forever",
+    period: "for now",
     popular: true,
     features: [
       "5.7 Lakh+ recipes",

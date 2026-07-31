@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="max-w-sm">
             <BrandLogo light className="h-8 w-auto" />
             <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-              Ghar ka khana, naye andaaz mein. 5.7 Lakh+ recipes — step-by-step cooking, pantry suggestions, bilkul free.
+              Ghar ka khana, naye andaaz mein. 5.7 Lakh+ recipes — step-by-step cooking, pantry suggestions, abhi ke liye free.
             </p>
             <p className="mt-3 text-xs text-[var(--accent-soft)]">Made with ❤️ for Indian home cooks</p>
           </div>
@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] pt-8 sm:flex-row">
           <p className="text-xs text-[var(--text-secondary)]">
-            {year} Rasoira — Hamesha Free
+            {year} Rasoira — Free for Now
           </p>
           <p className="text-xs text-[var(--text-secondary)]">
             Aapki rasoi, aapka pride 🍛

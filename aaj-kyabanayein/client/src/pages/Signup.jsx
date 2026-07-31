@@ -31,7 +31,7 @@ export default function Signup() {
       <div className="mx-auto flex max-w-md flex-col px-4 py-16">
         <div className="glass-strong rounded-2xl p-8">
           <BrandLogo light className="mb-6 h-9 w-auto" />
-          <h1 className="font-display text-2xl text-[var(--text-primary)]">Create your free account</h1>
+          <h1 className="font-display text-2xl text-[var(--text-primary)]">Create your account — free for now</h1>
           <p className="mb-6 mt-1 text-sm text-[var(--text-secondary)]">
             Join Rasoira to save recipes, build meal plans, and track what you love to cook.
           </p>
@@ -54,7 +54,7 @@ export default function Signup() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="At least 6 characters" />
             </div>
             <button type="submit" disabled={loading} className="premium-btn w-full py-3 text-sm disabled:opacity-50">
-              {loading ? "Creating account..." : "Join Free"}
+              {loading ? "Creating account..." : "Join — Free for Now"}
             </button>
           </form>
 

@@ -57,7 +57,7 @@ export default function Home() {
         <div className="hero-grid-pattern" aria-hidden />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 lg:grid-cols-2 lg:py-24">
           <div className="home-hero__content">
-            <span className="home-badge mb-5">100% Free · Ghar ka Khana</span>
+            <span className="home-badge mb-5">Free for Now · Ghar ka Khana</span>
             <BrandLogo light className="mb-4 h-10 w-auto sm:h-12" />
             <h1 className="font-display text-4xl leading-tight tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-[3.25rem]">
               Aapki rasoi,<br />
@@ -112,7 +112,7 @@ export default function Home() {
             { n: "5.7 Lakh+", l: "Recipes" },
             { n: "11", l: "Cuisines" },
             { n: "7 Din", l: "Meal Plan" },
-            { n: "Free", l: "Hamesha ke liye" },
+            { n: "Free", l: "Abhi ke liye" },
           ].map((s) => (
             <div key={s.l} className="home-stat">
               <div className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">{s.n}</div>
@@ -307,12 +307,12 @@ export default function Home() {
               Aaj se shuru karo —<br />ghar ka khana, naye andaaz mein
             </h2>
             <p className="relative mx-auto mt-4 max-w-lg text-[var(--text-secondary)]">
-              Free account banao, favourites save karo, meal plan banao.
+              Account banao (abhi free), favourites save karo, meal plan banao.
               Aapki rasoi, aapka pride — Rasoira ke saath.
             </p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-4">
               <button type="button" onClick={openSignup} className="premium-btn tap-smooth inline-flex items-center gap-2 px-10 py-3.5 text-sm">
-                Free Join Karo
+                Join Karo — Free for Now
                 <IconArrowRight className="h-4 w-4" />
               </button>
               <button type="button" onClick={openLogin} className="premium-btn-outline tap-smooth px-10 py-3.5 text-sm">

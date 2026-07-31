@@ -8,13 +8,24 @@ import { IconArrowRight } from './Icons';
 export default function HotMakings() {
   const { t } = useLanguage();
   const [recipes, setRecipes] = useState([]);
+  const [trendingDate, setTrendingDate] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchTrendingRecipes(8)
-      .then((data) => setRecipes(data.recipes || []))
+      .then((data) => {
+        setRecipes(data.recipes || []);
+        setTrendingDate(data.trendingDate || null);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const todayLabel = trendingDate
+    ? new Date(`${trendingDate}T12:00:00`).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+      })
+    : null;
 
   if (loading) {
     return (
@@ -40,6 +51,11 @@ export default function HotMakings() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
               {t('hotSubtitle')}
+              {todayLabel && (
+                <span className="ml-2 rounded-full bg-[var(--accent)]/15 px-2 py-0.5 text-[10px] normal-case tracking-normal text-[var(--accent-soft)]">
+                  {t('hotToday')} · {todayLabel}
+                </span>
+              )}
             </p>
             <h2 className="mt-1 font-display text-3xl text-[var(--text-primary)]">
               {t('hotMakings')}
