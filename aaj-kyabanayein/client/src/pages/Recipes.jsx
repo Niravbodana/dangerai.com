@@ -5,6 +5,7 @@ import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeSearch from "../components/RecipeSearch";
 import SegmentedControl from "../components/SegmentedControl";
+import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight } from "../components/Icons";
 
 function useDebounce(value, delay = 400) {
@@ -102,9 +103,9 @@ export default function Recipes() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="font-display text-3xl text-[var(--text-primary)]">Recipe Catalog</h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          {sortTrending ? t("hotMakings") : `${total.toLocaleString()}+ recipes with photos & ratings`}
+        <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">Recipe Catalog</h1>
+        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+          {sortTrending ? t("hotMakings") : `${total.toLocaleString()}+ recipes · rated by home cooks`}
         </p>
 
         <div className="mt-6">
@@ -113,6 +114,7 @@ export default function Recipes() {
 
         <div className="mt-6">
           <SegmentedControl
+            variant="catalog"
             options={[
               { id: "catalog", label: t("allRecipes") },
               { id: "trending", label: t("hotMakings") },
@@ -124,10 +126,21 @@ export default function Recipes() {
 
         <div className="mt-4">
           <SegmentedControl
+            variant="diet"
             options={[
               { id: "all", label: "All" },
-              { id: "veg", label: t("veg") },
-              { id: "non-veg", label: t("nonVeg") },
+              {
+                id: "veg",
+                label: t("veg"),
+                icon: <VegSymbol className="h-3.5 w-3.5" />,
+                tone: "veg",
+              },
+              {
+                id: "non-veg",
+                label: t("nonVeg"),
+                icon: <NonVegSymbol className="h-3.5 w-3.5" />,
+                tone: "nonveg",
+              },
             ]}
             value={diet}
             onChange={(id) => { setDiet(id); setPage(1); }}
@@ -135,36 +148,34 @@ export default function Recipes() {
           />
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="filter-row mt-5">
+          <span className="filter-row__label">Meal</span>
+          <div className="filter-row__chips">
           {categories.map((c) => (
             <button
               key={c.id}
               onClick={() => { setCategory(category === c.id ? "all" : c.id); setPage(1); }}
-              className={`rounded-full px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide transition ${
-                category === c.id
-                  ? "bg-[var(--accent)] text-[#14110e]"
-                  : "border border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-amber-500/30"
-              }`}
+              className={`filter-chip tap-smooth ${category === c.id ? "filter-chip--active" : ""}`}
             >
               {c.label}
             </button>
           ))}
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="filter-row mt-3">
+          <span className="filter-row__label">Cuisine</span>
+          <div className="filter-row__chips">
           {cuisines.map((c) => (
             <button
               key={c.id}
               onClick={() => { setCuisine(c.id); setPage(1); }}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition ${
-                cuisine === c.id
-                  ? "bg-[var(--accent)] text-[#14110e]"
-                  : "border border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-amber-500/30"
-              }`}
+              className={`filter-chip tap-smooth ${cuisine === c.id ? "filter-chip--active" : ""}`}
             >
               {c.label}
             </button>
           ))}
+          </div>
         </div>
 
         {loading ? (

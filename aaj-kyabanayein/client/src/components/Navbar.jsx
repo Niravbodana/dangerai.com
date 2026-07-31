@@ -19,8 +19,8 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#14110e]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0c0a08]/75 backdrop-blur-2xl backdrop-saturate-150">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5">
         <Link to="/" className="tap-smooth flex shrink-0 items-center">
           <BrandLogo light />
         </Link>

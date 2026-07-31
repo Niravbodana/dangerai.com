@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { isFavorite, toggleFavorite } from '../lib/guest';
 import RecipeImage from './RecipeImage';
+import { VegSymbol, NonVegSymbol } from './DietSymbols';
 import { IconClock, IconFlame, IconHeart, IconStar, IconUsers } from './Icons';
 
 function isVeg(diet) {
@@ -31,7 +32,7 @@ function StarRow({ average, count }) {
       </div>
       <span className="text-xs text-[var(--text-secondary)]">
         {count > 0 ? (
-          <><span className="font-semibold text-[var(--accent-soft)]">{average}</span> ({count} ratings)</>
+          <><span className="font-semibold text-[var(--accent-soft)]">{average}</span> · {count.toLocaleString()} ratings</>
         ) : (
           'No ratings yet'
         )}
@@ -87,9 +88,12 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
           <IconHeart filled={fav} className="w-4 h-4" />
         </button>
 
-        <span className={`absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-          veg ? 'bg-[var(--accent-green)]/90 text-white' : 'bg-black/60 text-white'
+        <span className={`absolute bottom-3 left-3 flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md ${
+          veg
+            ? 'border border-[#22c55e]/40 bg-[#22c55e]/15 text-[#4ade80]'
+            : 'border border-[#ef4444]/40 bg-[#ef4444]/15 text-[#f87171]'
         }`}>
+          {veg ? <VegSymbol className="h-3 w-3" /> : <NonVegSymbol className="h-3 w-3" />}
           {veg ? t('veg') : t('nonVeg')}
         </span>
       </div>

@@ -1,9 +1,15 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { mergeRatings, mergeReviews } from "../data/seedRatings.js";
+import { RECIPES } from "../data/recipes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RATINGS_FILE = path.join(__dirname, "../data/ratings.json");
+
+function recipeName(recipeId) {
+  return RECIPES.find((r) => r.id === recipeId)?.name || "";
+}
 
 function ensure() {
   const dir = path.dirname(RATINGS_FILE);
@@ -23,9 +29,8 @@ function write(data) {
 
 export function getRating(recipeId) {
   const data = read();
-  const r = data[recipeId];
-  if (!r) return { recipeId, average: 0, count: 0 };
-  return { recipeId, average: Math.round((r.total / r.count) * 10) / 10, count: r.count };
+  const live = data[recipeId];
+  return mergeRatings(recipeId, live, recipeName(recipeId));
 }
 
 export function rateRecipe(recipeId, score, userId = "guest") {
@@ -75,9 +80,8 @@ export function submitReview(recipeId, score, userId, comment = "") {
 
 export function getReviews(recipeId, limit = 20) {
   const data = read();
-  const r = data[recipeId];
-  if (!r?.reviews?.length) return [];
-  return [...r.reviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, limit);
+  const live = data[recipeId]?.reviews || [];
+  return mergeReviews(recipeId, live, recipeName(recipeId)).slice(0, limit);
 }
 
 export function attachRating(recipe) {

@@ -6,6 +6,7 @@ import { getGuestId, isFavorite, shareOnWhatsApp, toggleFavorite } from "../lib/
 import LoadingSpinner from "../components/LoadingSpinner";
 import RecipeCard from "../components/RecipeCard";
 import RecipeImage from "../components/RecipeImage";
+import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import ReviewForm from "../components/ReviewForm";
 import { IconArrowLeft, IconClock, IconHeart, IconShare, IconStar } from "../components/Icons";
 
@@ -167,7 +168,12 @@ export default function RecipeDetail() {
               <p className="mt-1 capitalize text-sm text-[var(--text-secondary)]">{recipe.cuisine} cuisine</p>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <MetaChip accent={isVeg}>{isVeg ? t("veg") : t("nonVeg")}</MetaChip>
+                <MetaChip accent={isVeg}>
+                <span className="flex items-center gap-1.5">
+                  {isVeg ? <VegSymbol className="h-3.5 w-3.5 text-[#4ade80]" /> : <NonVegSymbol className="h-3.5 w-3.5 text-[#f87171]" />}
+                  {isVeg ? t("veg") : t("nonVeg")}
+                </span>
+              </MetaChip>
                 <MetaChip>
                   <IconClock className="h-3.5 w-3.5" />
                   {recipe.cookTime} {t("min")}
@@ -256,12 +262,15 @@ export default function RecipeDetail() {
                 <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent reviews</h3>
                 {reviews.map((r, i) => (
                   <div key={i} className="rounded-xl bg-white/5 p-4">
-                    <div className="flex items-center gap-2">
-                      <StarRating value={r.score} />
-                      <span className="text-xs text-[var(--text-secondary)]">
-                        {new Date(r.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <StarRating value={r.score} />
+                    <span className="text-xs font-medium text-[var(--text-primary)]">
+                      {r.userName || "Home cook"}
+                    </span>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
                     {r.comment && (
                       <p className="mt-2 text-sm text-[var(--text-secondary)]">{r.comment}</p>
                     )}
