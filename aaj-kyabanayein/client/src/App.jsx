@@ -15,6 +15,7 @@ import HealthyWeek from './pages/HealthyWeek';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Pricing from './pages/Pricing';
+import RecipeReview from './pages/RecipeReview';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
               <Route path="/healthy-week" element={<HealthyWeek />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/recipe/:id/review" element={<RecipeReview />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

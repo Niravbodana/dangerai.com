@@ -103,7 +103,8 @@ body {
 }
 
 .recipe-card:hover,
-.feature-card:hover {
+.feature-card:hover,
+.catalog-card:hover {
   box-shadow: var(--glass-shadow-lg);
   border-color: rgba(212, 168, 75, 0.25);
   transform: translateY(-3px);

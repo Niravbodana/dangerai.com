@@ -20,5 +20,4 @@
   <path d="M28 72C28 72 32 96 64 96C96 96 100 72 100 72C100 72 96 60 64 60C32 60 28 72 28 72Z" fill="url(#bowl)"/>
   <ellipse cx="64" cy="72" rx="36" ry="8" fill="url(#rim)" fill-opacity="0.35"/>
   <ellipse cx="64" cy="70" rx="30" ry="5" stroke="url(#rim)" stroke-width="2" fill="none"/>
-  <path d="M78 78C84 74 90 76 88 82C86 86 80 88 76 84C74 81 76 79 78 78Z" fill="#5A8F6F" fill-opacity="0.85"/>
 </svg>

@@ -96,6 +96,12 @@ export async function fetchRecipes(params = {}) {
   return res.json();
 }
 
+export async function fetchRecipeSuggestions(q, limit = 8) {
+  const res = await fetch(`${API_BASE}/recipes/suggest?q=${encodeURIComponent(q)}&limit=${limit}`);
+  if (!res.ok) return { suggestions: [] };
+  return res.json();
+}
+
 export async function fetchRecipeCategories() {
   const res = await fetch(`${API_BASE}/recipes/categories`);
   if (!res.ok) throw new Error('Categories fetch failed');
@@ -117,6 +123,21 @@ export async function rateRecipe(id, score, guestId) {
     body: JSON.stringify({ score, guestId }),
   });
   return handleResponse(res);
+}
+
+export async function submitReview(id, score, comment, guestId) {
+  const res = await fetch(`${API_BASE}/recipes/${id}/review`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ score, comment, guestId }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchReviews(id) {
+  const res = await fetch(`${API_BASE}/recipes/${id}/reviews`);
+  if (!res.ok) return { reviews: [] };
+  return res.json();
 }
 
 export async function fetchFavorites(guestId) {

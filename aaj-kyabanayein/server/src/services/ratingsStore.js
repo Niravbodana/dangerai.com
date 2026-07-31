@@ -30,7 +30,7 @@ export function getRating(recipeId) {
 
 export function rateRecipe(recipeId, score, userId = "guest") {
   const data = read();
-  if (!data[recipeId]) data[recipeId] = { total: 0, count: 0, users: {} };
+  if (!data[recipeId]) data[recipeId] = { total: 0, count: 0, users: {}, reviews: [] };
 
   const prev = data[recipeId].users[userId];
   if (prev) {
@@ -43,6 +43,45 @@ export function rateRecipe(recipeId, score, userId = "guest") {
   data[recipeId].total += score;
   write(data);
   return getRating(recipeId);
+}
+
+export function submitReview(recipeId, score, userId, comment = "") {
+  const data = read();
+  if (!data[recipeId]) data[recipeId] = { total: 0, count: 0, users: {}, reviews: [] };
+  if (!data[recipeId].reviews) data[recipeId].reviews = [];
+
+  const prev = data[recipeId].users[userId];
+  if (prev) {
+    data[recipeId].total -= prev;
+  } else {
+    data[recipeId].count++;
+  }
+  data[recipeId].users[userId] = score;
+  data[recipeId].total += score;
+
+  const review = {
+    userId,
+    score,
+    comment: String(comment || "").trim().slice(0, 500),
+    createdAt: new Date().toISOString(),
+  };
+  const idx = data[recipeId].reviews.findIndex((r) => r.userId === userId);
+  if (idx >= 0) data[recipeId].reviews[idx] = review;
+  else data[recipeId].reviews.push(review);
+
+  write(data);
+  return { ...getRating(recipeId), review };
+}
+
+export function getReviews(recipeId, limit = 20) {
+  const data = read();
+  const r = data[recipeId];
+  if (!r?.reviews?.length) return [];
+  return [...r.reviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, limit);
+}
+
+export function attachRating(recipe) {
+  return { ...recipe, rating: getRating(recipe.id) };
 }
 
 export function getTopRated(limit = 10) {

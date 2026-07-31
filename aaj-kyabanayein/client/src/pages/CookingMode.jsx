@@ -27,6 +27,7 @@ export default function CookingMode() {
   const flow = recipe?.cookingFlow || [];
   const currentStep = flow[stepIndex];
   const progress = flow.length ? ((stepIndex + 1) / flow.length) * 100 : 0;
+  const isDone = currentStep?.type === "done";
 
   useEffect(() => {
     if (!timerRunning || timerLeft <= 0) return;
@@ -49,7 +50,13 @@ export default function CookingMode() {
   const goNext = () => {
     setTimerRunning(false);
     setTimerLeft(0);
-    if (stepIndex < flow.length - 1) setStepIndex(stepIndex + 1);
+    if (stepIndex < flow.length - 1) {
+      const nextIndex = stepIndex + 1;
+      setStepIndex(nextIndex);
+      if (flow[nextIndex]?.type === "done") {
+        navigate(`/recipe/${id}/review?from=cook`);
+      }
+    }
   };
 
   const goPrev = () => {
@@ -61,7 +68,7 @@ export default function CookingMode() {
   if (!recipe) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-[var(--accent)]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent)]" />
       </div>
     );
   }
@@ -70,8 +77,8 @@ export default function CookingMode() {
     return (
       <div className="min-h-screen">
         <div className="mx-auto max-w-2xl px-4 py-8 text-center">
-          <img src={recipe.image} alt="" className="mx-auto mb-6 h-48 w-48 rounded-2xl object-cover shadow-lg" />
-          <h1 className="font-display text-3xl text-[var(--text-primary)]">{recipe.nameHi}</h1>
+          <img src={recipe.image} alt="" className="mx-auto mb-6 h-56 w-full max-w-sm rounded-2xl object-cover shadow-lg" />
+          <h1 className="font-display text-3xl text-[var(--text-primary)]">{recipe.name}</h1>
           <p className="mt-2 text-[var(--text-secondary)]">{flow.length} steps · {recipe.cookTime} {t("min")}</p>
 
           <div className="glass-strong mt-8 rounded-2xl p-6 text-left">
@@ -79,14 +86,14 @@ export default function CookingMode() {
             <ul className="space-y-2">
               {recipe.ingredients.map((ing) => (
                 <li key={ing.name}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/40">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5">
                     <input
                       type="checkbox"
                       checked={checkedItems[ing.name] || false}
                       onChange={() => setCheckedItems((prev) => ({ ...prev, [ing.name]: !prev[ing.name] }))}
                       className="h-4 w-4 rounded accent-[var(--accent)]"
                     />
-                    <span className="text-sm text-[var(--text-primary)]">{ing.nameHi} — {ing.quantity}</span>
+                    <span className="text-sm text-[var(--text-primary)]">{ing.name} — {ing.quantity}</span>
                   </label>
                 </li>
               ))}
@@ -102,11 +109,10 @@ export default function CookingMode() {
   }
 
   if (!currentStep) return null;
-  const isDone = currentStep.type === "done";
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-0 z-50 glass border-b border-white/50 px-4 py-3">
+      <div className="sticky top-0 z-50 border-b border-white/10 bg-[#14110e]/90 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <button onClick={() => navigate(`/recipe/${id}`)} className="text-sm text-[var(--text-secondary)]">
             Close
@@ -115,25 +121,25 @@ export default function CookingMode() {
             Step {stepIndex + 1} / {flow.length}
           </span>
         </div>
-        <div className="mx-auto mt-2 h-1.5 max-w-2xl overflow-hidden rounded-full bg-white/40">
-          <div className="h-full rounded-full bg-[var(--accent)] transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="mx-auto mt-2 h-1.5 max-w-2xl overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-soft)] transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="glass-strong rounded-2xl p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--text-primary)] text-lg font-semibold text-[var(--cream-light)]">
-            {stepIndex + 1}
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent-soft)] text-lg font-semibold text-[#14110e]">
+            {isDone ? "☺️" : stepIndex + 1}
           </div>
-          <h2 className="mt-4 font-display text-2xl text-[var(--text-primary)]">{currentStep.titleHi}</h2>
-          {currentStep.descriptionHi && (
-            <p className="mt-3 text-[var(--text-secondary)]">{currentStep.descriptionHi}</p>
+          <h2 className="mt-4 font-display text-2xl text-[var(--text-primary)]">{currentStep.title}</h2>
+          {currentStep.description && (
+            <p className="mt-3 text-[var(--text-secondary)]">{currentStep.description}</p>
           )}
 
           {currentStep.duration > 0 && (
             <div className="mt-6">
               {timerRunning || timerLeft > 0 ? (
-                <div className="font-display text-4xl text-[var(--accent)]">{formatTime(timerLeft)}</div>
+                <div className="font-display text-4xl text-[var(--accent-soft)]">{formatTime(timerLeft)}</div>
               ) : (
                 <button onClick={startTimer} className="premium-btn px-6 py-2 text-sm">
                   Timer ({currentStep.duration} {t("min")})
@@ -148,8 +154,11 @@ export default function CookingMode() {
             Back
           </button>
           {isDone ? (
-            <button onClick={() => navigate("/recipes")} className="premium-btn flex-1 py-3 text-sm">
-              {t("browseRecipes")}
+            <button
+              onClick={() => navigate(`/recipe/${id}/review?from=cook`)}
+              className="premium-btn flex-1 py-3 text-sm"
+            >
+              Leave a Review ☺️
             </button>
           ) : (
             <button onClick={goNext} className="premium-btn flex-1 py-3 text-sm">

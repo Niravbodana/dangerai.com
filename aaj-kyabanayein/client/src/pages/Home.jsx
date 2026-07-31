@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import BlinkingSlogan from "../components/BlinkingSlogan";
 import BrandLogo from "../components/BrandLogo";
+import RecipeSearch from "../components/RecipeSearch";
 import HotMakings from "../components/HotMakings";
 import CuisineExplorer from "../components/CuisineExplorer";
 import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry } from "../components/Icons";
@@ -52,6 +54,9 @@ export default function Home() {
             <span className="premium-pill mb-6">{t("free")}</span>
             <BrandLogo light className="mb-5 h-11 w-auto sm:h-14" />
             <BlinkingSlogan />
+            <div className="mb-6 mt-4">
+              <RecipeSearch large />
+            </div>
             <p className="mb-8 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">{t("heroDesc")}</p>
             <div className="flex flex-wrap gap-3">
               <Link to="/recipes" className="premium-btn inline-flex items-center gap-2 px-8 py-3 text-sm">

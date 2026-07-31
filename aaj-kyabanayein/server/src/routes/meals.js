@@ -22,6 +22,7 @@ import {
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
+import { attachRating } from "../services/ratingsStore.js";
 
 const router = Router();
 
@@ -41,6 +42,28 @@ router.get("/recipes/trending", (req, res) => {
   const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 12));
   const recipes = getTrendingRecipes(limit);
   res.json({ success: true, recipes, total: recipes.length });
+});
+
+router.get("/recipes/suggest", (req, res) => {
+  const q = (req.query.q || "").trim().toLowerCase();
+  const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 8));
+  if (!q || q.length < 1) {
+    return res.json({ success: true, suggestions: [] });
+  }
+  const matches = [];
+  for (const r of RECIPES) {
+    if (
+      r.name.toLowerCase().includes(q) ||
+      r.nameHi?.toLowerCase().includes(q) ||
+      r.tags?.some((t) => t.toLowerCase().includes(q)) ||
+      r.cuisine?.toLowerCase().includes(q) ||
+      r.ingredients?.some((i) => i.name.toLowerCase().includes(q))
+    ) {
+      matches.push(attachRating(r));
+      if (matches.length >= limit) break;
+    }
+  }
+  res.json({ success: true, suggestions: matches });
 });
 
 router.get("/recipes/:id", (req, res) => {
@@ -89,7 +112,7 @@ router.get("/recipes", (req, res) => {
     total: filtered.length,
     page: pageNum,
     totalPages: Math.ceil(filtered.length / limitNum),
-    recipes: paginated,
+    recipes: paginated.map(attachRating),
   });
 });
 
