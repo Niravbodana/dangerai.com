@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchMealPlan, savePreferences } from "../api";
 import { useAuth } from "../context/AuthContext";
 import GroceryList from "../components/GroceryList";
@@ -14,13 +15,18 @@ const DEFAULT_PREFS = {
   spice: "medium",
 };
 
+function loadLocalPrefs() {
+  try {
+    const saved = localStorage.getItem("akb-prefs");
+    return saved ? { ...DEFAULT_PREFS, ...JSON.parse(saved) } : DEFAULT_PREFS;
+  } catch {
+    return DEFAULT_PREFS;
+  }
+}
+
 export default function Planner() {
   const { user, updateUser } = useAuth();
-  const [prefs, setPrefs] = useState(() => ({
-    ...DEFAULT_PREFS,
-    ...(user?.preferences || {}),
-    plan: user?.plan || "free",
-  }));
+  const [prefs, setPrefs] = useState(loadLocalPrefs);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,6 +38,7 @@ export default function Planner() {
     try {
       const result = await fetchMealPlan(preferences);
       setData(result);
+      localStorage.setItem("akb-prefs", JSON.stringify(preferences));
     } catch {
       setError("Plan generate nahi ho paya. Server check karein.");
     } finally {
@@ -40,23 +47,19 @@ export default function Planner() {
   }, []);
 
   useEffect(() => {
-    if (user?.preferences) {
-      const userPrefs = { ...user.preferences, plan: user.plan };
-      setPrefs(userPrefs);
-      generatePlan(userPrefs);
-    }
-  }, [user]);
+    const initial = user?.preferences
+      ? { ...DEFAULT_PREFS, ...user.preferences }
+      : loadLocalPrefs();
+    setPrefs(initial);
+    generatePlan(initial);
+  }, [user, generatePlan]);
 
-  const handlePrefsChange = (newPrefs) => {
-    setPrefs({ ...newPrefs, plan: user?.plan || "free" });
-  };
+  const handlePrefsChange = (newPrefs) => setPrefs(newPrefs);
 
-  const handleGenerate = async () => {
-    const prefsWithPlan = { ...prefs, plan: user?.plan || "free" };
-    await generatePlan(prefsWithPlan);
-  };
+  const handleGenerate = () => generatePlan(prefs);
 
   const handleSavePreferences = async () => {
+    if (!user) return;
     setSaving(true);
     try {
       const { diet, budget, familySize, maxCookTime, spice } = prefs;
@@ -75,15 +78,16 @@ export default function Planner() {
 
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">🍳 Aapka Meal Plan</h1>
+          <h1 className="text-3xl font-bold text-gray-900">🍳 Weekly Meal Plan</h1>
           <p className="mt-1 text-gray-600">
-            Namaste {user?.name}! Preferences set karo aur plan generate karo
+            {user ? `Namaste ${user.name}! ` : ""}
+            Pura hafta ka plan — bilkul free
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-4">
-            <PreferencesPanel prefs={prefs} onChange={handlePrefsChange} userPlan={user?.plan} />
+            <PreferencesPanel prefs={prefs} onChange={handlePrefsChange} />
             <button
               onClick={handleGenerate}
               disabled={loading}
@@ -91,13 +95,20 @@ export default function Planner() {
             >
               {loading ? "Ban raha hai..." : "🔄 Naya Plan Generate Karo"}
             </button>
-            <button
-              onClick={handleSavePreferences}
-              disabled={saving}
-              className="w-full rounded-2xl border border-green-300 bg-green-50 py-3 font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
-            >
-              {saving ? "Save ho raha hai..." : "💾 Preferences Save Karo"}
-            </button>
+            {user ? (
+              <button
+                onClick={handleSavePreferences}
+                disabled={saving}
+                className="w-full rounded-2xl border border-green-300 bg-green-50 py-3 font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+              >
+                {saving ? "Save ho raha hai..." : "💾 Account me Save Karo"}
+              </button>
+            ) : (
+              <p className="text-center text-xs text-gray-400">
+                <Link to="/login" className="text-orange-600 hover:underline">Login</Link> karke
+                preferences account me save kar sakte ho
+              </p>
+            )}
           </div>
 
           <div className="space-y-6 lg:col-span-2">
@@ -123,18 +134,7 @@ export default function Planner() {
               </div>
             ))}
 
-            {data?.groceryLocked && (
-              <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 p-6 text-center">
-                <p className="text-sm text-orange-700">
-                  🔒 Bazaar list sirf Pro plan me milegi —{" "}
-                  <a href="/pricing" className="font-semibold underline">
-                    ₹99/month
-                  </a>
-                </p>
-              </div>
-            )}
-
-            {!data?.groceryLocked && data?.groceryList && (
+            {data?.groceryList?.length > 0 && (
               <GroceryList items={data.groceryList} />
             )}
           </div>

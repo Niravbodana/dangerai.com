@@ -32,7 +32,9 @@ export default function Signup() {
       <div className="mx-auto flex max-w-md flex-col px-4 py-16">
         <div className="rounded-2xl border border-orange-100 bg-white p-8 shadow-sm">
           <h1 className="mb-2 text-2xl font-bold text-gray-900">Signup</h1>
-          <p className="mb-6 text-sm text-gray-500">Free account banao — meal plan save hoga</p>
+          <p className="mb-6 text-sm text-gray-500">
+            Optional — preferences save karne ke liye. Bina account ke bhi sab free hai.
+          </p>
 
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>

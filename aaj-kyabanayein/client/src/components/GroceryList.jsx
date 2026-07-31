@@ -21,7 +21,7 @@ export default function GroceryList({ items }) {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-gray-500">Pro plan me grocery list milegi.</p>
+        <p className="text-sm text-gray-500">Pehle meal plan generate karein.</p>
       ) : (
         <div className="space-y-4">
           {Object.entries(grouped).map(([category, catItems]) => (

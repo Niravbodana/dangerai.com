@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
+import MobileNav from "./components/MobileNav";
 import { AuthProvider } from "./context/AuthContext";
 import CookingMode from "./pages/CookingMode";
 import HealthyWeek from "./pages/HealthyWeek";
@@ -21,55 +21,14 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route
-            path="/planner"
-            element={
-              <ProtectedRoute>
-                <Planner />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/recipe/:id"
-            element={
-              <ProtectedRoute>
-                <RecipeDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cook/:id"
-            element={
-              <ProtectedRoute>
-                <CookingMode />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/recipes"
-            element={
-              <ProtectedRoute>
-                <Recipes />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pantry"
-            element={
-              <ProtectedRoute>
-                <Pantry />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/healthy-week"
-            element={
-              <ProtectedRoute>
-                <HealthyWeek />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/planner" element={<Planner />} />
+          <Route path="/recipe/:id" element={<RecipeDetail />} />
+          <Route path="/cook/:id" element={<CookingMode />} />
+          <Route path="/recipes" element={<Recipes />} />
+          <Route path="/pantry" element={<Pantry />} />
+          <Route path="/healthy-week" element={<HealthyWeek />} />
         </Routes>
+        <MobileNav />
       </BrowserRouter>
     </AuthProvider>
   );

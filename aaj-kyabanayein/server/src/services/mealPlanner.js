@@ -1,6 +1,7 @@
-import { RECIPES, PLAN_LIMITS } from "../data/recipes.js";
+import { RECIPES } from "../data/recipes.js";
 
 const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
+const WEEKLY_DAYS = 7;
 const DAY_LABELS = ["Aaj", "Kal", "Parso", "Agle din", "Agle din", "Agle din", "Agle din"];
 const BUDGET_RANK = { low: 1, medium: 2, high: 3 };
 
@@ -61,13 +62,10 @@ function generateDayPlan(prefs, dayOffset, usedIds) {
 }
 
 export function generateWeeklyPlan(prefs) {
-  const plan = prefs.plan || "free";
-  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
-  const days = limits.weeklyPlans === 1 ? 1 : 7;
   const usedIds = new Set();
   const plans = [];
 
-  for (let i = 0; i < days; i++) {
+  for (let i = 0; i < WEEKLY_DAYS; i++) {
     plans.push(generateDayPlan(prefs, i, usedIds));
   }
 

@@ -118,15 +118,14 @@ router.post("/plan", optionalAuth, (req, res) => {
   }
 
   const plans = generateWeeklyPlan(prefs);
-  const planTier = prefs.plan || "free";
-  const includeGrocery = planTier !== "free";
+  const groceryList = generateGroceryList(plans);
 
   res.json({
     success: true,
     preferences: prefs,
     plans,
-    groceryList: includeGrocery ? generateGroceryList(plans) : [],
-    groceryLocked: !includeGrocery,
+    groceryList,
+    groceryLocked: false,
   });
 });
 

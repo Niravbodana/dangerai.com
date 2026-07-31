@@ -60,7 +60,7 @@ export const FUTURE_CUISINES = [
 ];
 
 export const PLAN_LIMITS = {
-  free: { weeklyPlans: 1, groceryList: false },
+  free: { weeklyPlans: 7, groceryList: true },
   pro: { weeklyPlans: 7, groceryList: true },
   family: { weeklyPlans: 7, groceryList: true },
 };
@@ -68,43 +68,19 @@ export const PLAN_LIMITS = {
 export const PRICING_PLANS = [
   {
     id: "free",
-    name: "Free",
-    nameHi: "मुफ्त",
+    name: "100% Free",
+    nameHi: "पूरी तरह मुफ्त",
     price: 0,
-    period: "month",
-    features: [
-      "Roz 1 din ka meal plan",
-      "Pantry suggestion (5 recipes)",
-      "Veg / Non-veg filter",
-      "Basic preferences",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    nameHi: "प्रो",
-    price: 99,
-    period: "month",
+    period: "forever",
     popular: true,
     features: [
       "Pura hafta meal plan",
-      "500+ recipes with photos",
-      "Ghar me kya pada — smart suggest",
+      "22,000+ recipes with photos",
+      "Step-by-step cooking mode",
+      "Ghar me kya pada — pantry suggest",
       "Weekly healthy plan",
       "Bazaar grocery list",
-    ],
-  },
-  {
-    id: "family",
-    name: "Family",
-    nameHi: "परिवार",
-    price: 199,
-    period: "month",
-    features: [
-      "Sab Pro features",
-      "8 log tak family size",
-      "Healthy week for family",
-      "Priority support",
+      "Veg / Non-veg filters",
     ],
   },
 ];

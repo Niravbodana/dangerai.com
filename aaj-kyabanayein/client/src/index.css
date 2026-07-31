@@ -5,4 +5,11 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   background: #fffbf7;
   color: #1a1a1a;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@media (max-width: 639px) {
+  body {
+    padding-bottom: 4.5rem;
+  }
 }

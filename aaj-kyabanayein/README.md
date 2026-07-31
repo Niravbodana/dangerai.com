@@ -14,7 +14,7 @@ Roz ki tension — aaj kya banayein? Meal planner app with monthly subscription 
 - Diet filters: Veg, Non-veg, Jain, Diabetic, Vegan
 - Grocery list (Pro plan)
 - Login/Signup with saved preferences
-- Subscription pricing: Free / ₹99 Pro / ₹199 Family
+- Subscription pricing: **100% Free** (payment plans coming later when visits grow)
 
 ## Project Structure
 

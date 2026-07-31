@@ -31,7 +31,9 @@ export default function Login() {
       <div className="mx-auto flex max-w-md flex-col px-4 py-16">
         <div className="rounded-2xl border border-orange-100 bg-white p-8 shadow-sm">
           <h1 className="mb-2 text-2xl font-bold text-gray-900">Login</h1>
-          <p className="mb-6 text-sm text-gray-500">Apna meal plan save karne ke liye login karein</p>
+          <p className="mb-6 text-sm text-gray-500">
+            Optional — preferences account me save karne ke liye
+          </p>
 
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
