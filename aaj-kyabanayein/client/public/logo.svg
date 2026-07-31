@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bowl" x1="24" y1="72" x2="104" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3D3830"/>
+      <stop offset="1" stop-color="#5A5248"/>
+    </linearGradient>
+    <linearGradient id="steam" x1="64" y1="16" x2="64" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D4A84B" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#D4A84B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="32" y1="68" x2="96" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B8860B"/>
+      <stop offset="1" stop-color="#D4A84B"/>
+    </linearGradient>
+  </defs>
+  <path d="M52 20C52 20 48 36 52 44" stroke="url(#steam)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M64 14C64 14 60 32 64 42" stroke="url(#steam)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M76 20C76 20 72 36 76 44" stroke="url(#steam)" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="64" cy="88" rx="44" ry="10" fill="#3D3830" fill-opacity="0.12"/>
+  <path d="M28 72C28 72 32 96 64 96C96 96 100 72 100 72C100 72 96 60 64 60C32 60 28 72 28 72Z" fill="url(#bowl)"/>
+  <ellipse cx="64" cy="72" rx="36" ry="8" fill="url(#rim)" fill-opacity="0.35"/>
+  <ellipse cx="64" cy="70" rx="30" ry="5" stroke="url(#rim)" stroke-width="2" fill="none"/>
+</svg>

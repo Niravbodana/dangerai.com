@@ -22,8 +22,50 @@ import {
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
+import { attachRating } from "../services/ratingsStore.js";
+import {
+  ensureRecipeImage,
+  readCachedImage,
+  hasCachedImage,
+} from "../services/recipeImageService.js";
+import path from "path";
 
 const router = Router();
+
+const DEFAULT_IMAGE_ID = "_default";
+
+router.get("/recipes/image/:id", async (req, res) => {
+  const { id } = req.params;
+  const recipe = id === DEFAULT_IMAGE_ID
+    ? { id: DEFAULT_IMAGE_ID, name: "Indian thali food" }
+    : RECIPES.find((r) => r.id === id);
+
+  if (!recipe) {
+    return res.status(404).json({ success: false, message: "Recipe not found" });
+  }
+
+  try {
+    const file = readCachedImage(id) || await ensureRecipeImage(recipe);
+    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    res.type("image/jpeg");
+    return res.sendFile(path.resolve(file));
+  } catch (err) {
+    console.warn(`Image fetch failed for ${id}:`, err.message);
+    if (id !== DEFAULT_IMAGE_ID) {
+      const fallback = readCachedImage(DEFAULT_IMAGE_ID);
+      if (fallback) {
+        return res.sendFile(path.resolve(fallback));
+      }
+      try {
+        const file = await ensureRecipeImage({ id: DEFAULT_IMAGE_ID, name: "Indian thali food" });
+        return res.sendFile(path.resolve(file));
+      } catch {
+        return res.status(502).json({ success: false, message: "Image unavailable" });
+      }
+    }
+    return res.status(502).json({ success: false, message: "Image unavailable" });
+  }
+});
 
 router.get("/recipes/categories", (_req, res) => {
   const counts = getCategoryCounts();
@@ -41,6 +83,28 @@ router.get("/recipes/trending", (req, res) => {
   const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 12));
   const recipes = getTrendingRecipes(limit);
   res.json({ success: true, recipes, total: recipes.length });
+});
+
+router.get("/recipes/suggest", (req, res) => {
+  const q = (req.query.q || "").trim().toLowerCase();
+  const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 8));
+  if (!q || q.length < 1) {
+    return res.json({ success: true, suggestions: [] });
+  }
+  const matches = [];
+  for (const r of RECIPES) {
+    if (
+      r.name.toLowerCase().includes(q) ||
+      r.nameHi?.toLowerCase().includes(q) ||
+      r.tags?.some((t) => t.toLowerCase().includes(q)) ||
+      r.cuisine?.toLowerCase().includes(q) ||
+      r.ingredients?.some((i) => i.name.toLowerCase().includes(q))
+    ) {
+      matches.push(attachRating(r));
+      if (matches.length >= limit) break;
+    }
+  }
+  res.json({ success: true, suggestions: matches });
 });
 
 router.get("/recipes/:id", (req, res) => {
@@ -84,12 +148,19 @@ router.get("/recipes", (req, res) => {
   const start = (pageNum - 1) * limitNum;
   const paginated = filtered.slice(start, start + limitNum);
 
+  // Warm image cache in background for visible recipes
+  for (const recipe of paginated) {
+    if (!hasCachedImage(recipe.id)) {
+      ensureRecipeImage(recipe).catch(() => {});
+    }
+  }
+
   res.json({
     success: true,
     total: filtered.length,
     page: pageNum,
     totalPages: Math.ceil(filtered.length / limitNum),
-    recipes: paginated,
+    recipes: paginated.map(attachRating),
   });
 });
 
@@ -146,7 +217,7 @@ router.post("/plan", optionalAuth, (req, res) => {
 router.get("/health", (_req, res) => {
   res.json({
     success: true,
-    message: "AajKyaBanayein API is running",
+    message: "Rasoira API is running",
     totalRecipes: RECIPES.length,
   });
 });

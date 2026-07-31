@@ -162,12 +162,12 @@ export function buildCookingFlow(recipe) {
     id: id++,
     type: "done",
     action: "complete",
-    title: "Done!",
-    titleHi: "हो गया! बधाई हो! 🎉",
-    description: `Aapne ${recipe.nameHi} successfully banaya!`,
-    descriptionHi: `आपने ${recipe.nameHi} सफलतापूर्वक बनाया!`,
+    title: "You did it!",
+    titleHi: "You did it!",
+    description: "If you enjoyed cooking with me, please leave a review ☺️",
+    descriptionHi: "If you enjoyed cooking with me, please leave a review ☺️",
     duration: 0,
-    icon: "🎉",
+    icon: "☺️",
   });
 
   return flow;

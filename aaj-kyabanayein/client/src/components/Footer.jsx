@@ -1,28 +1,36 @@
 import { Link } from "react-router-dom";
-import { useLanguage } from "../context/LanguageContext";
+import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
-  const { t } = useLanguage();
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-16 border-t border-white/40">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-display text-lg text-[var(--text-primary)]">{t("appName")}</p>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">{t("heroDesc")}</p>
+    <footer className="border-t border-white/[0.06] bg-[#0c0a08]/50">
+      <div className="mx-auto max-w-6xl px-4 py-12">
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+          <div className="max-w-sm">
+            <BrandLogo light className="h-8 w-auto" />
+            <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+              Ghar ka khana, naye andaaz mein. 5.7 Lakh+ recipes — step-by-step cooking, pantry suggestions, bilkul free.
+            </p>
+            <p className="mt-3 text-xs text-[var(--accent-soft)]">Made with ❤️ for Indian home cooks</p>
           </div>
-          <div className="flex flex-wrap gap-4 text-sm text-[var(--text-secondary)]">
-            <Link to="/recipes" className="hover:text-[var(--text-primary)]">{t("recipes")}</Link>
-            <Link to="/planner" className="hover:text-[var(--text-primary)]">{t("mealPlan")}</Link>
-            <Link to="/pantry" className="hover:text-[var(--text-primary)]">{t("pantry")}</Link>
-            <Link to="/pricing" className="hover:text-[var(--text-primary)]">{t("pricing")}</Link>
+          <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-[var(--text-secondary)]">
+            <Link to="/recipes" className="transition hover:text-[var(--accent-soft)]">Recipes</Link>
+            <Link to="/planner" className="transition hover:text-[var(--accent-soft)]">Meal Plan</Link>
+            <Link to="/pantry" className="transition hover:text-[var(--accent-soft)]">Pantry</Link>
+            <Link to="/favorites" className="transition hover:text-[var(--accent-soft)]">Favorites</Link>
+            <Link to="/pricing" className="transition hover:text-[var(--accent-soft)]">Pricing</Link>
           </div>
         </div>
-        <p className="mt-8 text-center text-xs text-[var(--text-secondary)]">
-          {year} AajKyaBanayein — {t("completelyFree")}
-        </p>
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] pt-8 sm:flex-row">
+          <p className="text-xs text-[var(--text-secondary)]">
+            {year} Rasoira — Hamesha Free
+          </p>
+          <p className="text-xs text-[var(--text-secondary)]">
+            Aapki rasoi, aapka pride 🍛
+          </p>
+        </div>
       </div>
     </footer>
   );

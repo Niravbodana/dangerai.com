@@ -8,3 +8,5 @@ server/src/data/ratings.json
 server/src/data/favorites.json
 server/src/data/generated/
 server/src/data/generatedRecipes.json
+server/data/image-cache/
+server/data/image-cache-meta/

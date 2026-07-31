@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { MORE_RECIPES } from "./moreRecipes.js";
 import { BASE_RECIPES } from "./baseRecipes.js";
-import { getRecipeImage } from "./recipeImages.js";
+import { getRecipeImage, DEFAULT_FOOD_IMAGE } from "./recipeImages.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const GENERATED_DIR = path.join(__dirname, "generated");
@@ -36,7 +36,7 @@ function enrichRecipe(recipe) {
   return {
     ...recipe,
     category,
-    image: recipe.image || getRecipeImage(recipe),
+    image: getRecipeImage(recipe) || recipe.image || DEFAULT_FOOD_IMAGE,
     pantryKeys: recipe.pantryKeys || recipe.ingredients?.map((i) => i.name.toLowerCase()) || [],
     healthScore: recipe.healthScore ?? 5,
     cuisine: recipe.cuisine || "indian",

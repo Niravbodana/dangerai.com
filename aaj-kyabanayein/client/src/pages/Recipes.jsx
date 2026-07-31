@@ -3,22 +3,34 @@ import { useSearchParams } from "react-router-dom";
 import { fetchCategories, fetchRecipes, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
+import RecipeSearch from "../components/RecipeSearch";
+import SegmentedControl from "../components/SegmentedControl";
+import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight } from "../components/Icons";
+
+function useDebounce(value, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 export default function Recipes() {
   const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const sortTrending = searchParams.get("sort") === "trending";
-  const initialCuisine = searchParams.get("cuisine") || "all";
 
   const [recipes, setRecipes] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [categories, setCategories] = useState([]);
   const [total, setTotal] = useState(0);
   const [diet, setDiet] = useState("all");
-  const [cuisine, setCuisine] = useState(initialCuisine);
+  const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || "all");
   const [category, setCategory] = useState("all");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const debouncedSearch = useDebounce(search);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -32,7 +44,9 @@ export default function Recipes() {
 
   useEffect(() => {
     const urlCuisine = searchParams.get("cuisine");
-    if (urlCuisine && urlCuisine !== cuisine) setCuisine(urlCuisine);
+    if (urlCuisine) setCuisine(urlCuisine);
+    const urlSearch = searchParams.get("search");
+    if (urlSearch) setSearch(urlSearch);
   }, [searchParams]);
 
   useEffect(() => {
@@ -48,10 +62,10 @@ export default function Recipes() {
             list = list.filter((r) => r.diet?.includes("non-veg"));
           }
           if (cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
-          if (search) {
-            const q = search.toLowerCase();
+          if (debouncedSearch) {
+            const q = debouncedSearch.toLowerCase();
             list = list.filter(
-              (r) => r.name.toLowerCase().includes(q) || r.nameHi?.includes(search)
+              (r) => r.name.toLowerCase().includes(q) || r.nameHi?.toLowerCase().includes(q)
             );
           }
           setRecipes(list);
@@ -66,7 +80,7 @@ export default function Recipes() {
     if (diet !== "all") params.diet = diet;
     if (cuisine !== "all") params.cuisine = cuisine;
     if (category !== "all") params.category = category;
-    if (search) params.search = search;
+    if (debouncedSearch) params.search = debouncedSearch;
 
     fetchRecipes(params)
       .then((data) => {
@@ -75,7 +89,7 @@ export default function Recipes() {
         setTotalPages(data.totalPages);
       })
       .finally(() => setLoading(false));
-  }, [diet, cuisine, category, page, search, sortTrending]);
+  }, [diet, cuisine, category, page, debouncedSearch, sortTrending]);
 
   const setSort = (trending) => {
     if (trending) {
@@ -89,97 +103,90 @@ export default function Recipes() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("recipes")}</h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          {sortTrending ? t("hotMakings") : `${total.toLocaleString()}+ ${t("recipesCount").toLowerCase()}`}
+        <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">Recipe Catalog</h1>
+        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+          {sortTrending ? t("hotMakings") : `${total.toLocaleString()}+ recipes · rated by home cooks`}
         </p>
 
-        <div className="mt-6 flex gap-2">
-          <button
-            onClick={() => setSort(false)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              !sortTrending
-                ? "bg-[var(--text-primary)] text-[var(--cream-light)]"
-                : "glass text-[var(--text-secondary)] hover:bg-white/50"
-            }`}
-          >
-            {t("allRecipes")}
-          </button>
-          <button
-            onClick={() => setSort(true)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              sortTrending
-                ? "bg-[var(--accent)] text-white"
-                : "glass text-[var(--text-secondary)] hover:bg-white/50"
-            }`}
-          >
-            {t("hotMakings")}
-          </button>
+        <div className="mt-6">
+          <RecipeSearch />
         </div>
 
-        <div className="mt-4 flex gap-2">
-          {[
-            { id: "all", label: t("allCuisines") },
-            { id: "veg", label: t("veg") },
-            { id: "non-veg", label: t("nonVeg") },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => { setDiet(opt.id); setPage(1); }}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition sm:flex-none sm:px-6 ${
-                diet === opt.id
-                  ? "bg-[var(--text-primary)] text-[var(--cream-light)]"
-                  : "glass text-[var(--text-secondary)] hover:bg-white/50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="mt-6">
+          <SegmentedControl
+            variant="catalog"
+            options={[
+              { id: "catalog", label: t("allRecipes") },
+              { id: "trending", label: t("hotMakings") },
+            ]}
+            value={sortTrending ? "trending" : "catalog"}
+            onChange={(id) => setSort(id === "trending")}
+          />
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4">
+          <SegmentedControl
+            variant="diet"
+            options={[
+              { id: "all", label: "All" },
+              {
+                id: "veg",
+                label: t("veg"),
+                icon: <VegSymbol className="h-3.5 w-3.5" />,
+                tone: "veg",
+              },
+              {
+                id: "non-veg",
+                label: t("nonVeg"),
+                icon: <NonVegSymbol className="h-3.5 w-3.5" />,
+                tone: "nonveg",
+              },
+            ]}
+            value={diet}
+            onChange={(id) => { setDiet(id); setPage(1); }}
+            className="segmented-control--diet"
+          />
+        </div>
+
+        <div className="filter-row mt-5">
+          <span className="filter-row__label">Meal</span>
+          <div className="filter-row__chips">
           {categories.map((c) => (
             <button
               key={c.id}
               onClick={() => { setCategory(category === c.id ? "all" : c.id); setPage(1); }}
-              className={`rounded-full px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide transition ${
-                category === c.id
-                  ? "bg-[var(--text-primary)] text-[var(--cream-light)]"
-                  : "glass border border-white/50 text-[var(--text-secondary)] hover:bg-white/50"
-              }`}
+              className={`filter-chip tap-smooth ${category === c.id ? "filter-chip--active" : ""}`}
             >
-              {c.labelHi || c.label}
+              {c.label}
             </button>
           ))}
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="filter-row mt-3">
+          <span className="filter-row__label">Cuisine</span>
+          <div className="filter-row__chips">
           {cuisines.map((c) => (
             <button
               key={c.id}
               onClick={() => { setCuisine(c.id); setPage(1); }}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition ${
-                cuisine === c.id
-                  ? "bg-[var(--text-primary)] text-[var(--cream-light)]"
-                  : "glass text-[var(--text-secondary)] hover:bg-white/50"
-              }`}
+              className={`filter-chip tap-smooth ${cuisine === c.id ? "filter-chip--active" : ""}`}
             >
-              {c.labelHi || c.label}
+              {c.label}
             </button>
           ))}
+          </div>
         </div>
 
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder={t("search")}
-          className="glass-input mt-6"
-        />
-
         {loading ? (
-          <div className="mt-12 flex justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-orange-500" />
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/10" />
+            ))}
+          </div>
+        ) : recipes.length === 0 ? (
+          <div className="recipe-card mt-12 p-12 text-center">
+            <p className="text-[var(--text-secondary)]">No recipes found. Try a different search.</p>
           </div>
         ) : (
           <>
@@ -198,7 +205,7 @@ export default function Recipes() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-200 transition hover:bg-stone-50 disabled:opacity-30"
+                  className="premium-btn-outline flex h-10 w-10 items-center justify-center disabled:opacity-30"
                 >
                   <IconArrowLeft className="w-4 h-4" />
                 </button>
@@ -206,7 +213,7 @@ export default function Recipes() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-200 transition hover:bg-stone-50 disabled:opacity-30"
+                  className="premium-btn-outline flex h-10 w-10 items-center justify-center disabled:opacity-30"
                 >
                   <IconArrowRight className="w-4 h-4" />
                 </button>
