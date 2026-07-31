@@ -179,7 +179,7 @@ const BATCHES = [
   { file: "healthy.json", fn: () => generateHealthy(45000, "hl") },
 ];
 
-console.log("Generating 5 Lakh recipes across categories...");
+console.log("Generating 5.7 Lakh recipes across categories...");
 
 let total = 0;
 for (const batch of BATCHES) {

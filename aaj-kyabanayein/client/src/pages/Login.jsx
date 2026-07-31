@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Navbar from "../components/Navbar";
 
 export default function Login() {
   const { login } = useAuth();
@@ -26,55 +25,35 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fffbf7]">
-      <Navbar />
+    <div className="min-h-screen">
       <div className="mx-auto flex max-w-md flex-col px-4 py-16">
-        <div className="rounded-2xl border border-orange-100 bg-white p-8 shadow-sm">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">Login</h1>
-          <p className="mb-6 text-sm text-gray-500">
+        <div className="glass-strong rounded-2xl p-8">
+          <h1 className="font-display text-2xl text-[var(--text-primary)]">Login</h1>
+          <p className="mb-6 mt-1 text-sm text-[var(--text-secondary)]">
             Optional — preferences account me save karne ke liye
           </p>
 
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+            <div className="mb-4 rounded-xl bg-red-50/80 p-3 text-sm text-red-600">{error}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                placeholder="aap@email.com"
-              />
+              <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="aap@email.com" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                placeholder="••••••"
-              />
+              <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="••••••" />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="premium-btn w-full py-3 text-sm disabled:opacity-50">
               {loading ? "Login ho raha hai..." : "Login"}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
             Account nahi hai?{" "}
-            <Link to="/signup" className="font-semibold text-orange-600 hover:underline">
+            <Link to="/signup" className="font-semibold text-[var(--accent)] hover:underline">
               Signup karein
             </Link>
           </p>

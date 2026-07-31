@@ -26,10 +26,10 @@ export default function Favorites() {
   useEffect(load, []);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-stone-900">{t("favorites")}</h1>
-        <p className="mt-1 text-sm text-stone-500">{t("featFavoritesDesc")}</p>
+        <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("favorites")}</h1>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">{t("featFavoritesDesc")}</p>
 
         {loading ? (
           <div className="mt-12 flex justify-center">
@@ -37,8 +37,8 @@ export default function Favorites() {
           </div>
         ) : recipes.length === 0 ? (
           <div className="recipe-card mt-8 p-12 text-center">
-            <p className="text-stone-500">{t("noFavorites")}</p>
-            <Link to="/recipes" className="mt-4 inline-block text-sm font-medium text-orange-600 hover:text-orange-700">
+            <p className="text-[var(--text-secondary)]">{t("noFavorites")}</p>
+            <Link to="/recipes" className="mt-4 inline-block text-sm font-medium text-[var(--accent)] hover:underline">
               {t("browseRecipes")}
             </Link>
           </div>

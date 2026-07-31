@@ -76,7 +76,7 @@ export default function RecipeDetail() {
   const displayRating = userRating || rating.average;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-3xl px-4 py-8">
         <button
           onClick={() => navigate(-1)}

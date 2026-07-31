@@ -4,8 +4,8 @@ import { fetchMealPlan, savePreferences } from "../api";
 import { useAuth } from "../context/AuthContext";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
-import Navbar from "../components/Navbar";
 import PreferencesPanel from "../components/PreferencesPanel";
+import { useLanguage } from "../context/LanguageContext";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -25,6 +25,7 @@ function loadLocalPrefs() {
 }
 
 export default function Planner() {
+  const { t } = useLanguage();
   const { user, updateUser } = useAuth();
   const [prefs, setPrefs] = useState(loadLocalPrefs);
   const [data, setData] = useState(null);
@@ -54,10 +55,6 @@ export default function Planner() {
     generatePlan(initial);
   }, [user, generatePlan]);
 
-  const handlePrefsChange = (newPrefs) => setPrefs(newPrefs);
-
-  const handleGenerate = () => generatePlan(prefs);
-
   const handleSavePreferences = async () => {
     if (!user) return;
     setSaving(true);
@@ -73,70 +70,48 @@ export default function Planner() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fffbf7]">
-      <Navbar />
-
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="font-display text-3xl font-semibold text-stone-900">Weekly Meal Plan</h1>
-          <p className="mt-1 text-gray-600">
-            {user ? `Namaste ${user.name}! ` : ""}
-            Pura hafta ka plan — bilkul free
-          </p>
-        </div>
+        <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("featPlanner")}</h1>
+        <p className="mt-1 text-[var(--text-secondary)]">
+          {user ? `${user.name} — ` : ""}{t("featPlannerDesc")}
+        </p>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <div className="space-y-4">
-            <PreferencesPanel prefs={prefs} onChange={handlePrefsChange} />
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full rounded-2xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-            >
+            <PreferencesPanel prefs={prefs} onChange={setPrefs} />
+            <button onClick={() => generatePlan(prefs)} disabled={loading} className="premium-btn w-full py-3 text-sm disabled:opacity-50">
               {loading ? "Ban raha hai..." : "Naya Plan Generate Karo"}
             </button>
             {user ? (
-              <button
-                onClick={handleSavePreferences}
-                disabled={saving}
-                className="w-full rounded-2xl border border-green-300 bg-green-50 py-3 font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
-              >
+              <button onClick={handleSavePreferences} disabled={saving} className="premium-btn-outline w-full py-3 text-sm disabled:opacity-50">
                 {saving ? "Save ho raha hai..." : "Account me Save Karo"}
               </button>
             ) : (
-              <p className="text-center text-xs text-gray-400">
-                <Link to="/login" className="text-orange-600 hover:underline">Login</Link> karke
-                preferences account me save kar sakte ho
+              <p className="text-center text-xs text-[var(--text-secondary)]">
+                <Link to="/login" className="text-[var(--accent)] hover:underline">Login</Link> karke preferences save karo
               </p>
             )}
           </div>
 
           <div className="space-y-6 lg:col-span-2">
-            {error && (
-              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{error}</div>
-            )}
+            {error && <div className="glass rounded-xl p-4 text-sm text-red-600">{error}</div>}
 
             {data?.plans?.map((day) => (
               <div key={day.date}>
-                <h2 className="mb-4 text-xl font-bold text-gray-900">
+                <h2 className="mb-4 font-display text-xl text-[var(--text-primary)]">
                   {day.dayLabel}
-                  <span className="ml-2 text-sm font-normal text-gray-400">{day.date}</span>
+                  <span className="ml-2 text-sm font-normal text-[var(--text-secondary)]">{day.date}</span>
                 </h2>
                 <div className="space-y-4">
                   {day.meals.map((meal) => (
-                    <MealCard
-                      key={`${day.date}-${meal.mealType}`}
-                      mealType={meal.mealType}
-                      recipe={meal.recipe}
-                    />
+                    <MealCard key={`${day.date}-${meal.mealType}`} mealType={meal.mealType} recipe={meal.recipe} />
                   ))}
                 </div>
               </div>
             ))}
 
-            {data?.groceryList?.length > 0 && (
-              <GroceryList items={data.groceryList} />
-            )}
+            {data?.groceryList && <GroceryList items={data.groceryList} />}
           </div>
         </div>
       </div>

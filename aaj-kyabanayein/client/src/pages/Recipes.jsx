@@ -202,7 +202,7 @@ export default function Recipes() {
                 >
                   <IconArrowLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm text-stone-500">{page} / {totalPages}</span>
+                <span className="text-sm text-[var(--text-secondary)]">{page} / {totalPages}</span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}

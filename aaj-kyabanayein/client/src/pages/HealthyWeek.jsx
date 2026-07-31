@@ -1,41 +1,38 @@
 import { useEffect, useState } from "react";
 import { fetchHealthyPlan } from "../api";
+import { useLanguage } from "../context/LanguageContext";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
-import Navbar from "../components/Navbar";
 
 export default function HealthyWeek() {
+  const { t } = useLanguage();
   const [diet, setDiet] = useState("veg");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fetchHealthyPlan(diet)
-      .then(setData)
-      .finally(() => setLoading(false));
+    fetchHealthyPlan(diet).then(setData).finally(() => setLoading(false));
   }, [diet]);
 
   return (
-    <div className="min-h-screen bg-[#fffbf7]">
-      <Navbar />
-
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="font-display text-3xl font-semibold text-stone-900">Healthy Week Plan</h1>
-        <p className="mb-6 text-gray-600">
-          7 din ka sehat ke liye best meal plan — roz healthy khana
-        </p>
+        <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("featHealthy")}</h1>
+        <p className="mb-6 text-[var(--text-secondary)]">{t("featHealthyDesc")}</p>
 
         <div className="mb-6 flex gap-2">
           {[
-            { value: "veg", label: "Veg Healthy" },
-            { value: "non-veg", label: "Non-Veg Healthy" },
+            { value: "veg", label: `${t("veg")} Healthy` },
+            { value: "non-veg", label: `${t("nonVeg")} Healthy` },
           ].map((opt) => (
             <button
               key={opt.value}
               onClick={() => setDiet(opt.value)}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
-                diet === opt.value ? "bg-green-500 text-white" : "bg-gray-100 text-gray-600"
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                diet === opt.value
+                  ? "bg-[var(--accent-green)] text-white"
+                  : "glass text-[var(--text-secondary)] hover:bg-white/50"
               }`}
             >
               {opt.label}
@@ -44,37 +41,32 @@ export default function HealthyWeek() {
         </div>
 
         {loading ? (
-          <p className="text-gray-500">Healthy plan ban raha hai...</p>
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-[var(--accent-green)]" />
+          </div>
         ) : (
           <div className="space-y-8">
             {data?.plans?.map((day) => (
-              <div key={day.date} className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+              <div key={day.date} className="glass-strong rounded-2xl p-6">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-xl font-semibold text-stone-900">{day.dayLabel}</h2>
-                    <p className="text-sm text-gray-400">{day.date}</p>
+                    <h2 className="font-display text-xl text-[var(--text-primary)]">{day.dayLabel}</h2>
+                    <p className="text-sm text-[var(--text-secondary)]">{day.date}</p>
                   </div>
-                  <div className="text-right">
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-sm text-green-700">
-                      {day.totalCalories} cal total
-                    </span>
-                  </div>
+                  <span className="rounded-full bg-[var(--accent-green)]/10 px-3 py-1 text-sm text-[var(--accent-green)]">
+                    {day.totalCalories} cal
+                  </span>
                 </div>
-                <p className="mb-4 rounded-lg bg-green-50 px-4 py-2 text-sm text-green-800">
+                <p className="mb-4 rounded-xl bg-white/40 px-4 py-2 text-sm text-[var(--text-primary)]">
                   {day.healthTip}
                 </p>
                 <div className="space-y-4">
                   {day.meals.map((meal) => (
-                    <MealCard
-                      key={`${day.date}-${meal.mealType}`}
-                      mealType={meal.mealType}
-                      recipe={meal.recipe}
-                    />
+                    <MealCard key={`${day.date}-${meal.mealType}`} mealType={meal.mealType} recipe={meal.recipe} />
                   ))}
                 </div>
               </div>
             ))}
-
             {data?.groceryList && <GroceryList items={data.groceryList} />}
           </div>
         )}

@@ -41,10 +41,10 @@ export default function HotMakings() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
               {t('hotSubtitle')}
             </p>
-            <h2 className="mt-1 font-display text-3xl font-semibold tracking-tight text-stone-900">
+            <h2 className="mt-1 font-display text-3xl text-[var(--text-primary)]">
               {t('hotMakings')}
             </h2>
-            <p className="mt-2 max-w-lg text-sm text-stone-500">{t('hotDesc')}</p>
+            <p className="mt-2 max-w-lg text-sm text-[var(--text-secondary)]">{t('hotDesc')}</p>
           </div>
           <Link
             to="/recipes?sort=trending"

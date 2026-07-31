@@ -1,8 +1,26 @@
 import { useEffect, useState } from "react";
 import { fetchPantryItems, suggestFromPantry } from "../api";
+import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 
+function Chip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+        active
+          ? "bg-[var(--text-primary)] text-[var(--cream-light)]"
+          : "glass text-[var(--text-secondary)] hover:bg-white/50"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Pantry() {
+  const { t } = useLanguage();
   const [pantryItems, setPantryItems] = useState([]);
   const [selected, setSelected] = useState([]);
   const [diet, setDiet] = useState("veg");
@@ -41,88 +59,62 @@ export default function Pantry() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="font-display text-3xl font-semibold text-stone-900">Ghar Me Kya Pada Hai?</h1>
-        <p className="mb-6 text-gray-600">
-          Jo samaan ghar me hai select karo — hum batayenge kya bana sakte ho
-        </p>
+        <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("tryPantry")}</h1>
+        <p className="mb-6 text-[var(--text-secondary)]">{t("featPantryDesc")}</p>
 
-        <div className="mb-6 rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-gray-800">Diet</h3>
-          <div className="mb-4 flex gap-2">
-            {[
-              { value: "veg", label: "Veg" },
-              { value: "non-veg", label: "Non-Veg" },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setDiet(opt.value)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-                  diet === opt.value ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+        <div className="glass-strong mb-6 rounded-2xl p-6">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Diet</h3>
+          <div className="mb-5 flex gap-2">
+            <Chip active={diet === "veg"} onClick={() => setDiet("veg")}>{t("veg")}</Chip>
+            <Chip active={diet === "non-veg"} onClick={() => setDiet("non-veg")}>{t("nonVeg")}</Chip>
           </div>
 
-          <h3 className="mb-3 font-semibold text-gray-800">Meal (optional)</h3>
-          <div className="mb-4 flex flex-wrap gap-2">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Meal</h3>
+          <div className="mb-5 flex flex-wrap gap-2">
             {["", "breakfast", "lunch", "dinner", "snack"].map((type) => (
-              <button
-                key={type || "all"}
-                onClick={() => setMealType(type)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize ${
-                  mealType === type ? "bg-green-500 text-white" : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {type || "Sab"}
-              </button>
+              <Chip key={type || "all"} active={mealType === type} onClick={() => setMealType(type)}>
+                {type || t("allCuisines")}
+              </Chip>
             ))}
           </div>
 
-          <h3 className="mb-3 font-semibold text-gray-800">
-            Ghar me yeh hai ({selected.length} selected)
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+            {selected.length} selected
           </h3>
           <div className="flex flex-wrap gap-2">
             {pantryItems.map((item) => (
-              <button
+              <Chip
                 key={item.key}
+                active={selected.includes(item.key)}
                 onClick={() => toggleItem(item.key)}
-                className={`rounded-full px-3 py-1.5 text-sm transition ${
-                  selected.includes(item.key)
-                    ? "bg-orange-500 text-white"
-                    : "border border-orange-200 text-orange-700 hover:bg-orange-50"
-                }`}
               >
                 {item.labelHi} ({item.label})
-              </button>
+              </Chip>
             ))}
           </div>
 
           <button
             onClick={handleSuggest}
             disabled={loading || selected.length === 0}
-            className="mt-5 w-full rounded-2xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+            className="premium-btn mt-6 w-full py-3 text-sm disabled:opacity-50"
           >
-            {loading ? "Dhoondh rahe hain..." : "Batao Kya Banayein"}
+            {loading ? "..." : t("tryPantry")}
           </button>
         </div>
 
         {searched && (
           <div>
-            <h2 className="mb-4 text-xl font-bold text-gray-900">
-              {suggestions.length} recipes mil gayi
+            <h2 className="mb-4 font-display text-xl text-[var(--text-primary)]">
+              {suggestions.length} {t("recipesCount")}
             </h2>
             {suggestions.length === 0 ? (
-              <p className="text-gray-500">
-                Is combination se kuch nahi mila. Aur items select karo ya diet change karo.
-              </p>
+              <p className="text-[var(--text-secondary)]">{t("search")}</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {suggestions.map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} matchPercent={recipe.matchPercent} />
+                  <RecipeCard key={recipe.id} recipe={recipe} />
                 ))}
               </div>
             )}
