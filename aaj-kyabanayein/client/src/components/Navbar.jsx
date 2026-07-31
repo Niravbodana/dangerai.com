@@ -36,6 +36,18 @@ export default function Navbar() {
                 Meal Plan
               </Link>
               <Link
+                to="/pantry"
+                className="hidden rounded-full border border-green-200 px-3 py-2 text-sm font-medium text-green-600 transition hover:bg-green-50 sm:block"
+              >
+                🏠 Pantry
+              </Link>
+              <Link
+                to="/healthy-week"
+                className="hidden rounded-full border border-green-200 px-3 py-2 text-sm font-medium text-green-600 transition hover:bg-green-50 md:block"
+              >
+                💚 Healthy
+              </Link>
+              <Link
                 to="/recipes"
                 className="hidden rounded-full border border-orange-200 px-4 py-2 text-sm font-medium text-orange-600 transition hover:bg-orange-50 sm:block"
               >

@@ -1,8 +1,10 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+import HealthyWeek from "./pages/HealthyWeek";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Pantry from "./pages/Pantry";
 import Planner from "./pages/Planner";
 import Pricing from "./pages/Pricing";
 import Recipes from "./pages/Recipes";
@@ -30,6 +32,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Recipes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pantry"
+            element={
+              <ProtectedRoute>
+                <Pantry />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/healthy-week"
+            element={
+              <ProtectedRoute>
+                <HealthyWeek />
               </ProtectedRoute>
             }
           />

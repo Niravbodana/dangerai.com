@@ -40,19 +40,19 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-3">
           {[
             {
-              emoji: "🌅",
-              title: "Roz ka plan",
-              desc: "Nashta, lunch, dinner — sab ek jagah. Sochna band, pakana shuru.",
+              emoji: "🏠",
+              title: "Ghar me kya pada?",
+              desc: "Aloo, pyaz, tamatar select karo — hum batayenge kya ban sakta hai.",
             },
             {
-              emoji: "🛒",
-              title: "Bazaar list",
-              desc: "Kya kya lena hai — auto list ban jati hai. Bazaar me time bachega.",
+              emoji: "💚",
+              title: "Healthy Week",
+              desc: "7 din ka sehat ke liye meal plan — roz healthy khana.",
             },
             {
-              emoji: "💰",
-              title: "Budget friendly",
-              desc: "Sasta, medium ya premium — aapke budget ke hisaab se recipes.",
+              emoji: "📖",
+              title: "500+ Recipes",
+              desc: "Veg/non-veg breakfast, lunch, dinner — photos ke saath.",
             },
           ].map((f) => (
             <div

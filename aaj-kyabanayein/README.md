@@ -6,10 +6,14 @@ Roz ki tension — aaj kya banayein? Meal planner app with monthly subscription 
 
 ## Features
 
+- **694+ recipes** with food photos (Unsplash)
 - Daily meal plan (nashta, lunch, dinner)
+- **Ghar me kya pada** — pantry-based recipe suggestions
+- **Weekly Healthy Plan** — 7-day health-focused meals
+- Separate categories: Veg/Non-Veg × Breakfast/Lunch/Dinner
 - Diet filters: Veg, Non-veg, Jain, Diabetic, Vegan
-- Budget-based recipes (sasta / medium / premium)
 - Grocery list (Pro plan)
+- Login/Signup with saved preferences
 - Subscription pricing: Free / ₹99 Pro / ₹199 Family
 
 ## Project Structure
@@ -55,7 +59,11 @@ App runs on http://localhost:3000
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/health` | Health check |
-| GET | `/api/recipes` | All recipes (30+) |
+| GET | `/api/recipes` | Paginated recipes (filter by category, search) |
+| GET | `/api/recipes/categories` | Category list with counts |
+| GET | `/api/pantry/items` | Common pantry items |
+| POST | `/api/pantry/suggest` | Suggest recipes from home ingredients |
+| POST | `/api/plan/healthy` | 7-day healthy meal plan |
 | GET | `/api/pricing` | Subscription plans |
 | POST | `/api/plan` | Generate meal plan (auth optional) |
 | POST | `/api/auth/register` | Create account |
@@ -74,6 +82,15 @@ App runs on http://localhost:3000
   "plan": "pro"
 }
 ```
+
+## Regenerate Recipes
+
+```bash
+cd server
+npm run generate-recipes
+```
+
+Generates 650+ recipes into `src/data/generatedRecipes.json`.
 
 ## Next Steps
 

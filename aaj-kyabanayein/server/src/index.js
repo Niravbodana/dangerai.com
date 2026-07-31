@@ -19,6 +19,10 @@ app.get("/", (_req, res) => {
     endpoints: [
       "/api/health",
       "/api/recipes",
+      "/api/recipes/categories",
+      "/api/pantry/items",
+      "POST /api/pantry/suggest",
+      "POST /api/plan/healthy",
       "/api/pricing",
       "POST /api/plan",
       "POST /api/auth/register",
