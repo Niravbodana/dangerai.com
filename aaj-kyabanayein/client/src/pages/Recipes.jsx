@@ -4,6 +4,7 @@ import { fetchCategories, fetchRecipes, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeSearch from "../components/RecipeSearch";
+import SegmentedControl from "../components/SegmentedControl";
 import { IconArrowLeft, IconArrowRight } from "../components/Icons";
 
 function useDebounce(value, delay = 400) {
@@ -110,35 +111,28 @@ export default function Recipes() {
           <RecipeSearch />
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            onClick={() => setSort(false)}
-            className={`nav-pill ${!sortTrending ? "nav-pill--active" : ""}`}
-          >
-            {t("allRecipes")}
-          </button>
-          <button
-            onClick={() => setSort(true)}
-            className={`nav-pill ${sortTrending ? "nav-pill--active" : ""}`}
-          >
-            {t("hotMakings")}
-          </button>
+        <div className="mt-6">
+          <SegmentedControl
+            options={[
+              { id: "catalog", label: t("allRecipes") },
+              { id: "trending", label: t("hotMakings") },
+            ]}
+            value={sortTrending ? "trending" : "catalog"}
+            onChange={(id) => setSort(id === "trending")}
+          />
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {[
-            { id: "all", label: t("allCuisines") },
-            { id: "veg", label: t("veg") },
-            { id: "non-veg", label: t("nonVeg") },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => { setDiet(opt.id); setPage(1); }}
-              className={`nav-pill ${diet === opt.id ? "nav-pill--active" : ""}`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="mt-4">
+          <SegmentedControl
+            options={[
+              { id: "all", label: "All" },
+              { id: "veg", label: t("veg") },
+              { id: "non-veg", label: t("nonVeg") },
+            ]}
+            value={diet}
+            onChange={(id) => { setDiet(id); setPage(1); }}
+            className="segmented-control--diet"
+          />
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

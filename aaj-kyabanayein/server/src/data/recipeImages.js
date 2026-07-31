@@ -1,62 +1,217 @@
-export const DEFAULT_FOOD_IMAGE =
-  "https://images.unsplash.com/photo-1585937421612-70a008296fbe?w=600&h=450&fit=crop&q=80";
+const Q = "w=600&h=450&fit=crop&q=80";
+const u = (id) => `https://images.unsplash.com/photo-${id}?${Q}`;
+const local = (name) => `/recipes/${name}.jpg`;
+
+export const DEFAULT_FOOD_IMAGE = local("generic-veg");
+
+/** Local curated photos — each file matches the dish name */
+export const DISH_IMAGES = {
+  poha: local("poha"),
+  dalChawal: local("dal-chawal"),
+  paneerMasala: local("paneer-butter-masala"),
+  alooGobi: local("aloo-gobi"),
+  idliSambar: local("idli-sambar"),
+  dosa: local("masala-dosa"),
+  biryani: local("biryani"),
+  choleBhature: local("chole-bhature"),
+  chickenCurry: local("chicken-curry"),
+  butterChicken: local("butter-chicken"),
+  palakPaneer: local("palak-paneer"),
+  rajma: local("rajma-chawal"),
+  upma: local("upma"),
+  roti: local("roti-sabzi"),
+  eggBhurji: local("egg-bhurji"),
+  khichdi: local("khichdi"),
+  paratha: local("paratha"),
+  salad: local("sprouts-salad"),
+  fishFry: local("fish-fry"),
+  dahiVada: local("dahi-vada"),
+  bainganBharta: local("baingan-bharta"),
+  misalPav: local("misal-pav"),
+  kadhi: local("kadhi"),
+  mutton: local("mutton"),
+  pavBhaji: local("pav-bhaji"),
+  dhokla: local("dhokla"),
+  lassi: local("lassi"),
+  sabudana: local("sabudana"),
+  thepla: local("thepla"),
+  dalTadka: local("dal-tadka"),
+  manchurian: local("veg-manchurian"),
+  kheer: local("kheer"),
+  friedRice: local("fried-rice"),
+  noodles: local("noodles"),
+  pasta: local("pasta"),
+  pizza: local("pizza"),
+  tacos: local("tacos"),
+  sushi: u("1579584425555-d72f17d2459b"),
+  burger: u("1568901346635-4c465754d2b4"),
+  steak: u("1544025162-d76694265947"),
+  soup: local("soup"),
+  sandwich: local("sandwich"),
+  smoothie: local("healthy"),
+  prawn: local("fish-fry"),
+  kebab: local("chicken-curry"),
+  korean: u("1498654896293-37aacf113fd9"),
+  thai: u("1559314809-0d155014e29e"),
+  mexican: local("tacos"),
+  healthy: local("healthy"),
+  breakfast: local("poha"),
+  snack: local("dhokla"),
+  genericVeg: local("generic-veg"),
+  genericNonVeg: local("generic-nonveg"),
+};
+
+export const RECIPE_IMAGES_BY_ID = {
+  poha: DISH_IMAGES.poha,
+  "dal-chawal": DISH_IMAGES.dalChawal,
+  "paneer-butter-masala": DISH_IMAGES.paneerMasala,
+  "aloo-gobi": DISH_IMAGES.alooGobi,
+  "idli-sambar": DISH_IMAGES.idliSambar,
+  "chicken-curry": DISH_IMAGES.chickenCurry,
+  "palak-paneer": DISH_IMAGES.palakPaneer,
+  "rajma-chawal": DISH_IMAGES.rajma,
+  upma: DISH_IMAGES.upma,
+  "roti-sabzi": DISH_IMAGES.roti,
+  "egg-bhurji": DISH_IMAGES.eggBhurji,
+  khichdi: DISH_IMAGES.khichdi,
+  "paratha-curd": DISH_IMAGES.paratha,
+  "sprouts-salad": DISH_IMAGES.salad,
+  "masala-dosa": DISH_IMAGES.dosa,
+  "chole-bhature": DISH_IMAGES.choleBhature,
+  "biryani-veg": DISH_IMAGES.biryani,
+  "fish-fry": DISH_IMAGES.fishFry,
+  "dahi-vada": DISH_IMAGES.dahiVada,
+  "baingan-bharta": DISH_IMAGES.bainganBharta,
+  "misal-pav": DISH_IMAGES.misalPav,
+  "kadhi-pakora": DISH_IMAGES.kadhi,
+  "mutton-rogan-josh": DISH_IMAGES.mutton,
+  "pav-bhaji": DISH_IMAGES.pavBhaji,
+  dhokla: DISH_IMAGES.dhokla,
+  lassi: DISH_IMAGES.lassi,
+  "sabudana-khichdi": DISH_IMAGES.sabudana,
+  "butter-chicken": DISH_IMAGES.butterChicken,
+  thepla: DISH_IMAGES.thepla,
+  "dal-tadka": DISH_IMAGES.dalTadka,
+  "veg-manchurian": DISH_IMAGES.manchurian,
+  kheer: DISH_IMAGES.kheer,
+};
+
+const KEYWORD_RULES = [
+  ["butter chicken", DISH_IMAGES.butterChicken],
+  ["paneer butter", DISH_IMAGES.paneerMasala],
+  ["palak paneer", DISH_IMAGES.palakPaneer],
+  ["chole bhature", DISH_IMAGES.choleBhature],
+  ["chole bhatura", DISH_IMAGES.choleBhature],
+  ["masala dosa", DISH_IMAGES.dosa],
+  ["idli sambar", DISH_IMAGES.idliSambar],
+  ["dal chawal", DISH_IMAGES.dalChawal],
+  ["rajma chawal", DISH_IMAGES.rajma],
+  ["aloo paratha", DISH_IMAGES.paratha],
+  ["egg bhurji", DISH_IMAGES.eggBhurji],
+  ["fish fry", DISH_IMAGES.fishFry],
+  ["dahi vada", DISH_IMAGES.dahiVada],
+  ["baingan bharta", DISH_IMAGES.bainganBharta],
+  ["misal pav", DISH_IMAGES.misalPav],
+  ["kadhi pakora", DISH_IMAGES.kadhi],
+  ["mutton rogan", DISH_IMAGES.mutton],
+  ["pav bhaji", DISH_IMAGES.pavBhaji],
+  ["khaman dhokla", DISH_IMAGES.dhokla],
+  ["sabudana khichdi", DISH_IMAGES.sabudana],
+  ["dal tadka", DISH_IMAGES.dalTadka],
+  ["veg manchurian", DISH_IMAGES.manchurian],
+  ["manchurian", DISH_IMAGES.manchurian],
+  ["rice kheer", DISH_IMAGES.kheer],
+  ["methi thepla", DISH_IMAGES.thepla],
+  ["sweet lassi", DISH_IMAGES.lassi],
+  ["sprouts salad", DISH_IMAGES.salad],
+  ["moong dal khichdi", DISH_IMAGES.khichdi],
+  ["fried rice", DISH_IMAGES.friedRice],
+  ["spring roll", DISH_IMAGES.friedRice],
+  ["dim sum", DISH_IMAGES.friedRice],
+  ["dumpling", DISH_IMAGES.friedRice],
+  ["chow mein", DISH_IMAGES.noodles],
+  ["noodle", DISH_IMAGES.noodles],
+  ["ramyeon", DISH_IMAGES.noodles],
+  ["bibimbap", DISH_IMAGES.korean],
+  ["kimchi", DISH_IMAGES.korean],
+  ["bulgogi", DISH_IMAGES.korean],
+  ["pad thai", DISH_IMAGES.thai],
+  ["green curry", DISH_IMAGES.thai],
+  ["tom yum", DISH_IMAGES.thai],
+  ["tacos", DISH_IMAGES.tacos],
+  ["burrito", DISH_IMAGES.tacos],
+  ["quesadilla", DISH_IMAGES.tacos],
+  ["enchilada", DISH_IMAGES.tacos],
+  ["nachos", DISH_IMAGES.tacos],
+  ["pizza", DISH_IMAGES.pizza],
+  ["pasta", DISH_IMAGES.pasta],
+  ["lasagna", DISH_IMAGES.pasta],
+  ["risotto", DISH_IMAGES.pasta],
+  ["carbonara", DISH_IMAGES.pasta],
+  ["biryani", DISH_IMAGES.biryani],
+  ["pulao", DISH_IMAGES.biryani],
+  ["dosa", DISH_IMAGES.dosa],
+  ["idli", DISH_IMAGES.idliSambar],
+  ["poha", DISH_IMAGES.poha],
+  ["upma", DISH_IMAGES.upma],
+  ["paratha", DISH_IMAGES.paratha],
+  ["thepla", DISH_IMAGES.thepla],
+  ["khichdi", DISH_IMAGES.khichdi],
+  ["dhokla", DISH_IMAGES.dhokla],
+  ["kheer", DISH_IMAGES.kheer],
+  ["lassi", DISH_IMAGES.lassi],
+  ["pav", DISH_IMAGES.pavBhaji],
+  ["roti", DISH_IMAGES.roti],
+  ["paneer", DISH_IMAGES.paneerMasala],
+  ["palak", DISH_IMAGES.palakPaneer],
+  ["aloo gobi", DISH_IMAGES.alooGobi],
+  ["gobi", DISH_IMAGES.alooGobi],
+  ["cauliflower", DISH_IMAGES.alooGobi],
+  ["baingan", DISH_IMAGES.bainganBharta],
+  ["eggplant", DISH_IMAGES.bainganBharta],
+  ["aloo", DISH_IMAGES.alooGobi],
+  ["potato", DISH_IMAGES.alooGobi],
+  ["rajma", DISH_IMAGES.rajma],
+  ["dal", DISH_IMAGES.dalChawal],
+  ["chicken", DISH_IMAGES.chickenCurry],
+  ["mutton", DISH_IMAGES.mutton],
+  ["lamb", DISH_IMAGES.mutton],
+  ["keema", DISH_IMAGES.mutton],
+  ["fish", DISH_IMAGES.fishFry],
+  ["prawn", DISH_IMAGES.prawn],
+  ["crab", DISH_IMAGES.prawn],
+  ["egg", DISH_IMAGES.eggBhurji],
+  ["duck", DISH_IMAGES.chickenCurry],
+  ["pork", DISH_IMAGES.chickenCurry],
+  ["salad", DISH_IMAGES.salad],
+  ["smoothie", DISH_IMAGES.smoothie],
+  ["oats", DISH_IMAGES.healthy],
+  ["quinoa", DISH_IMAGES.healthy],
+  ["detox", DISH_IMAGES.healthy],
+  ["soup", DISH_IMAGES.soup],
+  ["sandwich", DISH_IMAGES.sandwich],
+  ["burger", DISH_IMAGES.burger],
+  ["steak", DISH_IMAGES.steak],
+  ["raita", DISH_IMAGES.salad],
+  ["tikka", DISH_IMAGES.kebab],
+  ["tandoori", DISH_IMAGES.kebab],
+  ["kebab", DISH_IMAGES.kebab],
+];
 
 export const FOOD_IMAGES = {
-  breakfast: [
-    "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1626074353767-517a3e4b5e9e?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=600&h=450&fit=crop&q=80",
-  ],
-  lunch: [
-    "https://images.unsplash.com/photo-1585937421612-70a008296fbe?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1546833998-877b37c2b5cd?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=600&h=450&fit=crop&q=80",
-  ],
-  dinner: [
-    "https://images.unsplash.com/photo-1563379091339-03246963d96a?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1574484854995-79e93e2d6e3c?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1512058564876-185f39845df5?w=600&h=450&fit=crop&q=80",
-  ],
-  snack: [
-    "https://images.unsplash.com/photo-1606491956689-2ea866880fbc?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1529042410759-befb1204bda8?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=600&h=450&fit=crop&q=80",
-  ],
-  healthy: [
-    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=450&fit=crop&q=80",
-  ],
-  nonveg: [
-    "https://images.unsplash.com/photo-1604908176997-125f629cc3f3?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&h=450&fit=crop&q=80",
-  ],
-  indian: [
-    "https://images.unsplash.com/photo-1585937421612-70a008296fbe?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1563379091339-03246963d96a?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1546833998-877b37c2b5cd?w=600&h=450&fit=crop&q=80",
-  ],
-  chinese: [
-    "https://images.unsplash.com/photo-1563379091339-03246963d96a?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1525755662778-989d0520907e?w=600&h=450&fit=crop&q=80",
-  ],
-  italian: [
-    "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&h=450&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&h=450&fit=crop&q=80",
-  ],
-  korean: [
-    "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=600&h=450&fit=crop&q=80",
-  ],
-  thai: [
-    "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&h=450&fit=crop&q=80",
-  ],
-  mexican: [
-    "https://images.unsplash.com/photo-1565299585323-38174c4aabaa?w=600&h=450&fit=crop&q=80",
-  ],
+  breakfast: [DISH_IMAGES.poha, DISH_IMAGES.dosa, DISH_IMAGES.idliSambar, DISH_IMAGES.paratha],
+  lunch: [DISH_IMAGES.dalChawal, DISH_IMAGES.biryani, DISH_IMAGES.rajma, DISH_IMAGES.roti],
+  dinner: [DISH_IMAGES.paneerMasala, DISH_IMAGES.chickenCurry, DISH_IMAGES.biryani, DISH_IMAGES.roti],
+  snack: [DISH_IMAGES.dahiVada, DISH_IMAGES.dhokla, DISH_IMAGES.salad, DISH_IMAGES.manchurian],
+  healthy: [DISH_IMAGES.healthy, DISH_IMAGES.salad, DISH_IMAGES.smoothie],
+  nonveg: [DISH_IMAGES.chickenCurry, DISH_IMAGES.fishFry, DISH_IMAGES.mutton, DISH_IMAGES.eggBhurji],
+  indian: [DISH_IMAGES.dalChawal, DISH_IMAGES.paneerMasala, DISH_IMAGES.biryani, DISH_IMAGES.roti],
+  chinese: [DISH_IMAGES.manchurian, DISH_IMAGES.friedRice, DISH_IMAGES.noodles],
+  italian: [DISH_IMAGES.pasta, DISH_IMAGES.pizza],
+  korean: [DISH_IMAGES.korean],
+  thai: [DISH_IMAGES.thai],
+  mexican: [DISH_IMAGES.tacos],
+  continental: [DISH_IMAGES.sandwich, DISH_IMAGES.steak, DISH_IMAGES.soup],
 };
 
 function hashId(id) {
@@ -65,7 +220,22 @@ function hashId(id) {
   return h;
 }
 
+function matchByKeywords(recipe) {
+  const haystack = `${recipe.id || ""} ${recipe.name || ""}`.toLowerCase();
+  for (const [keyword, image] of KEYWORD_RULES) {
+    if (haystack.includes(keyword)) return image;
+  }
+  return null;
+}
+
 export function getRecipeImage(recipe) {
+  if (recipe.id && RECIPE_IMAGES_BY_ID[recipe.id]) {
+    return RECIPE_IMAGES_BY_ID[recipe.id];
+  }
+
+  const keywordMatch = matchByKeywords(recipe);
+  if (keywordMatch) return keywordMatch;
+
   const cuisine = recipe.cuisine?.toLowerCase();
   const cuisinePool = FOOD_IMAGES[cuisine];
 
@@ -73,10 +243,10 @@ export function getRecipeImage(recipe) {
     ? FOOD_IMAGES.nonveg
     : recipe.tags?.includes("healthy")
       ? FOOD_IMAGES.healthy
-      : cuisinePool ||
-        FOOD_IMAGES[recipe.mealType] ||
-        FOOD_IMAGES.lunch;
+      : cuisinePool || FOOD_IMAGES[recipe.mealType] || FOOD_IMAGES.lunch;
 
-  if (!pool?.length) return DEFAULT_FOOD_IMAGE;
+  if (!pool?.length) {
+    return recipe.diet?.includes("non-veg") ? DISH_IMAGES.genericNonVeg : DISH_IMAGES.genericVeg;
+  }
   return pool[hashId(recipe.id || recipe.name || "x") % pool.length];
 }

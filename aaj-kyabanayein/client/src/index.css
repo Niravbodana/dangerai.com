@@ -431,3 +431,108 @@ body {
 .catalog-card {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Touch-friendly segmented control */
+.segmented-control {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.segmented-control--diet {
+  max-width: 22rem;
+}
+
+.segmented-control__item {
+  flex: 1;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.segmented-control__item--active {
+  background: linear-gradient(135deg, #f0d78c 0%, #d4a84b 100%);
+  color: #14110e;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(212, 168, 75, 0.35);
+}
+
+.segmented-control__item:not(.segmented-control__item--active):active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Recipe detail page */
+.recipe-detail-page {
+  background: transparent;
+}
+
+.detail-section-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+}
+
+.ingredient-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.875rem;
+}
+
+.ingredient-dot {
+  margin-top: 0.4rem;
+  height: 0.5rem;
+  width: 0.5rem;
+  shrink: 0;
+  border-radius: 9999px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.step-row {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.recipe-detail-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding-top: 0.75rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, #14110e 70%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 640px) {
+  .recipe-detail-cta {
+    padding-bottom: 1rem;
+  }
+}

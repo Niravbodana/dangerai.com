@@ -36,7 +36,7 @@ function enrichRecipe(recipe) {
   return {
     ...recipe,
     category,
-    image: recipe.image || getRecipeImage(recipe) || DEFAULT_FOOD_IMAGE,
+    image: getRecipeImage(recipe) || recipe.image || DEFAULT_FOOD_IMAGE,
     pantryKeys: recipe.pantryKeys || recipe.ingredients?.map((i) => i.name.toLowerCase()) || [],
     healthScore: recipe.healthScore ?? 5,
     cuisine: recipe.cuisine || "indian",
