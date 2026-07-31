@@ -43,5 +43,5 @@
   <rect x="174" y="14" width="1" height="24" fill="url(#wm-divider)" rx="0.5"/>
 
   <!-- Tagline — inline, same row -->
-  <text x="186" y="28" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="500" fill="#9A9288" letter-spacing="0.28em">GHAR KA KHANA</text>
+  <text x="186" y="28" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="500" fill="#9A9288" letter-spacing="0.28em">HOME COOKED FOOD</text>
 </svg>

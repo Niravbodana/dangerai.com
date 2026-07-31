@@ -20,10 +20,10 @@ export default function HotMakings() {
     return (
       <section className="section-padding">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="h-8 w-48 animate-pulse rounded bg-stone-200" />
+          <div className="h-8 w-48 animate-pulse rounded bg-white/10" />
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-stone-200" />
+              <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/10" />
             ))}
           </div>
         </div>

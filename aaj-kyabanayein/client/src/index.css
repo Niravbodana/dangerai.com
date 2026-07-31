@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --cream: #f5f0e6;
-  --cream-light: #faf7f0;
-  --cream-deep: #ebe4d6;
-  --glass: rgba(255, 252, 247, 0.55);
-  --glass-strong: rgba(255, 252, 247, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.65);
-  --glass-shadow: 0 8px 32px rgba(120, 100, 70, 0.08);
-  --glass-shadow-lg: 0 16px 48px rgba(120, 100, 70, 0.12);
+  --cream: #1c1814;
+  --cream-light: #14110e;
+  --cream-deep: #242018;
+  --glass: rgba(255, 248, 235, 0.05);
+  --glass-strong: rgba(255, 248, 235, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.45);
   --bg-primary: var(--cream-light);
   --bg-card: var(--glass-strong);
-  --bg-accent: rgba(255, 248, 240, 0.6);
-  --text-primary: #3d3830;
-  --text-secondary: #8a8278;
-  --accent: #b8860b;
-  --accent-soft: #d4a84b;
-  --accent-green: #5a8f6f;
-  --border: rgba(255, 255, 255, 0.5);
+  --bg-accent: rgba(212, 168, 75, 0.08);
+  --text-primary: #f5f0e8;
+  --text-secondary: #a89f92;
+  --accent: #d4a84b;
+  --accent-soft: #f0d78c;
+  --accent-green: #6db88a;
+  --border: rgba(255, 255, 255, 0.1);
   --radius: 1.25rem;
   --blur: 24px;
 }
@@ -42,10 +42,10 @@ body {
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255, 255, 255, 0.9) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(214, 196, 168, 0.25) 0%, transparent 50%),
-    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(235, 228, 214, 0.5) 0%, transparent 55%),
-    linear-gradient(165deg, #faf7f0 0%, #f3ece0 40%, #f7f2e8 100%);
+    radial-gradient(ellipse 70% 55% at 10% -5%, rgba(212, 168, 75, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 90% 10%, rgba(109, 184, 138, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(36, 32, 24, 0.9) 0%, transparent 55%),
+    linear-gradient(165deg, #14110e 0%, #1a1612 35%, #1c1814 70%, #14110e 100%);
   background-attachment: fixed;
 }
 
@@ -57,45 +57,45 @@ body {
 
 .glass {
   background: var(--glass);
-  backdrop-filter: blur(var(--blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
 
 .glass-strong {
   background: var(--glass-strong);
-  backdrop-filter: blur(var(--blur)) saturate(200%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--glass-shadow);
 }
 
 .section-padding {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
 }
 
 .premium-pill {
   display: inline-block;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(212, 168, 75, 0.35);
+  background: rgba(212, 168, 75, 0.12);
   backdrop-filter: blur(12px);
   padding: 0.375rem 1rem;
   font-size: 0.625rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: var(--accent-green);
+  color: var(--accent-soft);
 }
 
 .premium-card,
 .recipe-card,
 .feature-card {
   background: var(--glass-strong);
-  backdrop-filter: blur(var(--blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   box-shadow: var(--glass-shadow);
@@ -105,13 +105,13 @@ body {
 .recipe-card:hover,
 .feature-card:hover {
   box-shadow: var(--glass-shadow-lg);
-  border-color: rgba(255, 255, 255, 0.85);
-  transform: translateY(-2px);
+  border-color: rgba(212, 168, 75, 0.25);
+  transform: translateY(-3px);
 }
 
 .recipe-card--trending {
-  border-color: rgba(212, 168, 75, 0.35);
-  background: rgba(255, 250, 240, 0.72);
+  border-color: rgba(212, 168, 75, 0.3);
+  background: rgba(212, 168, 75, 0.06);
 }
 
 .trending-badge {
@@ -119,15 +119,15 @@ body {
   align-items: center;
   gap: 0.375rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(212, 168, 75, 0.15);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(212, 168, 75, 0.3);
   padding: 0.25rem 0.625rem;
   font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--accent);
+  color: var(--accent-soft);
 }
 
 .feature-card {
@@ -141,49 +141,49 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  color: var(--accent);
+  background: rgba(212, 168, 75, 0.12);
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  color: var(--accent-soft);
 }
 
 .cuisine-tile {
-  background: rgba(255, 252, 247, 0.5);
+  background: rgba(255, 248, 235, 0.04);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   padding: 1.25rem;
   transition: all 0.3s ease;
 }
 
 .cuisine-tile:hover {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(212, 168, 75, 0.08);
+  border-color: rgba(212, 168, 75, 0.3);
   transform: translateY(-2px);
   box-shadow: var(--glass-shadow);
 }
 
 .btn-primary,
 .premium-btn {
-  background: rgba(61, 56, 48, 0.88);
-  color: #faf7f0;
+  background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+  color: #14110e;
   border-radius: 0.875rem;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all 0.25s ease;
-  box-shadow: 0 4px 16px rgba(61, 56, 48, 0.15);
+  box-shadow: 0 4px 20px rgba(212, 168, 75, 0.25);
 }
 
 .premium-btn:hover,
 .btn-primary:hover {
-  background: rgba(45, 42, 36, 0.95);
+  background: linear-gradient(135deg, #f0d78c 0%, #d4a84b 100%);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(61, 56, 48, 0.2);
+  box-shadow: 0 8px 28px rgba(212, 168, 75, 0.35);
 }
 
 .premium-btn-outline {
   border-radius: 0.875rem;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
   font-weight: 600;
   color: var(--text-primary);
@@ -191,15 +191,15 @@ body {
 }
 
 .premium-btn-outline:hover {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(212, 168, 75, 0.4);
 }
 
 .glass-input {
   width: 100%;
   border-radius: 0.875rem;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
@@ -209,8 +209,8 @@ body {
 }
 
 .glass-input:focus {
-  border-color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(212, 168, 75, 0.5);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .glass-input::placeholder {
@@ -236,7 +236,7 @@ body {
   right: 0;
   opacity: 0;
   animation: sloganBlink 6s infinite;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 500;
   color: var(--text-secondary);
 }
@@ -251,6 +251,133 @@ body {
 @keyframes sloganBlink {
   0%, 45% { opacity: 1; transform: translateY(0); }
   50%, 100% { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Navbar pills */
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.nav-pill:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-pill--active {
+  color: #14110e;
+  background: linear-gradient(135deg, #f0d78c 0%, #d4a84b 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(212, 168, 75, 0.3);
+  font-weight: 600;
+}
+
+.stat-card {
+  background: rgba(255, 248, 235, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(16px);
+  transition: border-color 0.3s;
+}
+
+.stat-card:hover {
+  border-color: rgba(212, 168, 75, 0.3);
+}
+
+.food-gallery-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  aspect-ratio: 4/3;
+}
+
+.food-gallery-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.food-gallery-card:hover img {
+  transform: scale(1.06);
+}
+
+.food-gallery-card .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(20, 17, 14, 0.85) 0%, transparent 55%);
+  display: flex;
+  align-items: flex-end;
+  padding: 1.25rem;
+}
+
+.step-card {
+  position: relative;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 248, 235, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.step-number {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #d4a84b, #b8860b);
+  color: #14110e;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.tip-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  background: rgba(109, 184, 138, 0.06);
+  border: 1px solid rgba(109, 184, 138, 0.15);
+}
+
+.cta-section {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+  background:
+    linear-gradient(135deg, rgba(212, 168, 75, 0.15) 0%, rgba(109, 184, 138, 0.08) 100%);
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  padding: 3rem 2rem;
+}
+
+.cta-section::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 168, 75, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 60% 40%, rgba(212, 168, 75, 0.18) 0%, transparent 55%);
+  pointer-events: none;
 }
 
 @media (max-width: 639px) {
