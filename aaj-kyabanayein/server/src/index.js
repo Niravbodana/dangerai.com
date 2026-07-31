@@ -17,11 +17,11 @@ app.use("/api", mealsRouter);
 app.get("/", (_req, res) => {
   res.json({
     name: "AajKyaBanayein API",
-    version: "1.1.0",
+    version: "2.0.0",
     endpoints: [
       "/api/health",
       "/api/recipes",
-      "/api/recipes/categories",
+      "/api/recipes/trending",
       "/api/pantry/items",
       "POST /api/pantry/suggest",
       "POST /api/plan/healthy",

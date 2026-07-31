@@ -44,12 +44,15 @@ function enrichRecipe(recipe) {
 }
 
 const merged = new Map();
+console.time("recipes-load");
 for (const r of [...BASE_RECIPES, ...MORE_RECIPES, ...loadGeneratedRecipes()]) {
   const enriched = enrichRecipe(r);
   if (!merged.has(enriched.id)) merged.set(enriched.id, enriched);
 }
 
 export const RECIPES = Array.from(merged.values());
+console.timeEnd("recipes-load");
+console.log(`Loaded ${RECIPES.length.toLocaleString()} recipes`);
 
 export const RECIPE_CATEGORIES = [
   { id: "veg-breakfast", label: "Veg Breakfast", labelHi: "शाकाहारी नाश्ता" },

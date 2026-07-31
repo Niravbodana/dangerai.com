@@ -1,31 +1,31 @@
-# Aaj Kya Banayein 🍳
+# Aaj Kya Banayein
 
-Roz ki tension — aaj kya banayein? Meal planner app with monthly subscription model.
+Roz ki tension — aaj kya banayein? Free meal planner for Indian home cooks.
 
-**Stack:** Node.js (Express) + React (Vite)
+**Stack:** Node.js (Express) + React (Vite) + Tailwind CSS
 
 ## Features
 
-- **22,000+ Indian recipes** with food photos
-- **Step-by-step Cooking Mode** — cut, cook, timer, serve flow
-- **Ghar me kya pada** — pantry-based recipe suggestions
-- **Weekly Healthy Plan** — 7-day health-focused meals
-- Separate categories: Veg/Non-Veg × Breakfast/Lunch/Dinner
-- Diet filters: Veg, Non-veg, Jain, Diabetic, Vegan
-- Grocery list (Pro plan)
-- Login/Signup with saved preferences
-- Subscription pricing: **100% Free** (payment plans coming later when visits grow)
+- **5.7 Lakh+ recipes** across 11 cuisines (Indian, Chinese, Thai, Korean, Italian, Mexican, and more)
+- **Hot Makings** — trending recipes by ratings and cook popularity
+- **Veg / Non-Veg filters** + cuisine and category browsing
+- **Step-by-step Cooking Mode** with timers
+- **Pantry suggestions** — ghar me kya pada, wahi se recipe
+- **Weekly meal plan** + healthy week plan
+- **Ratings, favorites, WhatsApp share**
+- **Hindi / English** language toggle
+- **Apple cream glass UI** — premium frosted design
+- **100% free** — no payment required
 
 ## Project Structure
 
 ```
 aaj-kyabanayein/
-├── server/          # Node.js Express API
+├── server/          # Express API
 │   └── src/
-│       ├── index.js
+│       ├── data/generated/   # 570k recipes (gitignored, auto-generated)
 │       ├── routes/
-│       ├── services/
-│       └── data/
+│       └── services/
 └── client/          # React Vite frontend
     └── src/
         ├── pages/
@@ -34,79 +34,53 @@ aaj-kyabanayein/
 
 ## Run Locally
 
-### 1. Start Backend (Node.js)
+### Backend
 
 ```bash
 cd server
-npm install
-npm run dev
+npm install          # auto-generates 570k recipes on first install (~3s)
+npm run dev          # http://localhost:5000
 ```
 
-Server runs on http://localhost:5000
-
-### 2. Start Frontend (React)
+### Frontend
 
 ```bash
 cd client
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
 ```
 
-App runs on http://localhost:3000
+## Regenerate Recipes
+
+```bash
+cd server
+npm run generate-recipes
+```
+
+Generates 11 JSON files under `server/src/data/generated/` totaling ~570,000 recipes.
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/recipes/:id` | Single recipe with full cooking flow |
-| GET | `/api/recipes/categories` | Category list with counts |
-| GET | `/api/pantry/items` | Common pantry items |
-| POST | `/api/pantry/suggest` | Suggest recipes from home ingredients |
-| POST | `/api/plan/healthy` | 7-day healthy meal plan |
-| GET | `/api/pricing` | Subscription plans |
-| POST | `/api/plan` | Generate meal plan (auth optional) |
-| POST | `/api/auth/register` | Create account |
+| GET | `/api/health` | Health check + recipe count |
+| GET | `/api/recipes` | Paginated recipes (filters: diet, cuisine, category, search) |
+| GET | `/api/recipes/trending` | Hot Makings — top rated recipes |
+| GET | `/api/recipes/:id` | Single recipe with cooking flow |
+| GET | `/api/recipes/categories` | Categories + cuisine counts |
+| GET | `/api/recipes/:id/rating` | Recipe rating |
+| POST | `/api/recipes/:id/rate` | Rate a recipe |
+| GET/POST/DELETE | `/api/favorites` | Favorites |
+| POST | `/api/pantry/suggest` | Pantry-based suggestions |
+| POST | `/api/plan` | Weekly meal plan |
+| POST | `/api/plan/healthy` | Healthy week plan |
+| POST | `/api/auth/register` | Create account (optional) |
 | POST | `/api/auth/login` | Login |
-| GET | `/api/auth/me` | Get current user (JWT required) |
-| PUT | `/api/auth/preferences` | Save user preferences (JWT required) |
 
-### POST /api/plan body example
+## Cuisines
 
-```json
-{
-  "diet": "veg",
-  "budget": "medium",
-  "familySize": 4,
-  "maxCookTime": 45,
-  "plan": "pro"
-}
-```
+Indian, North Indian, South Indian, Chinese, Italian, Korean, Thai, Mexican, Continental, Healthy
 
-## Regenerate Recipes (22,000+)
+## License
 
-```bash
-cd server
-npm run generate-recipes   # Creates generatedRecipes.json (~30MB)
-npm run dev                # postinstall auto-runs generator
-```
-
-**Coming soon cuisines:** Italian, Korean (structure ready)
-
-## Cooking Flow
-
-Each recipe has step-by-step flow:
-1. **Samaan check** — ingredients list with checkboxes
-2. **Cut/Prep** — "4 pyaz kaato" with next button
-3. **Cook/Steam/Fry** — with built-in timer
-4. **Serve** — final step
-5. **Done!** 🎉
-
-Try: `/recipe/chole-bhature` → **Start Cooking**
-
-## Next Steps
-
-- [ ] Razorpay subscription integration
-- [x] User login/signup (JWT)
-- [x] More recipes (30+ dishes)
-- [ ] AI-powered custom recipes (OpenAI API)
+MIT

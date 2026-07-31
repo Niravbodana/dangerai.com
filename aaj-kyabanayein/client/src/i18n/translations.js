@@ -59,6 +59,8 @@ export const translations = {
     featFavorites: "Your Favorites",
     featFavoritesDesc: "Save recipes you love and come back to them anytime.",
     noFavorites: "No favorites saved yet.",
+    steps: "How to make",
+    similarRecipes: "Similar hot recipes",
   },
   hi: {
     appName: "AajKyaBanayein",
@@ -120,5 +122,7 @@ export const translations = {
     featFavorites: "Aapki Pasand",
     featFavoritesDesc: "Jo recipe pasand ho, save karo aur baad me dekho.",
     noFavorites: "Abhi koi favorite nahi hai.",
+    steps: "Kaise banayein",
+    similarRecipes: "Aisi hi hot recipes",
   },
 };

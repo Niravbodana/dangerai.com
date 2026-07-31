@@ -12,35 +12,43 @@ const BUDGET_OPTIONS = [
   { value: "high", label: "Premium" },
 ];
 
+function Chip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+        active
+          ? "bg-[var(--text-primary)] text-[var(--cream-light)]"
+          : "glass text-[var(--text-secondary)] hover:bg-white/50"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function PreferencesPanel({ prefs, onChange }) {
   const update = (key, value) => onChange({ ...prefs, [key]: value });
 
   return (
     <div className="recipe-card p-5">
-      <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-stone-400">Aapki Pasand</h3>
+      <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Aapki Pasand</h3>
 
       <div className="space-y-4">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-stone-700">Diet</label>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">Diet</label>
           <div className="flex flex-wrap gap-2">
             {DIET_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => update("diet", opt.value)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  prefs.diet === opt.value
-                    ? "bg-orange-600 text-white"
-                    : "border border-stone-200 text-stone-600 hover:bg-stone-50"
-                }`}
-              >
+              <Chip key={opt.value} active={prefs.diet === opt.value} onClick={() => update("diet", opt.value)}>
                 {opt.label}
-              </button>
+              </Chip>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-stone-700">
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             Parivaar ({prefs.familySize} log)
           </label>
           <input
@@ -49,31 +57,23 @@ export default function PreferencesPanel({ prefs, onChange }) {
             max={8}
             value={prefs.familySize}
             onChange={(e) => update("familySize", Number(e.target.value))}
-            className="w-full accent-orange-600"
+            className="w-full accent-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-stone-700">Budget</label>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">Budget</label>
           <div className="flex flex-wrap gap-2">
             {BUDGET_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => update("budget", opt.value)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  prefs.budget === opt.value
-                    ? "bg-orange-600 text-white"
-                    : "border border-stone-200 text-stone-600 hover:bg-stone-50"
-                }`}
-              >
+              <Chip key={opt.value} active={prefs.budget === opt.value} onClick={() => update("budget", opt.value)}>
                 {opt.label}
-              </button>
+              </Chip>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-stone-700">
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             Max cooking: {prefs.maxCookTime} min
           </label>
           <input
@@ -83,7 +83,7 @@ export default function PreferencesPanel({ prefs, onChange }) {
             step={5}
             value={prefs.maxCookTime}
             onChange={(e) => update("maxCookTime", Number(e.target.value))}
-            className="w-full accent-orange-600"
+            className="w-full accent-[var(--accent)]"
           />
         </div>
       </div>

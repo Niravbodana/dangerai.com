@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
+import Footer from './components/Footer';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import RecipeDetail from './pages/RecipeDetail';
@@ -14,6 +15,7 @@ import HealthyWeek from './pages/HealthyWeek';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Pricing from './pages/Pricing';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -34,8 +36,10 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
+          <Footer />
           <MobileNav />
         </div>
       </AuthProvider>
