@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const MEAL_EMOJI = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🥗" };
 const MEAL_LABEL = { breakfast: "Nashta", lunch: "Dopahar", dinner: "Raat", snack: "Snack" };
@@ -36,12 +37,20 @@ export default function MealCard({ mealType, recipe }) {
               </span>
             </div>
           </div>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="rounded-xl bg-orange-50 px-3 py-2 text-sm font-medium text-orange-600 transition hover:bg-orange-100"
-          >
-            {expanded ? "Band" : "Recipe"}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="rounded-xl bg-orange-50 px-3 py-2 text-sm font-medium text-orange-600 transition hover:bg-orange-100"
+            >
+              {expanded ? "Band" : "Recipe"}
+            </button>
+            <Link
+              to={`/cook/${recipe.id}`}
+              className="rounded-xl bg-orange-500 px-3 py-2 text-center text-sm font-medium text-white transition hover:bg-orange-600"
+            >
+              Start ▶
+            </Link>
+          </div>
         </div>
       </div>
 

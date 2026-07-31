@@ -4,3 +4,4 @@ dist/
 .DS_Store
 *.log
 server/src/data/users.json
+server/src/data/generatedRecipes.json

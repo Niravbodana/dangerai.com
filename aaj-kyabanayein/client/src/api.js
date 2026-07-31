@@ -63,6 +63,12 @@ export async function fetchMealPlan(preferences) {
   return res.json();
 }
 
+export async function fetchRecipe(id) {
+  const res = await fetch(`${API_BASE}/recipes/${id}`);
+  if (!res.ok) throw new Error("Recipe not found");
+  return res.json();
+}
+
 export async function fetchRecipes(params = {}) {
   const query = new URLSearchParams(params).toString();
   const res = await fetch(`${API_BASE}/recipes?${query}`);

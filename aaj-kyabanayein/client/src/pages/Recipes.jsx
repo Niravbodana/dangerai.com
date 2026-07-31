@@ -54,7 +54,19 @@ export default function Recipes() {
 
       <div className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">📖 Saari Recipes</h1>
-        <p className="mb-4 text-gray-600">{total}+ recipes with photos</p>
+        <p className="mb-4 text-gray-600">{total.toLocaleString()}+ Indian recipes with step-by-step cooking</p>
+
+        <div className="mb-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700">
+            🇮🇳 Indian
+          </span>
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-400">
+            🇮🇹 Italian — Coming Soon
+          </span>
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-400">
+            🇰🇷 Korean — Coming Soon
+          </span>
+        </div>
 
         <input
           type="text"

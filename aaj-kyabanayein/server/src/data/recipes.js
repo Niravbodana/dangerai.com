@@ -42,14 +42,21 @@ for (const r of [...BASE_RECIPES, ...MORE_RECIPES, ...generatedRecipes]) {
 export const RECIPES = Array.from(merged.values());
 
 export const RECIPE_CATEGORIES = [
-  { id: "veg-breakfast", label: "Veg Nashta", labelHi: "शाकाहारी नाश्ता" },
-  { id: "nonveg-breakfast", label: "Non-Veg Nashta", labelHi: "मांसाहारी नाश्ता" },
-  { id: "veg-lunch", label: "Veg Lunch", labelHi: "शाकाहारी दोपहर" },
-  { id: "nonveg-lunch", label: "Non-Veg Lunch", labelHi: "मांसाहारी दोपहर" },
-  { id: "veg-dinner", label: "Veg Dinner", labelHi: "शाकाहारी रात" },
-  { id: "nonveg-dinner", label: "Non-Veg Dinner", labelHi: "मांसाहारी रात" },
-  { id: "healthy", label: "Healthy Food", labelHi: "स्वस्थ भोजन" },
-  { id: "snack", label: "Snacks", labelHi: "नाश्ता/स्नैक" },
+  { id: "veg-breakfast", label: "Veg Nashta", labelHi: "शाकाहारी नाश्ता", cuisine: "indian" },
+  { id: "nonveg-breakfast", label: "Non-Veg Nashta", labelHi: "मांसाहारी नाश्ता", cuisine: "indian" },
+  { id: "veg-lunch", label: "Veg Lunch", labelHi: "शाकाहारी दोपहर", cuisine: "indian" },
+  { id: "nonveg-lunch", label: "Non-Veg Lunch", labelHi: "मांसाहारी दोपहर", cuisine: "indian" },
+  { id: "veg-dinner", label: "Veg Dinner", labelHi: "शाकाहारी रात", cuisine: "indian" },
+  { id: "nonveg-dinner", label: "Non-Veg Dinner", labelHi: "मांसाहारी रात", cuisine: "indian" },
+  { id: "healthy", label: "Healthy Food", labelHi: "स्वस्थ भोजन", cuisine: "indian" },
+  { id: "snack", label: "Snacks", labelHi: "नाश्ता/स्नैक", cuisine: "indian" },
+];
+
+export const FUTURE_CUISINES = [
+  { id: "indian", label: "Indian", labelHi: "भारतीय", active: true },
+  { id: "south-indian", label: "South Indian", labelHi: "दक्षिण भारतीय", active: true },
+  { id: "italian", label: "Italian", labelHi: "इटालियन", active: false, comingSoon: true },
+  { id: "korean", label: "Korean", labelHi: "कोरियन", active: false, comingSoon: true },
 ];
 
 export const PLAN_LIMITS = {

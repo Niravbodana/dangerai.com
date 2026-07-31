@@ -6,8 +6,8 @@ Roz ki tension — aaj kya banayein? Meal planner app with monthly subscription 
 
 ## Features
 
-- **694+ recipes** with food photos (Unsplash)
-- Daily meal plan (nashta, lunch, dinner)
+- **22,000+ Indian recipes** with food photos
+- **Step-by-step Cooking Mode** — cut, cook, timer, serve flow
 - **Ghar me kya pada** — pantry-based recipe suggestions
 - **Weekly Healthy Plan** — 7-day health-focused meals
 - Separate categories: Veg/Non-Veg × Breakfast/Lunch/Dinner
@@ -59,7 +59,7 @@ App runs on http://localhost:3000
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/health` | Health check |
-| GET | `/api/recipes` | Paginated recipes (filter by category, search) |
+| GET | `/api/recipes/:id` | Single recipe with full cooking flow |
 | GET | `/api/recipes/categories` | Category list with counts |
 | GET | `/api/pantry/items` | Common pantry items |
 | POST | `/api/pantry/suggest` | Suggest recipes from home ingredients |
@@ -83,14 +83,26 @@ App runs on http://localhost:3000
 }
 ```
 
-## Regenerate Recipes
+## Regenerate Recipes (22,000+)
 
 ```bash
 cd server
-npm run generate-recipes
+npm run generate-recipes   # Creates generatedRecipes.json (~30MB)
+npm run dev                # postinstall auto-runs generator
 ```
 
-Generates 650+ recipes into `src/data/generatedRecipes.json`.
+**Coming soon cuisines:** Italian, Korean (structure ready)
+
+## Cooking Flow
+
+Each recipe has step-by-step flow:
+1. **Samaan check** — ingredients list with checkboxes
+2. **Cut/Prep** — "4 pyaz kaato" with next button
+3. **Cook/Steam/Fry** — with built-in timer
+4. **Serve** — final step
+5. **Done!** 🎉
+
+Try: `/recipe/chole-bhature` → **Start Cooking**
 
 ## Next Steps
 

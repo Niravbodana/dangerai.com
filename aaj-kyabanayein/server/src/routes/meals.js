@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getCategoryCounts,
+  FUTURE_CUISINES,
   PRICING_PLANS,
   RECIPE_CATEGORIES,
   RECIPES,
@@ -16,9 +17,29 @@ import {
   COMMON_PANTRY_ITEMS,
   suggestFromPantry,
 } from "../services/pantryService.js";
+import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
 import { findUserById } from "../services/userStore.js";
 
 const router = Router();
+
+router.get("/recipes/categories", (_req, res) => {
+  res.json({
+    success: true,
+    categories: RECIPE_CATEGORIES,
+    counts: getCategoryCounts(),
+    totalRecipes: RECIPES.length,
+    cuisines: FUTURE_CUISINES,
+  });
+});
+
+router.get("/recipes/:id", (req, res) => {
+  const recipe = RECIPES.find((r) => r.id === req.params.id);
+  if (!recipe) {
+    return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+  }
+  const full = enrichRecipeWithFlow(recipe);
+  res.json({ success: true, recipe: full });
+});
 
 router.get("/recipes", (req, res) => {
   const { category, mealType, diet, search, page = 1, limit = 24 } = req.query;
@@ -55,15 +76,6 @@ router.get("/recipes", (req, res) => {
     page: pageNum,
     totalPages: Math.ceil(filtered.length / limitNum),
     recipes: paginated,
-  });
-});
-
-router.get("/recipes/categories", (_req, res) => {
-  res.json({
-    success: true,
-    categories: RECIPE_CATEGORIES,
-    counts: getCategoryCounts(),
-    totalRecipes: RECIPES.length,
   });
 });
 
