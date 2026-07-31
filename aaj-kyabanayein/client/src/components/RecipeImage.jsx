@@ -1,14 +1,8 @@
 import { useState } from "react";
 
-const FALLBACK =
-  "https://images.unsplash.com/photo-1585937421612-70a008296fbe?w=600&h=450&fit=crop&q=80";
+const FALLBACK = "/api/recipes/image/_default";
 
-const FALLBACKS = [
-  FALLBACK,
-  "https://images.unsplash.com/photo-1563379091339-03246963d96a?w=600&h=450&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1546833998-877b37c2b5cd?w=600&h=450&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=600&h=450&fit=crop&q=80",
-];
+const FALLBACKS = [FALLBACK];
 
 function pickFallback(seed = "") {
   let h = 0;

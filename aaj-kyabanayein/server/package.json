@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "generate-recipes": "node src/scripts/generateRecipes.js",
+    "prefetch-images": "node src/scripts/prefetchRecipeImages.js",
     "postinstall": "node src/scripts/generateRecipes.js"
   },
   "dependencies": {

@@ -23,8 +23,49 @@ import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
 import { attachRating } from "../services/ratingsStore.js";
+import {
+  ensureRecipeImage,
+  readCachedImage,
+  hasCachedImage,
+} from "../services/recipeImageService.js";
+import path from "path";
 
 const router = Router();
+
+const DEFAULT_IMAGE_ID = "_default";
+
+router.get("/recipes/image/:id", async (req, res) => {
+  const { id } = req.params;
+  const recipe = id === DEFAULT_IMAGE_ID
+    ? { id: DEFAULT_IMAGE_ID, name: "Indian thali food" }
+    : RECIPES.find((r) => r.id === id);
+
+  if (!recipe) {
+    return res.status(404).json({ success: false, message: "Recipe not found" });
+  }
+
+  try {
+    const file = readCachedImage(id) || await ensureRecipeImage(recipe);
+    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    res.type("image/jpeg");
+    return res.sendFile(path.resolve(file));
+  } catch (err) {
+    console.warn(`Image fetch failed for ${id}:`, err.message);
+    if (id !== DEFAULT_IMAGE_ID) {
+      const fallback = readCachedImage(DEFAULT_IMAGE_ID);
+      if (fallback) {
+        return res.sendFile(path.resolve(fallback));
+      }
+      try {
+        const file = await ensureRecipeImage({ id: DEFAULT_IMAGE_ID, name: "Indian thali food" });
+        return res.sendFile(path.resolve(file));
+      } catch {
+        return res.status(502).json({ success: false, message: "Image unavailable" });
+      }
+    }
+    return res.status(502).json({ success: false, message: "Image unavailable" });
+  }
+});
 
 router.get("/recipes/categories", (_req, res) => {
   const counts = getCategoryCounts();
@@ -106,6 +147,13 @@ router.get("/recipes", (req, res) => {
   const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
   const start = (pageNum - 1) * limitNum;
   const paginated = filtered.slice(start, start + limitNum);
+
+  // Warm image cache in background for visible recipes
+  for (const recipe of paginated) {
+    if (!hasCachedImage(recipe.id)) {
+      ensureRecipeImage(recipe).catch(() => {});
+    }
+  }
 
   res.json({
     success: true,
