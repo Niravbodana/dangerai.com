@@ -19,7 +19,7 @@ export default function Pricing() {
       <h1 className="font-display text-3xl text-[var(--text-primary)]">{t('pricing')}</h1>
       <div className="glass-strong mt-8 p-8">
         <p className="font-display text-5xl text-[var(--text-primary)]">₹0</p>
-        <p className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{t('freeForever')}</p>
+        <p className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{t('freeForNow')}</p>
         <p className="mt-4 text-[var(--text-secondary)]">{t('freeDesc')}</p>
         <ul className="mt-6 space-y-2 text-left text-[var(--text-primary)]">
           {features.map((f) => (

@@ -56,7 +56,7 @@ export default function Login() {
           <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
             Don&apos;t have an account?{" "}
             <Link to="/signup" className="font-semibold text-[var(--accent-soft)] hover:underline">
-              Sign up free
+              Sign up — free for now
             </Link>
           </p>
           <Link to="/" className="mt-4 block text-center text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]">

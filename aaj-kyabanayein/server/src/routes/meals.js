@@ -82,7 +82,8 @@ router.get("/recipes/categories", (_req, res) => {
 router.get("/recipes/trending", (req, res) => {
   const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 12));
   const recipes = getTrendingRecipes(limit);
-  res.json({ success: true, recipes, total: recipes.length });
+  const trendingDate = recipes[0]?.trendingDate || null;
+  res.json({ success: true, recipes, total: recipes.length, trendingDate });
 });
 
 router.get("/recipes/suggest", (req, res) => {
