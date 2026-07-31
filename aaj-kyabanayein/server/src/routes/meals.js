@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { PRICING_PLANS, RECIPES } from "../data/recipes.js";
+import { optionalAuth } from "../middleware/auth.js";
 import {
   generateGroceryList,
   generateWeeklyPlan,
   getDefaultPreferences,
 } from "../services/mealPlanner.js";
+import { findUserById } from "../services/userStore.js";
 
 const router = Router();
 
@@ -16,8 +18,20 @@ router.get("/pricing", (_req, res) => {
   res.json({ success: true, plans: PRICING_PLANS });
 });
 
-router.post("/plan", (req, res) => {
-  const prefs = { ...getDefaultPreferences(), ...req.body };
+router.post("/plan", optionalAuth, (req, res) => {
+  let prefs = { ...getDefaultPreferences(), ...req.body };
+
+  if (req.userId) {
+    const user = findUserById(req.userId);
+    if (user) {
+      prefs = {
+        ...user.preferences,
+        ...req.body,
+        plan: user.plan,
+      };
+    }
+  }
+
   const plans = generateWeeklyPlan(prefs);
   const planTier = prefs.plan || "free";
   const includeGrocery = planTier !== "free";

@@ -1,3 +1,5 @@
+import { MORE_RECIPES } from "./moreRecipes.js";
+
 export const RECIPES = [
   {
     id: "poha",
@@ -332,6 +334,7 @@ export const RECIPES = [
     ],
     tags: ["healthy", "quick"],
   },
+  ...MORE_RECIPES,
 ];
 
 export const PLAN_LIMITS = {

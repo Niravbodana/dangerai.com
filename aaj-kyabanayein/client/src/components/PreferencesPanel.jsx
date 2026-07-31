@@ -12,7 +12,7 @@ const BUDGET_OPTIONS = [
   { value: "high", label: "₹₹₹ Premium" },
 ];
 
-export default function PreferencesPanel({ prefs, onChange }) {
+export default function PreferencesPanel({ prefs, onChange, userPlan }) {
   const update = (key, value) => onChange({ ...prefs, [key]: value });
 
   return (
@@ -88,22 +88,10 @@ export default function PreferencesPanel({ prefs, onChange }) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Plan</label>
-          <div className="flex flex-wrap gap-2">
-            {["free", "pro", "family"].map((plan) => (
-              <button
-                key={plan}
-                onClick={() => update("plan", plan)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition ${
-                  prefs.plan === plan
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-green-50"
-                }`}
-              >
-                {plan}
-              </button>
-            ))}
-          </div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Aapka Plan</label>
+          <span className="inline-block rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium capitalize text-green-700">
+            {userPlan || "free"} plan
+          </span>
         </div>
       </div>
     </div>

@@ -55,9 +55,13 @@ App runs on http://localhost:3000
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/health` | Health check |
-| GET | `/api/recipes` | All recipes |
+| GET | `/api/recipes` | All recipes (30+) |
 | GET | `/api/pricing` | Subscription plans |
-| POST | `/api/plan` | Generate meal plan |
+| POST | `/api/plan` | Generate meal plan (auth optional) |
+| POST | `/api/auth/register` | Create account |
+| POST | `/api/auth/login` | Login |
+| GET | `/api/auth/me` | Get current user (JWT required) |
+| PUT | `/api/auth/preferences` | Save user preferences (JWT required) |
 
 ### POST /api/plan body example
 
@@ -74,6 +78,6 @@ App runs on http://localhost:3000
 ## Next Steps
 
 - [ ] Razorpay subscription integration
-- [ ] User login (JWT)
-- [ ] More recipes database
+- [x] User login/signup (JWT)
+- [x] More recipes (30+ dishes)
 - [ ] AI-powered custom recipes (OpenAI API)

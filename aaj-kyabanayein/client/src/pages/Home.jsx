@@ -21,10 +21,10 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              to="/planner"
+              to="/signup"
               className="rounded-full bg-orange-500 px-8 py-3 text-lg font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600"
             >
-              Aaj ka plan dekho →
+              Free account banao →
             </Link>
             <Link
               to="/pricing"
@@ -71,10 +71,10 @@ export default function Home() {
         <h2 className="mb-4 text-3xl font-bold">Aaj hi try karo — Free!</h2>
         <p className="mb-6 text-orange-100">Pehle din ka plan bilkul free. Pasand aaye toh Pro le lo.</p>
         <Link
-          to="/planner"
+          to="/signup"
           className="inline-block rounded-full bg-white px-8 py-3 font-semibold text-orange-600 transition hover:bg-orange-50"
         >
-          Free Meal Plan →
+          Free Account Banao →
         </Link>
       </section>
     </div>
