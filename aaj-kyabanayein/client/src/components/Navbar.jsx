@@ -18,12 +18,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 glass border-b border-white/50">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Rasoira" className="h-10 w-10" />
-          <div>
-            <span className="font-display text-base text-[var(--text-primary)]">{t("appName")}</span>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">{t("appTagline")}</p>
-          </div>
+        <Link to="/" className="flex items-center">
+          <img src="/logo-wordmark.svg" alt="Rasoira — Ghar Ka Khana" className="h-9 w-auto sm:h-10" />
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">

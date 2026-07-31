@@ -1,15 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 52" fill="none">
   <defs>
-    <linearGradient id="bowl2" x1="8" y1="44" x2="56" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3D3830"/>
+    <linearGradient id="wm-bowl" x1="6" y1="30" x2="38" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F2B26"/>
       <stop offset="1" stop-color="#5A5248"/>
     </linearGradient>
+    <linearGradient id="wm-steam" x1="22" y1="6" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E8C56A"/>
+      <stop offset="1" stop-color="#D4A84B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="wm-rim" x1="10" y1="26" x2="34" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9A7209"/>
+      <stop offset="0.5" stop-color="#D4A84B"/>
+      <stop offset="1" stop-color="#F0D78C"/>
+    </linearGradient>
+    <linearGradient id="wm-divider" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#D4A84B" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#D4A84B" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#D4A84B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="wm-word" x1="52" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F2B26"/>
+      <stop offset="1" stop-color="#4A433C"/>
+    </linearGradient>
   </defs>
-  <path d="M12 12C12 12 10 24 12 28" stroke="#D4A84B" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
-  <path d="M24 8C24 8 22 22 24 26" stroke="#D4A84B" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M36 12C36 12 34 24 36 28" stroke="#D4A84B" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
-  <path d="M8 36C8 36 10 52 32 52C54 52 56 36 56 36C56 36 54 28 32 28C10 28 8 36 8 36Z" fill="url(#bowl2)"/>
-  <ellipse cx="32" cy="36" rx="20" ry="4" stroke="#B8860B" stroke-width="1.5" fill="none" opacity="0.4"/>
-  <text x="72" y="46" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="600" fill="#3D3830" letter-spacing="-0.5">Rasoira</text>
-  <text x="74" y="62" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#8A8278" letter-spacing="0.2em">GHAR KA KHANA</text>
+
+  <!-- Icon — vertically centered with wordmark -->
+  <g transform="translate(2, 6)">
+    <path d="M14 4C14 4 12.5 12 14 15" stroke="url(#wm-steam)" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+    <path d="M22 2C22 2 20.5 11 22 14" stroke="url(#wm-steam)" stroke-width="1.9" stroke-linecap="round"/>
+    <path d="M30 4C30 4 28.5 12 30 15" stroke="url(#wm-steam)" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+    <ellipse cx="22" cy="38" rx="17" ry="3.5" fill="#3D3830" fill-opacity="0.08"/>
+    <path d="M6 24C6 24 7.5 38 22 38C36.5 38 38 24 38 24C38 24 36.5 18 22 18C7.5 18 6 24 6 24Z" fill="url(#wm-bowl)"/>
+    <ellipse cx="22" cy="24" rx="14" ry="3.2" fill="url(#wm-rim)" fill-opacity="0.32"/>
+    <ellipse cx="22" cy="23" rx="11.5" ry="2" stroke="url(#wm-rim)" stroke-width="1.2" fill="none" opacity="0.75"/>
+    <path d="M28 27C31 25 34 26 33 29.5C32 31.5 29 32.5 27 30.5C26 29.2 27 27.8 28 27Z" fill="#5A8F6F" fill-opacity="0.9"/>
+  </g>
+
+  <!-- Brand name — same baseline row as icon -->
+  <text x="52" y="28" dominant-baseline="middle" font-family="system-ui, -apple-system, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="30" font-weight="650" fill="url(#wm-word)" letter-spacing="-0.04em">Rasoira</text>
+
+  <!-- Premium divider -->
+  <rect x="174" y="14" width="1" height="24" fill="url(#wm-divider)" rx="0.5"/>
+
+  <!-- Tagline — inline, same row -->
+  <text x="186" y="28" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="500" fill="#9A9288" letter-spacing="0.28em">GHAR KA KHANA</text>
 </svg>
