@@ -7,7 +7,7 @@ const RECIPES = [...BASE_RECIPES, ...MORE_RECIPES];
 
 async function prefetch() {
   console.log(`Enriching & prefetching images for ${RECIPES.length} hand-crafted recipes...`);
-  console.log(`Google Search: ${process.env.GOOGLE_API_KEY ? "enabled" : "not configured (using Wikipedia/TheMealDB)"}`);
+  console.log(`Google API: ${process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY ? "Gemini enabled" : "not set"}`);
   let ok = 0;
   let fail = 0;
 

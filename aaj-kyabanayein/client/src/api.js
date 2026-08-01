@@ -92,8 +92,11 @@ export async function fetchHealthyPlan(diet = 'veg') {
 
 export const createHealthyPlan = fetchHealthyPlan;
 
-export async function fetchRecipe(id, { enrich = true } = {}) {
-  const q = enrich ? "?enrich=1" : "?enrich=0";
+export async function fetchRecipe(id, { enrich = true, wait = false } = {}) {
+  const params = new URLSearchParams();
+  if (!enrich) params.set('enrich', '0');
+  if (wait) params.set('wait', '1');
+  const q = params.toString() ? `?${params}` : '';
   const res = await fetch(`${API_BASE}/recipes/${id}${q}`);
   if (!res.ok) throw new Error('Recipe not found');
   return res.json();

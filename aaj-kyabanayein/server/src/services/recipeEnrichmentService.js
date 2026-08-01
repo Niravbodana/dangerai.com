@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 import { buildIngredients, buildStepsEn, buildStepsHi } from "../data/recipeTemplates.js";
 import { searchGoogleImage, searchGoogleRecipeData, isGoogleSearchConfigured } from "./googleSearchService.js";
+import { fetchRecipeFromGemini, isGeminiConfigured } from "./geminiRecipeService.js";
 import { searchTheMealDb } from "./theMealDbService.js";
 import { ensureRecipeImage, hasCachedImage } from "./recipeImageService.js";
 
@@ -62,11 +63,39 @@ function mergeIngredients(existing, incoming) {
   return merged;
 }
 
+async function fetchWikiThumb(title, size = 480) {
+  if (!title) return null;
+  const url =
+    "https://en.wikipedia.org/w/api.php?action=query&titles=" +
+    `${encodeURIComponent(title.replace(/ /g, "_"))}&prop=pageimages` +
+    `&piprop=thumbnail&pithumbsize=${size}&format=json`;
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "RasoiraMealPlanner/1.0" } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const page = Object.values(data.query?.pages || {})[0];
+    return page?.thumbnail?.source || null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchFromWeb(recipe) {
   const searchName = cleanRecipeName(recipe.name) || recipe.name;
   const results = [];
 
-  // 1. Google (best when API keys configured)
+  // 1. Gemini (primary — uses your Google API key)
+  if (isGeminiConfigured()) {
+    const gemini = await fetchRecipeFromGemini(searchName, recipe.cuisine || "indian");
+    if (gemini) {
+      results.push(gemini);
+      // Fast Wikipedia thumb from Gemini's suggested title
+      const thumb = await fetchWikiThumb(gemini.wikiImageTitle, 480);
+      if (thumb) results.push({ source: "gemini-wiki", imageUrl: thumb });
+    }
+  }
+
+  // 2. Google Custom Search (if CSE ID also configured)
   if (isGoogleSearchConfigured()) {
     const [googleData, googleImage] = await Promise.all([
       searchGoogleRecipeData(searchName),
@@ -76,7 +105,7 @@ async function fetchFromWeb(recipe) {
     if (googleImage) results.push(googleImage);
   }
 
-  // 2. TheMealDB (free structured data)
+  // 3. TheMealDB (free fallback)
   const mealDb = await searchTheMealDb(searchName);
   if (mealDb) results.push(mealDb);
 
@@ -168,7 +197,7 @@ async function runEnrichment(recipe) {
     enriched: true,
     enrichedAt: new Date().toISOString(),
     enrichmentSources: applied.sources,
-    googleEnabled: isGoogleSearchConfigured(),
+    googleEnabled: isGeminiConfigured() || isGoogleSearchConfigured(),
   };
 
   writeCache(recipe.id, enriched);
@@ -206,7 +235,24 @@ export async function getEnrichedRecipe(recipe, { force = false } = {}) {
 
 export function getEnrichmentStatus() {
   return {
+    gemini: isGeminiConfigured(),
     googleSearch: isGoogleSearchConfigured(),
     cacheDir: CACHE_DIR,
   };
+}
+
+/** Return cached recipe instantly; enrich in background if needed. */
+export function getCachedRecipeOverlay(recipe) {
+  const cached = readCache(recipe.id);
+  return cached ? { ...recipe, ...cached } : recipe;
+}
+
+export function enrichRecipeInBackground(recipe) {
+  if (readCache(recipe.id)?.enriched) return;
+  if (enrichInFlight.has(recipe.id)) return;
+  getEnrichedRecipe(recipe).catch(() => {});
+}
+
+export function isRecipeEnriched(recipeId) {
+  return Boolean(readCache(recipeId)?.enriched);
 }

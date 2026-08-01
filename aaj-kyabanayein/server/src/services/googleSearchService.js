@@ -42,7 +42,7 @@ export async function searchGoogleImage(recipeName) {
     searchType: "image",
     num: 5,
     safe: "active",
-    imgSize: "large",
+    imgSize: "medium",
     imgType: "photo",
   });
 

@@ -20,7 +20,7 @@ import {
   suggestFromPantry,
 } from "../services/pantryService.js";
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
-import { getEnrichedRecipe, getEnrichmentStatus } from "../services/recipeEnrichmentService.js";
+import { getEnrichedRecipe, getEnrichmentStatus, getCachedRecipeOverlay, enrichRecipeInBackground, isRecipeEnriched } from "../services/recipeEnrichmentService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
 import { attachRating } from "../services/ratingsStore.js";
@@ -132,10 +132,40 @@ router.get("/recipes/:id", async (req, res) => {
   if (!recipe) {
     return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   }
-  const shouldEnrich = req.query.enrich !== "0";
-  const enriched = shouldEnrich ? await getEnrichedRecipe(recipe) : recipe;
+
+  const waitEnrich = req.query.wait === "1";
+  const skipEnrich = req.query.enrich === "0";
+
+  if (skipEnrich) {
+    const full = enrichRecipeWithFlow(recipe);
+    return res.json({ success: true, recipe: full, enriched: false });
+  }
+
+  // Fast path: serve cache immediately
+  const cached = getCachedRecipeOverlay(recipe);
+  const isEnriched = isRecipeEnriched(recipe.id);
+
+  if (!waitEnrich && isEnriched) {
+    const full = enrichRecipeWithFlow(cached);
+    return res.json({ success: true, recipe: full, enriched: true });
+  }
+
+  if (!waitEnrich) {
+    // Return base/cached data instantly, enrich in background
+    const full = enrichRecipeWithFlow(cached);
+    enrichRecipeInBackground(recipe);
+    return res.json({
+      success: true,
+      recipe: full,
+      enriched: isEnriched,
+      enriching: !isEnriched,
+    });
+  }
+
+  // wait=1 for prefetch script
+  const enriched = await getEnrichedRecipe(recipe);
   const full = enrichRecipeWithFlow(enriched);
-  res.json({ success: true, recipe: full, enriched: Boolean(enriched.enriched) });
+  res.json({ success: true, recipe: full, enriched: true });
 });
 
 router.get("/recipes", (req, res) => {

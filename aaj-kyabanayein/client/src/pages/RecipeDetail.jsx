@@ -61,27 +61,40 @@ export default function RecipeDetail() {
 
   const load = () => {
     setLoading(true);
-    setEnriching(true);
-    Promise.all([
-      fetchRecipe(id, { enrich: true }),
-      fetchRecipeRating(id),
-      fetchReviews(id),
-      fetchTrendingRecipes(20),
-    ])
-      .then(([recipeData, ratingData, reviewsData, trendingData]) => {
-        setRecipe(recipeData.recipe);
+    fetchRecipe(id)
+      .then(async (recipeData) => {
+        const r = recipeData.recipe;
+        setRecipe(r);
+        setLoading(false);
+
+        if (recipeData.enriching) {
+          setEnriching(true);
+          for (let i = 0; i < 12; i++) {
+            await new Promise((res) => setTimeout(res, 2000));
+            const updated = await fetchRecipe(id);
+            if (!updated.enriching) {
+              setRecipe(updated.recipe);
+              break;
+            }
+          }
+          setEnriching(false);
+        }
+      })
+      .catch(() => setLoading(false));
+
+    Promise.all([fetchRecipeRating(id), fetchReviews(id), fetchTrendingRecipes(20)]).then(
+      ([ratingData, reviewsData, trendingData]) => {
         setRating(ratingData);
         setReviews(reviewsData.reviews || []);
         setIsFav(isFavorite(id));
         const trending = trendingData.recipes || [];
-        setIsTrending(trending.some((r) => r.id === id));
-        const cuisine = recipeData.recipe?.cuisine;
-        setSimilar(trending.filter((r) => r.id !== id && r.cuisine === cuisine).slice(0, 4));
-      })
-      .finally(() => {
-        setLoading(false);
-        setEnriching(false);
-      });
+        setIsTrending(trending.some((tr) => tr.id === id));
+        fetchRecipe(id).then((d) => {
+          const cuisine = d.recipe?.cuisine;
+          setSimilar(trending.filter((tr) => tr.id !== id && tr.cuisine === cuisine).slice(0, 4));
+        });
+      }
+    );
   };
 
   useEffect(load, [id]);
