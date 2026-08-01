@@ -1,4 +1,5 @@
 import { addFavorite, rateRecipe, removeFavorite } from "../api";
+import { trackFavorite } from "./analytics";
 
 export function getGuestId() {
   let id = localStorage.getItem("akb-guest-id");
@@ -34,6 +35,7 @@ export async function toggleFavorite(recipeId) {
     const updated = favs.filter((id) => id !== recipeId);
     setLocalFavorites(updated);
     removeFavorite(recipeId, guestId).catch(() => {});
+    trackFavorite(recipeId, false);
     return false;
   }
 
@@ -41,6 +43,7 @@ export async function toggleFavorite(recipeId) {
   setLocalFavorites(updated);
   await addFavorite(recipeId, guestId).catch(() => {});
   await rateRecipe(recipeId, 5, guestId).catch(() => {});
+  trackFavorite(recipeId, true);
   return true;
 }
 
