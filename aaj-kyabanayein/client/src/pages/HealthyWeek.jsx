@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchHealthyPlan } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
 
@@ -21,23 +22,29 @@ export default function HealthyWeek() {
         <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("featHealthy")}</h1>
         <p className="mb-6 text-[var(--text-secondary)]">{t("featHealthyDesc")}</p>
 
-        <div className="mb-6 flex gap-2">
-          {[
-            { value: "veg", label: `${t("veg")} Healthy` },
-            { value: "non-veg", label: `${t("nonVeg")} Healthy` },
-          ].map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setDiet(opt.value)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                diet === opt.value
-                  ? "bg-[var(--accent-green)] text-white"
-                  : "glass text-[var(--text-secondary)] hover:bg-white/50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <DailyHealthyPlan compact diet={diet} onDietChange={setDiet} />
+
+        <div className="mt-10 flex items-center justify-between">
+          <h2 className="font-display text-xl text-[var(--text-primary)]">7 Din ka Plan</h2>
+          <div className="flex gap-2">
+            {[
+              { value: "veg", label: `${t("veg")} Healthy` },
+              { value: "non-veg", label: `${t("nonVeg")} Healthy` },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setDiet(opt.value)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  diet === opt.value
+                    ? "bg-[var(--accent-green)] text-white"
+                    : "glass text-[var(--text-secondary)] hover:bg-white/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
@@ -45,7 +52,7 @@ export default function HealthyWeek() {
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-[var(--accent-green)]" />
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="mt-6 space-y-8">
             {data?.plans?.map((day) => (
               <div key={day.date} className="glass-strong rounded-2xl p-6">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

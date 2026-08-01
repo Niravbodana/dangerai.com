@@ -20,41 +20,81 @@ const HEALTH_TIPS = [
   "Fruit aur salad zaroor rakhein",
 ];
 
-function pickHealthy(pool, usedIds, dayIndex, mealType) {
-  const available = pool.filter(
-    (r) => r.mealType === mealType && !usedIds.has(r.id)
-  );
-  if (available.length === 0) return null;
+const MEAL_SLOTS = [
+  { mealType: "breakfast", label: "Breakfast", labelHi: "नाश्ता", icon: "🌅" },
+  { mealType: "lunch", label: "Lunch", labelHi: "दोपहर", icon: "☀️" },
+  { mealType: "snack", label: "Snack", labelHi: "स्नैक", icon: "🍎" },
+  { mealType: "dinner", label: "Dinner", labelHi: "रात", icon: "🌙" },
+];
 
-  const idx = (dayIndex + mealType.length) % available.length;
+function daySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+function seededIndex(seed, max, salt = 0) {
+  const x = Math.sin(seed + salt) * 10000;
+  return Math.floor((x - Math.floor(x)) * max);
+}
+
+function pickHealthy(pool, usedIds, seed, mealType, salt) {
+  const available = pool.filter((r) => r.mealType === mealType && !usedIds.has(r.id));
+  if (available.length === 0) return null;
+  const idx = seededIndex(seed, available.length, salt);
   const meta = available[idx];
+  usedIds.add(meta.id);
   return getRecipeById(meta.id);
 }
 
-export function generateWeeklyHealthyPlan(diet = "veg") {
-  const pool = filterRecipeIndex({ diet, cuisine: "healthy" });
-  const fallbackPool = filterRecipeIndex({ diet });
+function buildDayPlan(pool, dayOffset, diet) {
+  const date = new Date();
+  date.setDate(date.getDate() + dayOffset);
+  const seed = daySeed() + dayOffset;
   const usedIds = new Set();
-  const plans = [];
+  const meals = [];
 
-  for (let day = 0; day < 7; day++) {
-    const date = new Date();
-    date.setDate(date.getDate() + day);
-    const meals = [];
-
-    for (const mealType of ["breakfast", "lunch", "dinner"]) {
-      let recipe = pickHealthy(pool.length ? pool : fallbackPool, usedIds, day, mealType);
-      if (recipe) usedIds.add(recipe.id);
-      if (recipe) meals.push({ mealType, recipe });
+  for (let i = 0; i < MEAL_SLOTS.length; i++) {
+    const slot = MEAL_SLOTS[i];
+    const recipe = pickHealthy(pool, usedIds, seed, slot.mealType, i * 17);
+    if (recipe) {
+      meals.push({
+        mealType: slot.mealType,
+        label: slot.label,
+        labelHi: slot.labelHi,
+        icon: slot.icon,
+        recipe,
+      });
     }
-
-    plans.push({
-      date: date.toISOString().split("T")[0],
-      dayLabel: DAY_LABELS[day],
-      tip: HEALTH_TIPS[day],
-      meals,
-    });
   }
 
+  return {
+    date: date.toISOString().split("T")[0],
+    dayLabel: DAY_LABELS[dayOffset % 7],
+    healthTip: HEALTH_TIPS[dayOffset % 7],
+    diet,
+    totalCalories: meals.reduce((sum, m) => sum + (m.recipe.calories || 0), 0),
+    meals,
+  };
+}
+
+function getHealthyPool(diet) {
+  let pool = filterRecipeIndex({ diet, category: "healthy" });
+  if (pool.length < 20) pool = filterRecipeIndex({ diet });
+  if (pool.length < 10) pool = filterRecipeIndex({});
+  return pool;
+}
+
+/** Today's recommended healthy meals — breakfast, lunch, snack, dinner */
+export function generateDailyHealthyPlan(diet = "veg") {
+  const pool = getHealthyPool(diet);
+  return buildDayPlan(pool, 0, diet);
+}
+
+export function generateWeeklyHealthyPlan(diet = "veg") {
+  const pool = getHealthyPool(diet);
+  const plans = [];
+  for (let day = 0; day < 7; day++) {
+    plans.push(buildDayPlan(pool, day, diet));
+  }
   return plans;
 }

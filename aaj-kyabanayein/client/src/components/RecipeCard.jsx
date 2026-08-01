@@ -17,6 +17,13 @@ function formatCooks(count) {
   return String(count);
 }
 
+function mealEmoji(mealType) {
+  if (mealType === 'breakfast') return '🌅';
+  if (mealType === 'snack') return '🍎';
+  if (mealType === 'dinner') return '🌙';
+  return '🍛';
+}
+
 function StarRow({ average, count }) {
   const rounded = Math.round(average || 0);
   return (
@@ -41,12 +48,13 @@ function StarRow({ average, count }) {
   );
 }
 
-export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank }) {
+export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank, lazyImage = true }) {
   const { t, lang } = useLanguage();
   const [fav, setFav] = useState(isFavorite(recipe.id));
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
   const cooks = rating?.count;
+  const displayName = lang === 'hi' ? (recipe.nameHi || recipe.name) : recipe.name;
 
   const handleFav = async (e) => {
     e.preventDefault();
@@ -56,6 +64,58 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
     onFavoriteChange?.();
   };
 
+  if (lazyImage) {
+    return (
+      <Link
+        to={`/recipe/${recipe.id}`}
+        className={`recipe-card catalog-card group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
+      >
+        <div className="flex items-start gap-4 p-4">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/8 text-2xl">
+            {mealEmoji(recipe.mealType)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 tracking-tight">{displayName}</h3>
+                <p className="mt-0.5 text-xs capitalize text-[var(--text-secondary)]">{recipe.cuisine}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleFav}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${
+                  fav ? 'bg-[var(--accent)]/20 text-[var(--accent-soft)]' : 'text-white/40 hover:text-white/70'
+                }`}
+                aria-label={fav ? t('removeFavorite') : t('addFavorite')}
+              >
+                <IconHeart filled={fav} className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${
+                veg ? 'bg-[#22c55e]/15 text-[#4ade80]' : 'bg-[#ef4444]/15 text-[#f87171]'
+              }`}>
+                {veg ? <VegSymbol className="h-3 w-3" /> : <NonVegSymbol className="h-3 w-3" />}
+                {veg ? t('veg') : t('nonVeg')}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                <IconClock className="w-3.5 h-3.5" />
+                {recipe.cookTime || recipe.time} {t('min')}
+              </span>
+              {trending && rank && (
+                <span className="trending-badge text-[10px]">
+                  <IconFlame className="w-3 h-3" />
+                  #{rank}
+                </span>
+              )}
+            </div>
+            <StarRow average={rating?.average} count={rating?.count} />
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <Link
       to={`/recipe/${recipe.id}`}
@@ -63,9 +123,10 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#242018]">
         <RecipeImage
-          src={recipe.image}
-          alt={recipe.name}
+          src={`/api/recipes/image/${recipe.id}`}
+          alt={displayName}
           recipeId={recipe.id}
+          eager
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#14110e]/80 via-transparent to-transparent" />
@@ -99,9 +160,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
       </div>
 
       <div className="p-4">
-        <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 tracking-tight">
-          {lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name}
-        </h3>
+        <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 tracking-tight">{displayName}</h3>
         <p className="mt-0.5 text-xs capitalize text-[var(--text-secondary)]">{recipe.cuisine}</p>
 
         <div className="mt-2 flex items-center gap-3 text-xs text-[var(--text-secondary)]">

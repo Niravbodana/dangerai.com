@@ -4,6 +4,7 @@ import BrandLogo from "../components/BrandLogo";
 import RecipeSearch from "../components/RecipeSearch";
 import HotMakings from "../components/HotMakings";
 import CuisineExplorer from "../components/CuisineExplorer";
+import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry, IconStar } from "../components/Icons";
 
 const GALLERY = [
@@ -25,14 +26,14 @@ const TESTIMONIALS = [
 const FEATURES = [
   { to: "/pantry", icon: IconPantry, title: "Ghar mein kya pada?", desc: "Ingredients batao — turant matching recipes mil jayengi." },
   { to: "/planner", icon: IconCalendar, title: "7 Din ka Meal Plan", desc: "Poora hafta plan ho jayega — veg, non-veg, healthy sab options." },
-  { to: "/healthy-week", icon: IconChef, title: "Healthy Week", desc: "Family ke liye balanced, nutritious meals — bina compromise." },
-  { to: "/recipes", icon: IconBook, title: "5.7 Lakh+ Recipes", desc: "Indian, Chinese, Italian, Korean — har cuisine, har mood." },
+  { to: "/healthy-week", icon: IconChef, title: "Aaj ka Healthy Plan", desc: "Breakfast, lunch, snack, dinner — aaj ke liye balanced meals." },
+  { to: "/recipes", icon: IconBook, title: "770+ Real Recipes", desc: "Indian, Chinese, Italian — asli ingredients, asli recipes." },
   { to: "/favorites", icon: IconHeart, title: "Apni Favourites", desc: "Jo pasand aaye save karo — kabhi bhi wapas banao." },
 ];
 
 const STEPS = [
   { n: "01", title: "Ghar ka pantry batao", desc: "Jo ingredients fridge ya kitchen mein hain, add karo. Smart matching turant recipes dikhayega.", img: "/home/section-pantry-planning.png" },
-  { n: "02", title: "Recipe choose karo", desc: "5.7 lakh options — breakfast se dinner tak. Photos, ratings, reviews sab dekho.", img: "/home/gallery-thali.png" },
+  { n: "02", title: "Recipe choose karo", desc: "770+ real recipes — breakfast se dinner tak. Tap karo, ingredients aur photo dekho.", img: "/home/gallery-thali.png" },
   { n: "03", title: "Step-by-step pakao", desc: "Phone haath mein, ek ek step follow karo. Timer, tips — jaise chef saath ho.", img: "/home/section-cooking-steps.png" },
 ];
 
@@ -97,8 +98,8 @@ export default function Home() {
               className="home-hero__img"
             />
             <div className="home-float-card home-float-card--stats">
-              <p className="font-display text-2xl text-[var(--accent-soft)]">5.7L+</p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Recipes</p>
+              <p className="font-display text-2xl text-[var(--accent-soft)]">770+</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Real Recipes</p>
             </div>
             <div className="home-float-card home-float-card--rating">
               <Stars n={5} />
@@ -109,7 +110,7 @@ export default function Home() {
 
         <div className="relative mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pb-16 sm:grid-cols-4 sm:gap-4">
           {[
-            { n: "5.7 Lakh+", l: "Recipes" },
+            { n: "770+", l: "Real Recipes" },
             { n: "11", l: "Cuisines" },
             { n: "7 Din", l: "Meal Plan" },
             { n: "Free", l: "Abhi ke liye" },
@@ -184,6 +185,12 @@ export default function Home() {
       </section>
 
       <HotMakings />
+
+      <section className="home-section border-t border-white/[0.06]">
+        <div className="mx-auto max-w-6xl px-4">
+          <DailyHealthyPlan />
+        </div>
+      </section>
 
       {/* ── Food gallery scroll ── */}
       <section className="home-section border-t border-white/[0.06]">

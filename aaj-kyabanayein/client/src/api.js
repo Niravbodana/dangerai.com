@@ -90,6 +90,12 @@ export async function fetchHealthyPlan(diet = 'veg') {
   return res.json();
 }
 
+export async function fetchDailyHealthyPlan(diet = 'veg') {
+  const res = await fetch(`${API_BASE}/plan/healthy/daily?diet=${encodeURIComponent(diet)}`);
+  if (!res.ok) throw new Error('Daily healthy plan fetch failed');
+  return res.json();
+}
+
 export const createHealthyPlan = fetchHealthyPlan;
 
 export async function fetchRecipe(id) {

@@ -110,3 +110,20 @@ export function IconUsers({ className = "w-3.5 h-3.5" }) {
     </svg>
   );
 }
+
+export function IconSearch({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <circle cx="11" cy="11" r="7" />
+      <path strokeLinecap="round" d="M20 20l-3-3" />
+    </svg>
+  );
+}
+
+export function IconFilter({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path strokeLinecap="round" d="M4 6h16M7 12h10M10 18h4" />
+    </svg>
+  );
+}

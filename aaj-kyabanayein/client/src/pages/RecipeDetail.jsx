@@ -141,9 +141,10 @@ export default function RecipeDetail() {
         {/* Hero */}
         <div className="relative h-72 overflow-hidden sm:h-80">
           <RecipeImage
-            src={recipe.image}
+            src={`/api/recipes/image/${recipe.id}`}
             alt={displayName}
             recipeId={recipe.id}
+            eager
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#14110e] via-[#14110e]/40 to-transparent" />
@@ -302,7 +303,7 @@ export default function RecipeDetail() {
               <h2 className="font-display text-xl text-[var(--text-primary)]">{t("similarRecipes")}</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {similar.map((r) => (
-                  <RecipeCard key={r.id} recipe={r} trending />
+                  <RecipeCard key={r.id} recipe={r} trending lazyImage={false} />
                 ))}
               </div>
             </div>

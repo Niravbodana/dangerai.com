@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { IconClock } from "./Icons";
+import RecipeImage from "./RecipeImage";
 
 const MEAL_LABEL = { breakfast: "Nashta", lunch: "Dopahar", dinner: "Raat", snack: "Snack" };
 
@@ -10,9 +11,12 @@ export default function MealCard({ mealType, recipe }) {
   return (
     <article className="recipe-card overflow-hidden">
       <div className="flex gap-4 p-4">
-        {recipe.image && (
-          <img src={recipe.image} alt={recipe.nameHi} className="h-24 w-24 shrink-0 rounded-xl object-cover" loading="lazy" />
-        )}
+        <RecipeImage
+          recipeId={recipe.id}
+          alt={recipe.nameHi || recipe.name}
+          className="h-24 w-24 shrink-0 rounded-xl object-cover bg-[#242018]"
+          eager
+        />
         <div className="flex flex-1 items-start justify-between gap-3">
           <div className="flex-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)]">

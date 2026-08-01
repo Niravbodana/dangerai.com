@@ -1,9 +1,5 @@
-import { BASE_RECIPES } from "../data/baseRecipes.js";
-import { MORE_RECIPES } from "../data/moreRecipes.js";
+import { filterRecipeIndex } from "../data/recipes.js";
 import { getRating } from "./ratingsStore.js";
-
-/** Hand-crafted recipes only — fast daily rotation without scanning 5L+ generated entries */
-const HOT_MAKINGS_POOL = [...BASE_RECIPES, ...MORE_RECIPES];
 
 function trendingScore(average, count) {
   return average * Math.log10(count + 10) + count * 0.02;
@@ -27,7 +23,6 @@ function mulberry32(seed) {
   };
 }
 
-/** UTC date key — same Hot Makings for everyone on a given day */
 export function getTrendingDateKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
@@ -40,14 +35,11 @@ function dailyRecipeScore(recipeId, rating, dateKey) {
 
 export function getTrendingRecipes(limit = 12, date = new Date()) {
   const dateKey = getTrendingDateKey(date);
+  const pool = filterRecipeIndex({});
 
-  const scored = HOT_MAKINGS_POOL.map((recipe) => {
+  const scored = pool.map((recipe) => {
     const rating = getRating(recipe.id);
-    return {
-      recipe,
-      rating,
-      score: dailyRecipeScore(recipe.id, rating, dateKey),
-    };
+    return { recipe, rating, score: dailyRecipeScore(recipe.id, rating, dateKey) };
   });
 
   return scored
@@ -63,6 +55,5 @@ export function getTrendingRecipes(limit = 12, date = new Date()) {
 }
 
 export function isTrendingRecipe(recipeId, date = new Date()) {
-  const trending = getTrendingRecipes(20, date);
-  return trending.some((r) => r.id === recipeId);
+  return getTrendingRecipes(20, date).some((r) => r.id === recipeId);
 }

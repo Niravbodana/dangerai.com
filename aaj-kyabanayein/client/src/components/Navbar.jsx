@@ -6,11 +6,9 @@ import BrandLogo from "./BrandLogo";
 
 const NAV = [
   { to: "/recipes", key: "recipes" },
-  { to: "/my-meals", key: "myMeals" },
-  { to: "/add-meal", key: "addMeal" },
+  { to: "/healthy-week", key: "featHealthy" },
   { to: "/pantry", key: "pantry" },
   { to: "/planner", key: "mealPlan" },
-  { to: "/favorites", key: "favorites" },
 ];
 
 export default function Navbar() {

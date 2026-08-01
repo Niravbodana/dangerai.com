@@ -5,13 +5,12 @@ import {
   getRecipeById,
   filterRecipeIndex,
   RECIPE_INDEX,
-  isNonVegRecipe,
-  isVegRecipe,
+  toListItem,
   PRICING_PLANS,
   RECIPE_CATEGORIES,
 } from "../data/recipes.js";
 import { optionalAuth } from "../middleware/auth.js";
-import { generateWeeklyHealthyPlan } from "../services/healthyPlanService.js";
+import { generateDailyHealthyPlan, generateWeeklyHealthyPlan } from "../services/healthyPlanService.js";
 import {
   generateGroceryList,
   generateWeeklyPlan,
@@ -56,7 +55,6 @@ router.get("/recipes/image/:id", async (req, res) => {
     return res.status(404).json({ success: false, message: "Recipe not found" });
   }
 
-  // Return default instantly — fetch real image in background
   const fallback = readCachedImage(DEFAULT_IMAGE_ID);
   if (fallback) {
     res.type("image/jpeg");
@@ -90,7 +88,7 @@ router.get("/recipes/categories", (_req, res) => {
 
 router.get("/recipes/trending", (req, res) => {
   const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 12));
-  const recipes = getTrendingRecipes(limit);
+  const recipes = getTrendingRecipes(limit).map(toListItem).map(attachRating);
   const trendingDate = recipes[0]?.trendingDate || null;
   res.json({ success: true, recipes, total: recipes.length, trendingDate });
 });
@@ -98,10 +96,14 @@ router.get("/recipes/trending", (req, res) => {
 router.get("/recipes/suggest", (req, res) => {
   const q = (req.query.q || "").trim();
   const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 8));
-  if (!q) return res.json({ success: true, suggestions: [] });
 
-  const matches = filterRecipeIndex({ search: q }).slice(0, limit).map(attachRating);
-  res.json({ success: true, suggestions: matches });
+  if (!q) {
+    const popular = getTrendingRecipes(limit).map(toListItem).map(attachRating);
+    return res.json({ success: true, suggestions: popular, type: "popular" });
+  }
+
+  const matches = filterRecipeIndex({ search: q }).slice(0, limit).map(toListItem).map(attachRating);
+  res.json({ success: true, suggestions: matches, type: "search" });
 });
 
 router.get("/recipes/enrichment-status", (_req, res) => {
@@ -140,7 +142,7 @@ router.get("/recipes", (req, res) => {
     total: filtered.length,
     page: pageNum,
     totalPages: Math.ceil(filtered.length / limitNum),
-    recipes: paginated.map(attachRating),
+    recipes: paginated.map(toListItem).map(attachRating),
   });
 });
 
@@ -152,6 +154,16 @@ router.post("/pantry/suggest", (req, res) => {
   const { ingredients, diet, mealType, category, limit } = req.body;
   const result = suggestFromPantry({ ingredients, diet, mealType, category, limit });
   res.json({ success: true, ...result });
+});
+
+router.get("/plan/healthy/daily", optionalAuth, (req, res) => {
+  const diet = req.query.diet || "veg";
+  const plan = generateDailyHealthyPlan(diet);
+  res.json({
+    success: true,
+    plan,
+    message: "Aaj ka healthy meal plan — sehat ke liye best!",
+  });
 });
 
 router.post("/plan/healthy", optionalAuth, (req, res) => {

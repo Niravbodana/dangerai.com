@@ -4,9 +4,8 @@ import { fetchCategories, fetchRecipes, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeSearch from "../components/RecipeSearch";
-import SegmentedControl from "../components/SegmentedControl";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
-import { IconArrowLeft, IconArrowRight } from "../components/Icons";
+import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 
 function useDebounce(value, delay = 400) {
   const [debounced, setDebounced] = useState(value);
@@ -34,6 +33,7 @@ export default function Recipes() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     fetchCategories().then((data) => {
@@ -100,88 +100,117 @@ export default function Recipes() {
     setPage(1);
   };
 
+  const activeFilters = [diet !== "all", cuisine !== "all", category !== "all"].filter(Boolean).length;
+
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">Recipe Catalog</h1>
-        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
-          {sortTrending ? t("hotMakings") : `${total.toLocaleString()}+ recipes · rated by home cooks`}
-        </p>
-
-        <div className="mt-6">
-          <RecipeSearch />
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="text-center">
+          <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">
+            {sortTrending ? t("hotMakings") : "Recipes"}
+          </h1>
+          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+            {total.toLocaleString()} real recipes · tap to see ingredients & photo
+          </p>
         </div>
 
         <div className="mt-6">
-          <SegmentedControl
-            variant="catalog"
-            options={[
-              { id: "catalog", label: t("allRecipes") },
-              { id: "trending", label: t("hotMakings") },
-            ]}
-            value={sortTrending ? "trending" : "catalog"}
-            onChange={(id) => setSort(id === "trending")}
-          />
+          <RecipeSearch autoFocus />
         </div>
 
-        <div className="mt-4">
-          <SegmentedControl
-            variant="diet"
-            options={[
-              { id: "all", label: "All" },
-              {
-                id: "veg",
-                label: t("veg"),
-                icon: <VegSymbol className="h-3.5 w-3.5" />,
-                tone: "veg",
-              },
-              {
-                id: "non-veg",
-                label: t("nonVeg"),
-                icon: <NonVegSymbol className="h-3.5 w-3.5" />,
-                tone: "nonveg",
-              },
-            ]}
-            value={diet}
-            onChange={(id) => { setDiet(id); setPage(1); }}
-            className="segmented-control--diet"
-          />
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSort(false)}
+            className={`rounded-full px-4 py-2 text-xs font-medium transition ${
+              !sortTrending ? "bg-white/12 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            {t("allRecipes")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSort(true)}
+            className={`rounded-full px-4 py-2 text-xs font-medium transition ${
+              sortTrending ? "bg-white/12 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            {t("hotMakings")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium transition ${
+              filtersOpen || activeFilters > 0
+                ? "border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent-soft)]"
+                : "border-white/12 text-[var(--text-secondary)] hover:border-white/25"
+            }`}
+          >
+            <IconFilter className="h-3.5 w-3.5" />
+            Filters{activeFilters > 0 ? ` (${activeFilters})` : ""}
+          </button>
         </div>
 
-        <div className="filter-row mt-5">
-          <span className="filter-row__label">Meal</span>
-          <div className="filter-row__chips">
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => { setCategory(category === c.id ? "all" : c.id); setPage(1); }}
-              className={`filter-chip tap-smooth ${category === c.id ? "filter-chip--active" : ""}`}
-            >
-              {c.label}
-            </button>
-          ))}
+        {filtersOpen && (
+          <div className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="flex flex-wrap justify-center gap-2">
+              {[
+                { id: "all", label: "All" },
+                { id: "veg", label: t("veg"), icon: <VegSymbol className="h-3 w-3" /> },
+                { id: "non-veg", label: t("nonVeg"), icon: <NonVegSymbol className="h-3 w-3" /> },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => { setDiet(opt.id); setPage(1); }}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    diet === opt.id ? "bg-white/15 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-white/8"
+                  }`}
+                >
+                  {opt.icon}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-row">
+              <span className="filter-row__label">Meal</span>
+              <div className="filter-row__chips">
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => { setCategory(category === c.id ? "all" : c.id); setPage(1); }}
+                    className={`filter-chip tap-smooth ${category === c.id ? "filter-chip--active" : ""}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-row">
+              <span className="filter-row__label">Cuisine</span>
+              <div className="filter-row__chips">
+                {cuisines.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => { setCuisine(c.id); setPage(1); }}
+                    className={`filter-chip tap-smooth ${cuisine === c.id ? "filter-chip--active" : ""}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="filter-row mt-3">
-          <span className="filter-row__label">Cuisine</span>
-          <div className="filter-row__chips">
-          {cuisines.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => { setCuisine(c.id); setPage(1); }}
-              className={`filter-chip tap-smooth ${cuisine === c.id ? "filter-chip--active" : ""}`}
-            >
-              {c.label}
-            </button>
-          ))}
-          </div>
-        </div>
+        )}
 
         {loading ? (
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 space-y-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/10" />
+              <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/10" />
             ))}
           </div>
         ) : recipes.length === 0 ? (
@@ -190,19 +219,21 @@ export default function Recipes() {
           </div>
         ) : (
           <>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 space-y-3">
               {recipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
                   trending={sortTrending}
                   rank={recipe.trendingRank}
+                  lazyImage
                 />
               ))}
             </div>
             {!sortTrending && totalPages > 1 && (
               <div className="mt-10 flex items-center justify-center gap-4">
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="premium-btn-outline flex h-10 w-10 items-center justify-center disabled:opacity-30"
@@ -211,6 +242,7 @@ export default function Recipes() {
                 </button>
                 <span className="text-sm text-[var(--text-secondary)]">{page} / {totalPages}</span>
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   className="premium-btn-outline flex h-10 w-10 items-center justify-center disabled:opacity-30"

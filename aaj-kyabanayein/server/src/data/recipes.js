@@ -1,22 +1,20 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { BASE_RECIPES } from "./baseRecipes.js";
-import { MORE_RECIPES } from "./moreRecipes.js";
-import { getRecipeImage, DEFAULT_FOOD_IMAGE } from "./recipeImages.js";
 import { ENGLISH_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const GENERATED_DIR = path.join(__dirname, "generated");
-const INDEX_FILE = path.join(GENERATED_DIR, "index.json");
+const CURATED_DIR = path.join(__dirname, "curated");
+const RECIPES_FILE = path.join(CURATED_DIR, "recipes.json");
+const INDEX_FILE = path.join(CURATED_DIR, "index.json");
 
-const shardCache = new Map();
 let recipeIndex = [];
-let indexById = new Map();
+let recipeById = new Map();
+const customRecipes = new Map();
 
 function expandThinIngredients(recipe) {
   const ings = recipe.ingredients || [];
-  if (ings.length >= 5) return ings;
+  if (ings.length >= 3) return ings;
   const isNonVeg = recipe.diet?.includes("non-veg");
   const main = ings[0] || { name: "Vegetable", nameHi: "सब्जी", quantity: "2 cups" };
   const styleMatch = (recipe.name || "").match(
@@ -36,35 +34,32 @@ export function enrichRecipe(recipe) {
         : `veg-${recipe.mealType}`);
 
   const ingredients = expandThinIngredients(recipe);
-  const steps = recipe.steps?.length ? recipe.steps : ENGLISH_STEPS[recipe.id];
-  const stepsHi = recipe.stepsHi?.length ? recipe.stepsHi : undefined;
+  let steps = recipe.steps?.length ? recipe.steps : ENGLISH_STEPS[recipe.id];
+  let stepsHi = recipe.stepsHi?.length ? recipe.stepsHi : undefined;
 
-  let finalSteps = steps;
-  let finalStepsHi = stepsHi;
-  if (!finalSteps?.length && ingredients[0]) {
+  if (!steps?.length && ingredients[0]) {
     const isNonVeg = recipe.diet?.includes("non-veg");
     const styleMatch = (recipe.name || "").match(
       /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
     );
     const style = styleMatch ? styleMatch[1] : "Curry";
-    finalSteps = buildStepsEn(ingredients[0].name, style, isNonVeg);
-    finalStepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
+    steps = buildStepsEn(ingredients[0].name, style, isNonVeg);
+    stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
   }
 
   return {
     ...recipe,
     category,
     ingredients,
-    steps: finalSteps,
-    stepsHi: finalStepsHi,
-    image: getRecipeImage(recipe) || recipe.image || DEFAULT_FOOD_IMAGE,
+    steps,
+    stepsHi,
     pantryKeys: recipe.pantryKeys || ingredients.map((i) => i.name.toLowerCase()),
     healthScore: recipe.healthScore ?? 5,
     cuisine: recipe.cuisine || "indian",
   };
 }
 
-function toIndexEntry(recipe, shard) {
+function toIndexEntry(recipe) {
   return {
     id: recipe.id,
     name: recipe.name,
@@ -78,71 +73,34 @@ function toIndexEntry(recipe, shard) {
     calories: recipe.calories,
     spice: recipe.spice,
     tags: recipe.tags,
-    image: getRecipeImage(recipe),
-    shard,
   };
 }
 
-function buildIndexFromShards() {
-  if (!fs.existsSync(GENERATED_DIR)) return [];
-  const index = [];
-  const files = fs.readdirSync(GENERATED_DIR).filter((f) => f.endsWith(".json") && f !== "index.json");
-  for (const file of files) {
-    try {
-      const batch = JSON.parse(fs.readFileSync(path.join(GENERATED_DIR, file), "utf-8"));
-      for (const r of batch) index.push(toIndexEntry(r, file));
-    } catch (e) {
-      console.warn(`Skip index ${file}:`, e.message);
-    }
+function loadCuratedData() {
+  if (!fs.existsSync(INDEX_FILE) || !fs.existsSync(RECIPES_FILE)) {
+    console.warn("Curated recipes not found — run: npm run build-recipe-books");
+    return;
   }
-  fs.writeFileSync(INDEX_FILE, JSON.stringify(index));
-  return index;
-}
 
-function loadShard(shard) {
-  if (!shardCache.has(shard)) {
-    const data = JSON.parse(fs.readFileSync(path.join(GENERATED_DIR, shard), "utf-8"));
-    shardCache.set(shard, data);
-  }
-  return shardCache.get(shard);
-}
-
-// Hand-crafted recipes — fully loaded (fast, high quality)
-const HANDCRAFTED = new Map();
-console.time("recipes-load");
-for (const r of [...BASE_RECIPES, ...MORE_RECIPES]) {
-  HANDCRAFTED.set(r.id, enrichRecipe(r));
-}
-
-// Lightweight index for generated recipes (metadata only — instant load)
-if (fs.existsSync(INDEX_FILE)) {
   recipeIndex = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
-} else if (fs.existsSync(GENERATED_DIR)) {
-  console.log("Building recipe index (one-time)...");
-  recipeIndex = buildIndexFromShards();
+  const recipes = JSON.parse(fs.readFileSync(RECIPES_FILE, "utf-8"));
+  recipeById = new Map(recipes.map((r) => [r.id, enrichRecipe(r)]));
 }
 
-for (const entry of recipeIndex) indexById.set(entry.id, entry);
-for (const [id, r] of HANDCRAFTED) {
-  indexById.set(id, { ...toIndexEntry(r, null), _full: r });
-}
-
+console.time("recipes-load");
+loadCuratedData();
 console.timeEnd("recipes-load");
-console.log(`Ready: ${HANDCRAFTED.size} hand-crafted + ${recipeIndex.length.toLocaleString()} indexed recipes`);
+console.log(`Ready: ${recipeIndex.length} curated real recipes`);
 
-/** Lightweight list for browsing — no full recipe load */
-export const RECIPE_INDEX = [...indexById.values()].map(({ _full, shard, ...meta }) => meta);
+/** Lightweight list for browsing — names & meta only, no images or ingredients */
+export const RECIPE_INDEX = recipeIndex;
 
-/** Backward compat — only hand-crafted + custom (not 570k) */
-export const RECIPES = [...HANDCRAFTED.values()];
+/** Backward compat — full recipe objects */
+export const RECIPES = [...recipeById.values(), ...customRecipes.values()];
 
 export function getRecipeById(id) {
-  if (HANDCRAFTED.has(id)) return HANDCRAFTED.get(id);
-  const meta = indexById.get(id);
-  if (!meta?.shard) return meta?._full || null;
-  const shard = loadShard(meta.shard);
-  const raw = shard.find((r) => r.id === id);
-  return raw ? enrichRecipe(raw) : null;
+  if (customRecipes.has(id)) return customRecipes.get(id);
+  return recipeById.get(id) || null;
 }
 
 export function filterRecipeIndex(filters = {}) {
@@ -171,8 +129,9 @@ export function filterRecipeIndex(filters = {}) {
 
 export function registerCustomRecipe(recipe) {
   const enriched = enrichRecipe(recipe);
-  HANDCRAFTED.set(recipe.id, enriched);
-  indexById.set(recipe.id, { ...toIndexEntry(enriched, null), _full: enriched });
+  customRecipes.set(recipe.id, enriched);
+  const entry = toIndexEntry(enriched);
+  recipeIndex.push(entry);
   return enriched;
 }
 
@@ -212,11 +171,11 @@ export const PRICING_PLANS = [
     period: "for now",
     popular: true,
     features: [
-      "5.7 Lakh+ recipes",
+      "770+ real recipes",
       "Ratings & Favorites",
       "Step-by-step cooking",
       "Pantry suggestions",
-      "Weekly healthy plan",
+      "Daily healthy meal plan",
       "Hindi / English",
       "Add your own meals",
     ],
@@ -243,4 +202,20 @@ export function isVegRecipe(r) {
 
 export function isNonVegRecipe(r) {
   return r.diet?.includes("non-veg");
+}
+
+/** Strip full recipe to list-safe metadata (no ingredients, no image) */
+export function toListItem(meta) {
+  return {
+    id: meta.id,
+    name: meta.name,
+    nameHi: meta.nameHi,
+    mealType: meta.mealType,
+    diet: meta.diet,
+    cuisine: meta.cuisine,
+    cookTime: meta.cookTime,
+    calories: meta.calories,
+    spice: meta.spice,
+    tags: meta.tags,
+  };
 }
