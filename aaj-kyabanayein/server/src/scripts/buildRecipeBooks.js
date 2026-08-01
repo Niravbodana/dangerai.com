@@ -18,7 +18,24 @@ const RECIPES_FILE = path.join(OUT_DIR, "recipes.json");
 const INDEX_FILE = path.join(OUT_DIR, "index.json");
 
 const THEMEALDB = "https://www.themealdb.com/api/json/v1/1";
+const DUMMYJSON = "https://dummyjson.com/recipes";
 const USER_AGENT = "RasoiraRecipeBooks/1.0";
+
+const DUMMY_CUISINE = {
+  Italian: "italian",
+  Asian: "chinese",
+  American: "continental",
+  Mexican: "mexican",
+  Mediterranean: "continental",
+  Pakistani: "indian",
+  Japanese: "japanese",
+  Moroccan: "continental",
+  Korean: "korean",
+  Thai: "thai",
+  Indian: "indian",
+  Greek: "continental",
+  Smoothie: "healthy",
+};
 
 const AREA_TO_CUISINE = {
   Indian: "indian",
@@ -215,6 +232,95 @@ async function fetchTheMealDbRecipes() {
   return list.filter(Boolean);
 }
 
+async function fetchDummyJsonRecipes() {
+  const data = await fetchJson(`${DUMMYJSON}?limit=100`);
+  const recipes = data?.recipes || [];
+  const list = [];
+
+  for (const r of recipes) {
+    const ingredients = (r.ingredients || [])
+      .map((name) => ({
+        name: String(name).trim(),
+        nameHi: String(name).trim(),
+        quantity: "as needed",
+      }))
+      .filter((i) => i.name);
+
+    if (ingredients.length < 3) continue;
+
+    const steps = (r.instructions || []).map((s) => String(s).trim()).filter((s) => s.length > 5);
+    const cuisineRaw = r.cuisine || "American";
+    const cuisine = DUMMY_CUISINE[cuisineRaw] || AREA_TO_CUISINE[cuisineRaw] || "continental";
+    const mealTypes = r.mealType || [];
+    const mealType = guessMealType(r.name, mealTypes[0] || "");
+    const diet = guessDiet(ingredients, r.name);
+    const tags = [...(r.tags || []), cuisineRaw, r.difficulty].filter(Boolean).map((t) => String(t).toLowerCase());
+
+    list.push(finalizeRecipe({
+      id: `dj-${r.id}`,
+      name: r.name,
+      nameHi: r.name,
+      mealType,
+      diet,
+      cuisine,
+      cookTime: (r.cookTimeMinutes || 0) + (r.prepTimeMinutes || 0) || 30,
+      calories: r.caloriesPerServing || 300,
+      ingredients,
+      steps: steps.length ? steps : undefined,
+      stepsHi: steps.length ? steps : undefined,
+      tags,
+      source: "dummyjson",
+      thumbUrl: r.image || undefined,
+    }));
+  }
+  return list.filter(Boolean);
+}
+
+/** Extra TheMealDB coverage via category filters (Vegetarian, Vegan, Seafood, …) */
+async function fetchTheMealDbByCategories() {
+  const cats = ["Vegetarian", "Vegan", "Seafood", "Breakfast", "Dessert", "Chicken", "Pasta", "Side"];
+  const meals = new Map();
+
+  for (const cat of cats) {
+    const data = await fetchJson(`${THEMEALDB}/filter.php?c=${encodeURIComponent(cat)}`);
+    for (const meal of data?.meals || []) {
+      if (meal?.idMeal) meals.set(meal.idMeal, meal);
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+
+  const list = [];
+  for (const meal of meals.values()) {
+    // filter endpoint only has id/name/thumb — need lookup for ingredients
+    let full = meal;
+    if (!meal.strInstructions) {
+      const detail = await fetchJson(`${THEMEALDB}/lookup.php?i=${meal.idMeal}`);
+      full = detail?.meals?.[0] || meal;
+      await new Promise((r) => setTimeout(r, 70));
+    }
+    const ingredients = mealToIngredients(full);
+    if (ingredients.length < 3) continue;
+    const steps = mealToSteps(full);
+    const cuisine = AREA_TO_CUISINE[full.strArea] || "continental";
+    list.push(finalizeRecipe({
+      id: `tmdb-${full.idMeal}`,
+      name: full.strMeal,
+      nameHi: full.strMeal,
+      mealType: guessMealType(full.strMeal, full.strCategory),
+      diet: guessDiet(ingredients, full.strMeal),
+      cuisine,
+      category: full.strCategory === "Dessert" ? "snack" : undefined,
+      ingredients,
+      steps: steps.length ? steps : undefined,
+      stepsHi: steps.length ? steps : undefined,
+      tags: [full.strCategory, full.strArea].filter(Boolean).map((t) => t.toLowerCase()),
+      source: "themealdb",
+      thumbUrl: full.strMealThumb || meal.strMealThumb || undefined,
+    }));
+  }
+  return list.filter(Boolean);
+}
+
 function deduplicateRecipes(recipes) {
   const result = [];
   const seenNames = [];
@@ -263,10 +369,23 @@ async function main() {
   let external = [];
   try {
     console.log("Fetching TheMealDB (real recipes)...");
-    external = await fetchTheMealDbRecipes();
-    console.log(`TheMealDB: ${external.length} recipes`);
+    const byLetter = await fetchTheMealDbRecipes();
+    console.log(`TheMealDB letters: ${byLetter.length}`);
+    console.log("Fetching TheMealDB categories...");
+    const byCat = await fetchTheMealDbByCategories();
+    console.log(`TheMealDB categories: ${byCat.length}`);
+    external = [...byLetter, ...byCat];
   } catch (e) {
-    console.warn("TheMealDB fetch failed, using hand-crafted only:", e.message);
+    console.warn("TheMealDB fetch failed:", e.message);
+  }
+
+  try {
+    console.log("Fetching DummyJSON recipes (free + photos)...");
+    const dummy = await fetchDummyJsonRecipes();
+    console.log(`DummyJSON: ${dummy.length} recipes`);
+    external = [...external, ...dummy];
+  } catch (e) {
+    console.warn("DummyJSON fetch failed:", e.message);
   }
 
   const merged = deduplicateRecipes([...handCrafted, ...external]);

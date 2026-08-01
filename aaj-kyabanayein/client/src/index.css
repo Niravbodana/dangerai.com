@@ -1131,3 +1131,29 @@ body {
   background: radial-gradient(circle, rgba(212, 168, 75, 0.15) 0%, transparent 70%);
   pointer-events: none;
 }
+
+/* ── Video shorts (15s) ── */
+.short-card {
+  width: 9.5rem;
+}
+
+@media (min-width: 640px) {
+  .short-card {
+    width: 11.5rem;
+  }
+}
+
+.short-card__media {
+  aspect-ratio: 9 / 16;
+  height: 16.5rem;
+}
+
+@media (min-width: 640px) {
+  .short-card__media {
+    height: 20rem;
+  }
+}
+
+.short-card video {
+  background: #0a0806;
+}
