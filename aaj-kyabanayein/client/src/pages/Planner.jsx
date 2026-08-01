@@ -6,6 +6,7 @@ import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
 import PreferencesPanel from "../components/PreferencesPanel";
 import { useLanguage } from "../context/LanguageContext";
+import { buildPlannerContext } from "../lib/plannerContext";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -37,7 +38,7 @@ export default function Planner() {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchMealPlan(preferences);
+      const result = await fetchMealPlan({ ...preferences, ...buildPlannerContext() });
       setData(result);
       localStorage.setItem("akb-prefs", JSON.stringify(preferences));
     } catch {
@@ -96,6 +97,12 @@ export default function Planner() {
 
           <div className="space-y-6 lg:col-span-2">
             {error && <div className="glass rounded-xl p-4 text-sm text-red-600">{error}</div>}
+
+            {data?.smart && data?.summary && (
+              <p className="text-xs text-[var(--text-secondary)]">
+                Smart plan · {data.summary.proteinDays} protein-balanced days · {data.summary.pantryAwareMeals} pantry meals · {data.summary.leftoverOptimized} leftover-friendly lunches · {data.summary.groceryItems} grocery items to buy
+              </p>
+            )}
 
             {data?.plans?.map((day) => (
               <div key={day.date}>

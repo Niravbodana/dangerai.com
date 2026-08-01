@@ -17,6 +17,7 @@ import {
   generateWeeklyPlan,
   getDefaultPreferences,
 } from "../services/mealPlanner.js";
+import { generateSmartWeeklyPlan } from "../services/smartPlannerService.js";
 import {
   COMMON_PANTRY_ITEMS,
   getGroceryRecommendations,
@@ -272,6 +273,27 @@ router.post("/plan", optionalAuth, (req, res) => {
     if (user) {
       prefs = { ...user.preferences, ...req.body, plan: user.plan };
     }
+  }
+
+  const useSmart = req.body.smart !== false;
+  const context = {
+    taste: req.body.taste,
+    family: req.body.family,
+    pantry: req.body.pantry,
+    expiringKeys: req.body.expiringKeys,
+  };
+
+  if (useSmart) {
+    const result = generateSmartWeeklyPlan(prefs, context);
+    return res.json({
+      success: true,
+      preferences: prefs,
+      plans: result.plans,
+      groceryList: result.groceryList,
+      smart: true,
+      summary: result.summary,
+      groceryLocked: false,
+    });
   }
 
   const plans = generateWeeklyPlan(prefs);
