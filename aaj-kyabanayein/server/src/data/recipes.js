@@ -315,6 +315,8 @@ export function isNonVegRecipe(r) {
 }
 
 export function toListItem(meta) {
+  const full = typeof meta.ingredients !== "undefined" ? meta : null;
+  const thumb = meta.thumbUrl || full?.thumbUrl;
   return {
     id: meta.id,
     name: meta.name,
@@ -326,6 +328,8 @@ export function toListItem(meta) {
     calories: meta.calories,
     spice: meta.spice,
     tags: meta.tags,
-    imageUrl: `/api/recipes/image/${meta.id}`,
+    thumbUrl: thumb || null,
+    // Prefer instant remote thumb for lists; API still works as fallback
+    imageUrl: thumb || `/api/recipes/image/${meta.id}`,
   };
 }

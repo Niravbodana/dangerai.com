@@ -384,9 +384,52 @@ body {
 }
 
 @media (max-width: 639px) {
-  body { padding-bottom: 4.5rem; }
+  body { padding-bottom: 4.5rem; overflow-x: hidden; }
   body.cooking-active { padding-bottom: 0; }
   body.cooking-active .mobile-nav { display: none; }
+
+  .app-shell { overflow-x: hidden; }
+
+  .mobile-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-nav a {
+    min-width: 3.25rem;
+    min-height: 3rem;
+  }
+
+  .recipe-detail-cta {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .recipe-detail-cta .premium-btn,
+  .recipe-detail-cta .premium-btn-outline {
+    font-size: 0.8125rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .catalog-card h3 {
+    font-size: 0.9375rem;
+  }
+
+  .home-hero {
+    min-height: auto;
+  }
+
+  .home-hero__img {
+    max-height: 260px !important;
+  }
+
+  .glass-input {
+    font-size: 16px; /* prevent iOS zoom */
+  }
+
+  .premium-btn, .premium-btn-outline {
+    min-height: 44px;
+  }
 }
 
 .tap-smooth {

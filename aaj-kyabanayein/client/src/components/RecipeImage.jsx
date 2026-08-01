@@ -7,38 +7,57 @@ const PLACEHOLDER_SVG =
     '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
     '<stop offset="0%" stop-color="#2a231c"/><stop offset="100%" stop-color="#1a1612"/>' +
     '</linearGradient></defs><rect width="400" height="300" fill="url(#g)"/>' +
-    '<text x="200" y="155" text-anchor="middle" fill="#8a7a68" font-size="14" font-family="system-ui">Loading photo…</text></svg>'
+    '<text x="200" y="155" text-anchor="middle" fill="#8a7a68" font-size="13" font-family="system-ui">Photo…</text></svg>'
   );
 
+function isExternal(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url);
+}
+
 export default function RecipeImage({ src, alt, className = "", recipeId = "", eager = false, version = 0 }) {
-  const [url, setUrl] = useState(PLACEHOLDER_SVG);
+  const [url, setUrl] = useState(() => (isExternal(src) ? src : PLACEHOLDER_SVG));
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!recipeId) {
-      setUrl(src || PLACEHOLDER_SVG);
-      return;
+    let cancelled = false;
+    let objectUrl = null;
+    setFailed(false);
+
+    if (isExternal(src)) {
+      setUrl(src);
+      return () => { cancelled = true; };
     }
 
-    let cancelled = false;
-    setFailed(false);
-    setUrl(PLACEHOLDER_SVG);
+    if (!recipeId) {
+      setUrl(src || PLACEHOLDER_SVG);
+      return () => { cancelled = true; };
+    }
 
+    setUrl(PLACEHOLDER_SVG);
     const imageApi = `/api/recipes/image/${recipeId}?wait=${eager ? "1" : "0"}&v=${version}`;
+    let tries = 0;
 
     async function load() {
       try {
         const res = await fetch(imageApi);
-        if (!res.ok) {
-          if (res.status === 202 && !eager) {
-            setTimeout(load, 2000);
-            return;
+        if (cancelled) return;
+
+        if (res.status === 202) {
+          const data = await res.json().catch(() => ({}));
+          // Use remote thumb immediately while cache warms
+          if (data.thumbUrl && isExternal(data.thumbUrl)) {
+            setUrl(data.thumbUrl);
           }
-          throw new Error("Image fetch failed");
+          if (tries < 10) {
+            tries += 1;
+            setTimeout(load, eager ? 500 : 800);
+          }
+          return;
         }
+        if (!res.ok) throw new Error("fail");
         const blob = await res.blob();
         if (cancelled) return;
-        const objectUrl = URL.createObjectURL(blob);
+        objectUrl = URL.createObjectURL(blob);
         setUrl(objectUrl);
       } catch {
         if (!cancelled) setFailed(true);
@@ -48,7 +67,7 @@ export default function RecipeImage({ src, alt, className = "", recipeId = "", e
     load();
     return () => {
       cancelled = true;
-      if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [recipeId, eager, version, src]);
 
@@ -60,6 +79,7 @@ export default function RecipeImage({ src, alt, className = "", recipeId = "", e
       loading={eager ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={eager ? "high" : "low"}
+      onError={() => setFailed(true)}
     />
   );
 }

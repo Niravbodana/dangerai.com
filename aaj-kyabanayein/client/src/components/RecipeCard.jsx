@@ -17,7 +17,8 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
   const displayName = lang === 'hi' ? (recipe.nameHi || recipe.name) : recipe.name;
-  const imageUrl = recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
+  const imageUrl = recipe.thumbUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
+  const useRemote = /^https?:\/\//i.test(imageUrl);
 
   const handleFav = async (e) => {
     e.preventDefault();
@@ -36,7 +37,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
         <RecipeImage
           src={imageUrl}
           alt={displayName}
-          recipeId={recipe.id}
+          recipeId={useRemote ? "" : recipe.id}
           version={recipe._imageVersion || 0}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />

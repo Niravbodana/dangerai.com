@@ -1,38 +1,58 @@
+/**
+ * Fast recipe image pipeline.
+ * Priority: cache → recipe.thumbUrl → MealDB/Openverse/Wiki (parallel) → Groq hint → Google CSE
+ * Low quality OK — speed first.
+ */
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 import { isGoogleSearchConfigured, searchGoogleImage } from "./googleSearchService.js";
 import { fetchRecipeFromAI, isAIConfigured } from "./aiRecipeService.js";
+import {
+  searchMealDbThumb,
+  searchOpenverseImage,
+  searchWikipediaSummary,
+} from "./fastImageSearch.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com)";
-const WIKI_DELAY_MS = 800;
-const MAX_FETCH_RETRIES = 3;
-const IMAGE_FETCH_TIMEOUT_MS = 12000;
+const IMAGE_FETCH_TIMEOUT_MS = 7000;
+const DOWNLOAD_TIMEOUT_MS = 6000;
 
 const NOISE_WORDS = new Set([
   "home", "dhaba", "restaurant", "traditional", "quick", "special", "classic",
   "royal", "grand", "lite", "authentic", "street", "festive", "comfort",
   "punjabi", "gujarati", "bengali", "maharashtrian", "hyderabadi", "kashmiri",
-  "rajasthani", "awadhi", "goan", "chettinad", "mughlai", "sindhi", "odia", "assamese",
-  "north", "south", "indian", "veg", "non", "style", "bowl", "plate",
+  "north", "south", "indian", "veg", "non", "style",
 ]);
 
-const WRONG_DISHES = ["dosa", "pizza", "burger", "sushi", "taco", "sandwich", "pasta"];
+const WRONG_DISHES = ["dosa", "pizza", "burger", "sushi", "taco", "sandwich"];
 
 const inFlight = new Map();
 const aiHints = new Map();
-let lastWikiCall = 0;
 let fetchQueue = Promise.resolve();
+let activeFetches = 0;
+const MAX_PARALLEL = 4;
 
 function enqueueFetch(task) {
-  const run = fetchQueue.then(task, task);
-  fetchQueue = run.catch(() => {});
-  return run;
+  const run = async () => {
+    while (activeFetches >= MAX_PARALLEL) {
+      await new Promise((r) => setTimeout(r, 80));
+    }
+    activeFetches++;
+    try {
+      return await task();
+    } finally {
+      activeFetches--;
+    }
+  };
+  const p = fetchQueue.then(run, run);
+  fetchQueue = p.catch(() => {});
+  return p;
 }
 
 function ensureDirs() {
@@ -56,38 +76,14 @@ export function hasCachedImage(recipeId) {
   return fs.existsSync(cachePath(recipeId));
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function throttleWiki() {
-  const wait = WIKI_DELAY_MS - (Date.now() - lastWikiCall);
-  if (wait > 0) await sleep(wait);
-  lastWikiCall = Date.now();
-}
-
-async function fetchJson(url, attempt = 0) {
-  await throttleWiki();
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (res.status === 429 && attempt < MAX_FETCH_RETRIES) {
-    await sleep(2000 * (attempt + 1));
-    return fetchJson(url, attempt + 1);
-  }
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
 function cleanSearchTerms(name = "") {
   const words = name
     .replace(/[^a-zA-Z0-9\s]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
-    .map((w) => w.toLowerCase());
-
-  const meaningful = words.filter((w) => !NOISE_WORDS.has(w) && w.length > 2);
-  if (meaningful.length >= 2) return meaningful.join(" ");
-  if (words.length >= 2) return words.slice(-2).join(" ");
-  return name.trim();
+    .map((w) => w.toLowerCase())
+    .filter((w) => !NOISE_WORDS.has(w) && w.length > 2);
+  return words.join(" ") || name.trim();
 }
 
 function extractCoreDishName(name = "") {
@@ -104,44 +100,29 @@ function recipeWantsDish(name = "", dish) {
 }
 
 function scoreTitle(title, name) {
-  const t = title.toLowerCase();
+  const t = (title || "").toLowerCase();
   const core = extractCoreDishName(name).toLowerCase();
-  const words = core.split(/\s+/).filter((w) => w.length > 2 && !NOISE_WORDS.has(w));
-  if (!words.length) return 0;
-
+  const words = core.split(/\s+/).filter((w) => w.length > 2);
+  if (!words.length) return 0.3;
   const hits = words.filter((w) => t.includes(w)).length;
   let score = hits / words.length;
-
-  if (t.includes(core)) score += 0.5;
-
+  if (t.includes(core)) score += 0.4;
   for (const dish of WRONG_DISHES) {
-    if (t.includes(dish) && !recipeWantsDish(name, dish)) {
-      score -= 0.85;
-    }
+    if (t.includes(dish) && !recipeWantsDish(name, dish)) score -= 0.9;
   }
-
-  if (words.length >= 2 && hits < Math.ceil(words.length / 2)) score -= 0.35;
   return score;
-}
-
-function pickBest(candidates, name) {
-  return candidates
-    .filter((c) => c?.imageUrl && scoreTitle(c.title || "", name) >= 0.45)
-    .sort((a, b) => (b.score ?? scoreTitle(b.title, name)) - (a.score ?? scoreTitle(a.title, name)))[0] || null;
 }
 
 async function getAIImageHints(recipe) {
   const key = recipe.id || recipe.name;
   if (aiHints.has(key)) return aiHints.get(key);
-
   if (!isAIConfigured()) return null;
-
   try {
     const data = await fetchRecipeFromAI(recipe.name, recipe.cuisine || "indian");
     if (!data) return null;
     const hints = {
       wikiImageTitle: data.wikiImageTitle,
-      imageSearchQuery: data.imageSearchQuery || recipe.name,
+      imageSearchQuery: data.imageSearchQuery || cleanSearchTerms(recipe.name),
     };
     aiHints.set(key, hints);
     return hints;
@@ -150,153 +131,91 @@ async function getAIImageHints(recipe) {
   }
 }
 
-async function searchWikipediaTitle(title, originalName) {
-  const url =
-    "https://en.wikipedia.org/w/api.php?action=query&titles=" +
-    `${encodeURIComponent(title.replace(/ /g, "_"))}&prop=pageimages` +
-    "&piprop=thumbnail&pithumbsize=900&format=json";
-  const data = await fetchJson(url);
-  const page = Object.values(data.query?.pages || {})[0];
-  if (!page || page.missing || !page.thumbnail?.source) return null;
-  const score = scoreTitle(page.title, originalName);
-  if (score < 0.45) return null;
-  return { title: page.title, imageUrl: page.thumbnail.source, score };
-}
-
-async function searchWikipedia(query, originalName) {
-  const url =
-    "https://en.wikipedia.org/w/api.php?action=query&generator=search" +
-    `&gsrsearch=${encodeURIComponent(query)}&gsrlimit=8&prop=pageimages` +
-    "&piprop=thumbnail&pithumbsize=900&format=json";
-
-  const data = await fetchJson(url);
-  const pages = Object.values(data.query?.pages || {})
-    .filter((p) => p.thumbnail?.source)
-    .map((p) => ({
-      title: p.title,
-      imageUrl: p.thumbnail.source,
-      score: scoreTitle(p.title, originalName),
-    }));
-
-  return pickBest(pages, originalName);
-}
-
-async function searchWikimediaCommons(query, originalName) {
-  const url =
-    "https://commons.wikimedia.org/w/api.php?action=query&generator=search" +
-    `&gsrsearch=${encodeURIComponent(query + " food dish")}&gsrlimit=8` +
-    "&prop=imageinfo&iiprop=url&iiurlwidth=900&format=json";
-
-  try {
-    const data = await fetchJson(url);
-    const pages = Object.values(data.query?.pages || {})
-      .filter((p) => p.imageinfo?.[0]?.thumburl || p.imageinfo?.[0]?.url)
-      .map((p) => {
-        const info = p.imageinfo[0];
-        const title = p.title?.replace("File:", "").replace(/\.[^.]+$/, "") || "";
-        return {
-          title,
-          imageUrl: info.thumburl || info.url,
-          score: scoreTitle(title, originalName) + 0.05,
-        };
-      });
-
-    return pickBest(pages, originalName);
-  } catch {
-    return null;
-  }
-}
-
-async function searchMealDb(name) {
-  const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(name)}`;
-  try {
-    const data = await fetchJson(url);
-    const meal = data.meals?.[0];
-    if (!meal?.strMealThumb) return null;
-    const score = scoreTitle(meal.strMeal, name);
-    if (score < 0.4) return null;
-    return { title: meal.strMeal, imageUrl: meal.strMealThumb, score };
-  } catch {
-    return null;
-  }
-}
-
-function buildSearchQueries(name, hints) {
-  const clean = cleanSearchTerms(name);
-  const core = extractCoreDishName(name);
-  const queries = new Set([
-    hints?.imageSearchQuery,
-    hints?.wikiImageTitle,
-    name,
-    clean,
-    core,
-    `${core} food`,
-    `${core} dish`,
-    `${clean} recipe`,
-  ]);
-  return [...queries].filter(Boolean);
-}
-
-async function findImageUrl(recipe) {
-  const name = recipe.name || recipe.id || "food";
-  const hints = await getAIImageHints(recipe);
-  const candidates = [];
-
-  const curatedTitle = getCuratedWikiTitle(recipe);
-  if (curatedTitle) {
-    const direct = await searchWikipediaTitle(curatedTitle, name);
-    if (direct) candidates.push({ ...direct, source: "curated-wikipedia" });
-  }
-
-  if (hints?.wikiImageTitle) {
-    const geminiWiki = await searchWikipediaTitle(hints.wikiImageTitle, name);
-    if (geminiWiki) candidates.push({ ...geminiWiki, source: "ai-wikipedia" });
-  }
-
-  if (isGoogleSearchConfigured()) {
-    const google = await searchGoogleImage(hints?.imageSearchQuery || extractCoreDishName(name) || name);
-    if (google?.imageUrl) {
-      candidates.push({
-        title: google.title || name,
-        imageUrl: google.imageUrl,
-        score: 0.9,
-        source: "google-images",
-      });
-    }
-  }
-
-  for (const query of buildSearchQueries(name, hints)) {
-    const wiki = await searchWikipedia(query, name);
-    if (wiki) candidates.push({ ...wiki, source: "wikipedia" });
-    if (candidates.some((c) => c.score >= 0.9)) break;
-  }
-
-  const commons = await searchWikimediaCommons(hints?.imageSearchQuery || extractCoreDishName(name) || cleanSearchTerms(name), name);
-  if (commons) candidates.push({ ...commons, source: "wikimedia-commons" });
-
-  const mealDb = await searchMealDb(extractCoreDishName(name) || cleanSearchTerms(name) || name);
-  if (mealDb) candidates.push({ ...mealDb, source: "themealdb" });
-
-  const best = pickBest(candidates, name);
-  if (best) return best;
-
-  // No generic cuisine fallback — avoids wrong photos (e.g. random dosa for every dish)
-  return null;
-}
-
-async function downloadImage(url, dest) {
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`Image download failed: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(dest, buf);
-  return buf;
-}
-
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
   ]);
+}
+
+/**
+ * Parallel fast search — first good match wins path.
+ * Order of preference via score after all settle (with short timeout).
+ */
+async function findImageUrl(recipe) {
+  const name = recipe.name || recipe.id || "food";
+  const core = extractCoreDishName(name) || cleanSearchTerms(name) || name;
+
+  // Instant: baked-in thumb from TheMealDB build
+  if (recipe.thumbUrl) {
+    return { title: name, imageUrl: recipe.thumbUrl, score: 0.95, source: "thumb-embedded" };
+  }
+
+  const curatedTitle = getCuratedWikiTitle(recipe);
+
+  // Kick Groq hints in parallel (don't block other sources)
+  const hintsPromise = getAIImageHints(recipe).catch(() => null);
+
+  const searches = [
+    searchMealDbThumb(core),
+    searchOpenverseImage(core),
+    curatedTitle ? searchWikipediaSummary(curatedTitle) : Promise.resolve(null),
+    searchWikipediaSummary(core),
+  ];
+
+  if (isGoogleSearchConfigured()) {
+    searches.push(
+      searchGoogleImage(core).then((g) =>
+        g?.imageUrl ? { ...g, score: 0.9 } : null
+      )
+    );
+  }
+
+  const settled = await Promise.allSettled(
+    searches.map((p) => withTimeout(p, 4500).catch(() => null))
+  );
+
+  const candidates = settled
+    .map((r) => (r.status === "fulfilled" ? r.value : null))
+    .filter((c) => c?.imageUrl)
+    .map((c) => ({
+      ...c,
+      score: (c.score || 0.5) + scoreTitle(c.title || "", name) * 0.3,
+    }))
+    .filter((c) => scoreTitle(c.title || "", name) >= 0.25 || c.source === "thumb-embedded");
+
+  candidates.sort((a, b) => (b.score || 0) - (a.score || 0));
+  if (candidates[0]) return candidates[0];
+
+  // Last try: Groq wiki title
+  const hints = await hintsPromise;
+  if (hints?.wikiImageTitle) {
+    const wiki = await searchWikipediaSummary(hints.wikiImageTitle);
+    if (wiki) return wiki;
+  }
+  if (hints?.imageSearchQuery) {
+    const open = await searchOpenverseImage(hints.imageSearchQuery);
+    if (open) return open;
+    const meal = await searchMealDbThumb(hints.imageSearchQuery);
+    if (meal) return meal;
+  }
+
+  return null;
+}
+
+async function downloadImage(url, dest) {
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT },
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`Image download failed: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  // Skip huge files — keep list fast
+  if (buf.length > 2_500_000) {
+    // still save but ok
+  }
+  fs.writeFileSync(dest, buf);
+  return buf;
 }
 
 export async function ensureRecipeImage(recipe) {
@@ -310,6 +229,7 @@ export async function ensureRecipeImage(recipe) {
   if (inFlight.has(id)) return inFlight.get(id);
 
   const promise = enqueueFetch(async () => {
+    if (fs.existsSync(cached)) return cached;
     const match = await withTimeout(findImageUrl(recipe), IMAGE_FETCH_TIMEOUT_MS);
     if (!match?.imageUrl) throw new Error(`No image found for ${recipe.name}`);
 
@@ -347,12 +267,22 @@ export function warmRecipeImage(recipe) {
   ensureRecipeImage(recipe).catch(() => {});
 }
 
-/** Download external image URL into recipe cache (from Google enrichment). */
 export async function cacheImageFromUrl(recipeId, imageUrl, source = "external") {
   if (!recipeId || !imageUrl || hasCachedImage(recipeId)) return cachePath(recipeId);
   ensureDirs();
   const dest = cachePath(recipeId);
   await downloadImage(imageUrl, dest);
-  fs.writeFileSync(metaPath(recipeId), JSON.stringify({ recipeId, source, originalUrl: imageUrl, fetchedAt: new Date().toISOString() }));
+  fs.writeFileSync(
+    metaPath(recipeId),
+    JSON.stringify({ recipeId, source, originalUrl: imageUrl, fetchedAt: new Date().toISOString() })
+  );
   return dest;
+}
+
+/** Prefer external thumb for list cards when not cached yet */
+export function getRecipeThumbHint(recipe) {
+  if (!recipe) return null;
+  if (hasCachedImage(recipe.id)) return imageUrlForRecipe(recipe.id);
+  if (recipe.thumbUrl) return recipe.thumbUrl;
+  return imageUrlForRecipe(recipe.id);
 }

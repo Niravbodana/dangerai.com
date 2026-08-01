@@ -43,7 +43,7 @@ const DEFAULT_IMAGE_ID = "_default";
 router.get("/recipes/image/:id", async (req, res) => {
   const { id } = req.params;
   const wait = req.query.wait !== "0";
-  res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+  res.setHeader("Cache-Control", "public, max-age=604800");
 
   const cached = readCachedImage(id);
   if (cached) {
@@ -59,6 +59,17 @@ router.get("/recipes/image/:id", async (req, res) => {
     return res.status(404).json({ success: false, message: "Recipe not found" });
   }
 
+  // Instant: stream remote thumb into cache while client can use thumbUrl on cards
+  if (recipe?.thumbUrl && !wait) {
+    warmRecipeImage(recipe);
+    return res.status(202).json({
+      success: false,
+      pending: true,
+      thumbUrl: recipe.thumbUrl,
+      message: "Image loading",
+    });
+  }
+
   if (!wait) {
     warmRecipeImage(recipe);
     return res.status(202).json({ success: false, message: "Image loading", pending: true });
@@ -69,6 +80,9 @@ router.get("/recipes/image/:id", async (req, res) => {
     res.type("image/jpeg");
     return res.sendFile(path.resolve(file));
   } catch {
+    if (recipe?.thumbUrl) {
+      return res.redirect(302, recipe.thumbUrl);
+    }
     return res.status(404).json({ success: false, message: "Image unavailable" });
   }
 });

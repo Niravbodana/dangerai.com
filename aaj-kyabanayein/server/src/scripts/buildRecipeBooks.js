@@ -10,6 +10,7 @@ import { BASE_RECIPES } from "../data/baseRecipes.js";
 import { MORE_RECIPES } from "../data/moreRecipes.js";
 import { INDIAN_BOOK_RECIPES } from "../data/recipeBookIndian.js";
 import { MORE_INDIAN_RECIPES } from "../data/recipeBookMoreIndian.js";
+import { EVEN_MORE_INDIAN_RECIPES } from "../data/recipeBookExtra.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "../data/curated");
@@ -142,6 +143,7 @@ function finalizeRecipe(raw) {
     healthScore: raw.healthScore ?? (cuisine === "healthy" || raw.tags?.includes("healthy") ? 8 : 5),
     pantryKeys: ingredients.map((i) => i.name.toLowerCase()),
     source: raw.source || "curated",
+    thumbUrl: raw.thumbUrl || undefined,
   };
 
   if (!recipe.steps?.length) {
@@ -207,6 +209,7 @@ async function fetchTheMealDbRecipes() {
       stepsHi: steps.length ? steps : undefined,
       tags: [full.strCategory, full.strArea].filter(Boolean).map((t) => t.toLowerCase()),
       source: "themealdb",
+      thumbUrl: full.strMealThumb || undefined,
     }));
   }
   return list.filter(Boolean);
@@ -246,6 +249,7 @@ function toIndexEntry(recipe) {
     calories: recipe.calories,
     spice: recipe.spice,
     tags: recipe.tags,
+    thumbUrl: recipe.thumbUrl || undefined,
   };
 }
 
@@ -253,7 +257,7 @@ async function main() {
   console.log("Building curated recipe books...");
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const handCrafted = [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES, ...MORE_INDIAN_RECIPES];
+  const handCrafted = [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES, ...MORE_INDIAN_RECIPES, ...EVEN_MORE_INDIAN_RECIPES];
   console.log(`Hand-crafted: ${handCrafted.length}`);
 
   let external = [];

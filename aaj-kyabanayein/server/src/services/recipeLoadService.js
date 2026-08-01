@@ -1,39 +1,51 @@
 /**
- * On-demand recipe load — photo + ingredients via Google/Gemini pipeline.
- * Called when user selects a recipe.
+ * On-demand recipe load — FAST path.
+ * Never block UI on image download. Enrich with short timeout; continue in background.
  */
 import { getRecipeById } from "../data/recipes.js";
 import { enrichRecipeWithFlow } from "./cookingFlowService.js";
-import { getEnrichedRecipe } from "./recipeEnrichmentService.js";
-import { ensureRecipeImage, hasCachedImage, imageUrlForRecipe } from "./recipeImageService.js";
+import { getCachedRecipeOverlay, getEnrichedRecipe, enrichRecipeInBackground } from "./recipeEnrichmentService.js";
+import { hasCachedImage, imageUrlForRecipe, warmRecipeImage } from "./recipeImageService.js";
+
+const ENRICH_BUDGET_MS = 4500;
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("enrich-timeout")), ms)),
+  ]);
+}
 
 export async function loadRecipeOnSelect(recipeId) {
   const base = getRecipeById(recipeId);
   if (!base) return null;
 
-  const needsFetch = !hasCachedImage(recipeId);
-  const enriched = await getEnrichedRecipe(base, { force: needsFetch });
-  const recipe = enrichRecipeWithFlow(enriched);
+  // Start with instant overlay (disk cache or base)
+  let recipe = enrichRecipeWithFlow(getCachedRecipeOverlay(base));
 
-  let imageReady = hasCachedImage(recipeId);
-  if (!imageReady) {
-    try {
-      await ensureRecipeImage(recipe);
-      imageReady = true;
-    } catch {
-      imageReady = false;
-    }
+  // Warm photo in background — never await
+  warmRecipeImage(recipe);
+
+  // Try fast enrich with budget; if slow, keep going in background
+  try {
+    const enriched = await withTimeout(getEnrichedRecipe(base, { force: false }), ENRICH_BUDGET_MS);
+    recipe = enrichRecipeWithFlow(enriched);
+    warmRecipeImage(recipe);
+  } catch {
+    enrichRecipeInBackground(base);
   }
 
   return {
     recipe: {
       ...recipe,
       image: imageUrlForRecipe(recipeId),
+      thumbUrl: recipe.thumbUrl || null,
     },
     image: {
       url: imageUrlForRecipe(recipeId),
-      ready: imageReady,
+      ready: hasCachedImage(recipeId),
       cached: hasCachedImage(recipeId),
+      thumbUrl: recipe.thumbUrl || null,
     },
     loadedAt: new Date().toISOString(),
   };

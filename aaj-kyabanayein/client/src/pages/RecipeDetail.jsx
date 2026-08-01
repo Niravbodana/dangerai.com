@@ -67,35 +67,52 @@ export default function RecipeDetail() {
   const load = () => {
     setLoading(true);
     setLoadingMedia(true);
-    Promise.all([
-      fetchRecipeLoad(id),
-      fetchRecipeRating(id, getGuestId()),
-      fetchReviews(id),
-      fetchTrendingRecipes(12),
-    ])
-      .then(([loadData, ratingData, reviewsData, trendingData]) => {
+    setIsFav(isFavorite(id));
+    track("recipe_open", { id });
+
+    // FAST: show base recipe immediately
+    fetchRecipe(id)
+      .then((data) => {
+        if (data?.recipe) {
+          setRecipe(data.recipe);
+          setLoading(false);
+        }
+      })
+      .catch(() => {});
+
+    // Parallel: ratings + reviews + trending (non-blocking for recipe body)
+    fetchRecipeRating(id, getGuestId()).then((ratingData) => {
+      setRating(ratingData);
+      setUserRating(ratingData.userScore || 0);
+    }).catch(() => {});
+
+    fetchReviews(id).then((reviewsData) => {
+      setReviews(reviewsData.reviews || []);
+    }).catch(() => {});
+
+    fetchTrendingRecipes(12).then((trendingData) => {
+      const trending = trendingData.recipes || [];
+      setIsTrending(trending.some((tr) => tr.id === id));
+      setSimilar((prev) => {
+        const cuisine = prev?.cuisine;
+        return trending.filter((tr) => tr.id !== id).slice(0, 4);
+      });
+    }).catch(() => {});
+
+    // Enrich ingredients + photo in background (Groq pipeline, budgeted)
+    fetchRecipeLoad(id)
+      .then((loadData) => {
         setRecipe(loadData.recipe);
         setImageVersion(Date.now());
-        setRating(ratingData);
-        setUserRating(ratingData.userScore || 0);
-        track("recipe_open", { id });
-        setReviews(reviewsData.reviews || []);
-        setIsFav(isFavorite(id));
-        const trending = trendingData.recipes || [];
-        setIsTrending(trending.some((tr) => tr.id === id));
-        const cuisine = loadData.recipe?.cuisine;
-        setSimilar(trending.filter((tr) => tr.id !== id && tr.cuisine === cuisine).slice(0, 4));
-      })
-      .catch(() => {
-        return fetchRecipe(id).then((recipeData) => {
-          setRecipe(recipeData.recipe);
-          setImageVersion(Date.now());
-        });
-      })
-      .finally(() => {
-        setLoading(false);
         setLoadingMedia(false);
-      });
+        const cuisine = loadData.recipe?.cuisine;
+        fetchTrendingRecipes(12).then((trendingData) => {
+          const trending = trendingData.recipes || [];
+          setSimilar(trending.filter((tr) => tr.id !== id && tr.cuisine === cuisine).slice(0, 4));
+        }).catch(() => {});
+      })
+      .catch(() => setLoadingMedia(false))
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [id]);
@@ -124,10 +141,10 @@ export default function RecipeDetail() {
   };
 
   const handleFav = async () => {
+    // Optimistic — don't wait on network for UI
     const nowFav = await toggleFavorite(id);
     setIsFav(nowFav);
-    const ratingData = await fetchRecipeRating(id);
-    setRating(ratingData);
+    fetchRecipeRating(id, getGuestId()).then(setRating).catch(() => {});
   };
 
   const handleAddToPlan = async () => {
@@ -180,16 +197,16 @@ export default function RecipeDetail() {
         {/* Hero */}
         <div className="relative h-72 overflow-hidden sm:h-80">
           <RecipeImage
-            src={`/api/recipes/image/${recipe.id}`}
+            src={recipe.thumbUrl || `/api/recipes/image/${recipe.id}`}
             alt={displayName}
-            recipeId={recipe.id}
+            recipeId={recipe.thumbUrl ? "" : recipe.id}
             eager
             version={imageVersion}
             className="h-full w-full object-cover"
           />
-          {loadingMedia && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-              <p className="text-sm text-white/80">Fetching matching photo…</p>
+          {loadingMedia && !recipe.thumbUrl && (
+            <div className="absolute bottom-4 right-4 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80 backdrop-blur-sm">
+              Better photo…
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#14110e] via-[#14110e]/40 to-transparent" />

@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="max-w-sm">
             <BrandLogo light className="h-8 w-auto" />
             <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-              India&apos;s home-cooking OS. 791+ real recipes — Aaj Kya Banaye, voice cook, smart pantry.
+              India&apos;s home-cooking OS. 799+ real recipes — Aaj Kya Banaye, voice cook, smart pantry.
             </p>
             <p className="mt-3 text-xs text-[var(--accent-soft)]">Made with care for Indian home cooks</p>
           </div>
