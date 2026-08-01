@@ -1,4 +1,5 @@
 import os from "os";
+import cors from "cors";
 import express from "express";
 import fs from "fs";
 import path from "path";
