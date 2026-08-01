@@ -46,7 +46,10 @@ export default function RecipeImage({ src, alt, className = "", recipeId = "", e
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+    };
   }, [recipeId, eager, version, src]);
 
   return (

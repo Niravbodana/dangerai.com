@@ -2,12 +2,14 @@ import { BASE_RECIPES } from "../data/baseRecipes.js";
 import { MORE_RECIPES } from "../data/moreRecipes.js";
 import { getEnrichedRecipe } from "../services/recipeEnrichmentService.js";
 import { hasCachedImage } from "../services/recipeImageService.js";
+import { getAIProviderStatus } from "../services/aiRecipeService.js";
 
 const RECIPES = [...BASE_RECIPES, ...MORE_RECIPES];
 
 async function prefetch() {
   console.log(`Enriching & prefetching images for ${RECIPES.length} hand-crafted recipes...`);
-  console.log(`Google API: ${process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY ? "Gemini enabled" : "not set"}`);
+  const ai = getAIProviderStatus();
+  console.log(`AI: ${ai.primary || "none"} (groq=${ai.groq}, gemini=${ai.gemini})`);
   let ok = 0;
   let fail = 0;
 

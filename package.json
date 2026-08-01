@@ -1,0 +1,16 @@
+{
+  "name": "dangerai.com",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rasoira monorepo — npm scripts delegate to aaj-kyabanayein/",
+  "scripts": {
+    "install:all": "npm install --prefix aaj-kyabanayein/server && npm install --prefix aaj-kyabanayein/client",
+    "dev:server": "npm run dev --prefix aaj-kyabanayein/server",
+    "dev:client": "npm run dev --prefix aaj-kyabanayein/client",
+    "start:server": "npm start --prefix aaj-kyabanayein/server",
+    "build:client": "npm run build --prefix aaj-kyabanayein/client",
+    "build-recipe-books": "npm run build-recipe-books --prefix aaj-kyabanayein/server",
+    "prefetch-images": "npm run prefetch-images --prefix aaj-kyabanayein/server",
+    "generate-recipes": "npm run generate-recipes --prefix aaj-kyabanayein/server"
+  }
+}
