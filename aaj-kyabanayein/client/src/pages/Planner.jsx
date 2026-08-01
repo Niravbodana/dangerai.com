@@ -11,6 +11,18 @@ import { buildPlannerContext } from "../lib/plannerContext";
 import { nutritionFromPlans } from "../lib/nutrition";
 import { getNutritionGoals } from "../lib/nutritionGoals";
 import { saveGroceryFromPlan } from "../lib/groceryStore";
+import {
+  disableMealReminders,
+  enableMealReminders,
+  getNotifyPref,
+  getSmartNotificationSummary,
+  initNotificationEngine,
+  previewMealReminder,
+  stopNotificationEngine,
+  updateNotificationType,
+  updateSmartPrefs,
+} from "../lib/notifications";
+import { getStreak } from "../lib/streak";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -37,6 +49,8 @@ export default function Planner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [notifyPrefs, setNotifyPrefs] = useState(getNotifyPref);
+  const notifySummary = getSmartNotificationSummary();
 
   const generatePlan = useCallback(async (preferences) => {
     setLoading(true);
@@ -60,6 +74,27 @@ export default function Planner() {
     setPrefs(initial);
     generatePlan(initial);
   }, [user, generatePlan]);
+
+  useEffect(() => {
+    if (!notifyPrefs.enabled) {
+      stopNotificationEngine();
+      return undefined;
+    }
+    initNotificationEngine({ mealPlan: data, streak: getStreak() });
+    return () => stopNotificationEngine();
+  }, [notifyPrefs.enabled, data]);
+
+  const handleToggleNotifications = async () => {
+    if (notifyPrefs.enabled) {
+      disableMealReminders();
+      setNotifyPrefs(getNotifyPref());
+      return;
+    }
+    const res = await enableMealReminders();
+    if (res.ok) setNotifyPrefs(getNotifyPref());
+  };
+
+  const mealPreview = data ? previewMealReminder(data) : null;
 
   const handleSavePreferences = async () => {
     if (!user) return;
@@ -101,6 +136,55 @@ export default function Planner() {
                 <Link to="/login" className="text-[var(--accent)] hover:underline">Login</Link> karke preferences save karo
               </p>
             )}
+
+            <div className="recipe-card p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Meal reminders</h3>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                Local browser reminders from your plan — no push provider.
+              </p>
+              <button
+                type="button"
+                onClick={handleToggleNotifications}
+                className="premium-btn-outline mt-3 w-full py-2 text-xs"
+              >
+                {notifyPrefs.enabled ? "Reminders on" : "Enable reminders"}
+              </button>
+              {notifyPrefs.enabled && (
+                <div className="mt-3 space-y-2 text-xs text-[var(--text-secondary)]">
+                  <label className="flex items-center justify-between gap-2">
+                    <span>Meal reminders</span>
+                    <input
+                      type="checkbox"
+                      checked={notifyPrefs.types.meal.enabled}
+                      onChange={(e) => setNotifyPrefs(updateNotificationType("meal", { enabled: e.target.checked }))}
+                      className="accent-[var(--accent)]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-2">
+                    <span>Pantry reminder</span>
+                    <input
+                      type="checkbox"
+                      checked={notifyPrefs.types.pantry.enabled}
+                      onChange={(e) => setNotifyPrefs(updateNotificationType("pantry", { enabled: e.target.checked }))}
+                      className="accent-[var(--accent)]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-2">
+                    <span>Skip if already cooked today</span>
+                    <input
+                      type="checkbox"
+                      checked={notifyPrefs.smart.skipIfCookedToday}
+                      onChange={(e) => setNotifyPrefs(updateSmartPrefs({ skipIfCookedToday: e.target.checked }))}
+                      className="accent-[var(--accent)]"
+                    />
+                  </label>
+                  <p className="text-[10px]">Quiet hours: {notifySummary.quietHours}</p>
+                  {mealPreview && (
+                    <p className="text-[10px] text-[var(--accent-soft)]">Next: {mealPreview.title} — {mealPreview.body}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6 lg:col-span-2">
