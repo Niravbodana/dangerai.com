@@ -27,6 +27,7 @@ import {
   ensureRecipeImage,
   readCachedImage,
   hasCachedImage,
+  warmRecipeImage,
 } from "../services/recipeImageService.js";
 import path from "path";
 
@@ -149,11 +150,9 @@ router.get("/recipes", (req, res) => {
   const start = (pageNum - 1) * limitNum;
   const paginated = filtered.slice(start, start + limitNum);
 
-  // Warm image cache in background for visible recipes
-  for (const recipe of paginated) {
-    if (!hasCachedImage(recipe.id)) {
-      ensureRecipeImage(recipe).catch(() => {});
-    }
+  // Warm image cache slowly in background (max 3 per page to avoid Wikipedia 429)
+  for (const recipe of paginated.slice(0, 3)) {
+    warmRecipeImage(recipe);
   }
 
   res.json({

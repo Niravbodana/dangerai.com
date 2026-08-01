@@ -8,7 +8,8 @@ const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com)";
-const WIKI_DELAY_MS = 350;
+const WIKI_DELAY_MS = 1200;
+const MAX_FETCH_RETRIES = 4;
 
 const NOISE_WORDS = new Set([
   "home", "dhaba", "restaurant", "traditional", "quick", "special", "classic",
@@ -20,6 +21,13 @@ const NOISE_WORDS = new Set([
 
 const inFlight = new Map();
 let lastWikiCall = 0;
+let fetchQueue = Promise.resolve();
+
+function enqueueFetch(task) {
+  const run = fetchQueue.then(task, task);
+  fetchQueue = run.catch(() => {});
+  return run;
+}
 
 function ensureDirs() {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -52,8 +60,14 @@ async function throttleWiki() {
   lastWikiCall = Date.now();
 }
 
-async function fetchJson(url) {
+async function fetchJson(url, attempt = 0) {
+  await throttleWiki();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  if (res.status === 429 && attempt < MAX_FETCH_RETRIES) {
+    const backoff = 2000 * (attempt + 1);
+    await sleep(backoff);
+    return fetchJson(url, attempt + 1);
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -106,7 +120,6 @@ function scoreTitle(title, name) {
 }
 
 async function searchWikipediaTitle(title) {
-  await throttleWiki();
   const url =
     "https://en.wikipedia.org/w/api.php?action=query&titles=" +
     `${encodeURIComponent(title.replace(/ /g, "_"))}&prop=pageimages` +
@@ -118,7 +131,6 @@ async function searchWikipediaTitle(title) {
 }
 
 async function searchWikipedia(query, originalName) {
-  await throttleWiki();
   const url =
     "https://en.wikipedia.org/w/api.php?action=query&generator=search" +
     `&gsrsearch=${encodeURIComponent(query)}&gsrlimit=8&prop=pageimages` +
@@ -138,7 +150,6 @@ async function searchWikipedia(query, originalName) {
 }
 
 async function searchWikimediaCommons(query, originalName) {
-  await throttleWiki();
   const url =
     "https://commons.wikimedia.org/w/api.php?action=query&generator=search" +
     `&gsrsearch=${encodeURIComponent(query + " food dish")}&gsrlimit=6` +
@@ -305,7 +316,7 @@ export async function ensureRecipeImage(recipe) {
 
   if (inFlight.has(id)) return inFlight.get(id);
 
-  const promise = (async () => {
+  const promise = enqueueFetch(async () => {
     const match = await findImageUrl(recipe);
     if (!match?.imageUrl) throw new Error(`No image found for ${recipe.name}`);
 
@@ -323,7 +334,7 @@ export async function ensureRecipeImage(recipe) {
       }, null, 2)
     );
     return cached;
-  })();
+  });
 
   inFlight.set(id, promise);
   try {
@@ -336,4 +347,10 @@ export async function ensureRecipeImage(recipe) {
 export function readCachedImage(recipeId) {
   const file = cachePath(recipeId);
   return fs.existsSync(file) ? file : null;
+}
+
+/** Queue a background image fetch (rate-limited, non-blocking). */
+export function warmRecipeImage(recipe) {
+  if (!recipe?.id || hasCachedImage(recipe.id)) return;
+  ensureRecipeImage(recipe).catch(() => {});
 }
