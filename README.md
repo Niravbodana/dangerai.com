@@ -7,7 +7,8 @@ Indian home-cooking app: **900+ recipes**, photos, Aaj Kya Banaye, pantry search
 | Kya chahiye | Link |
 |-------------|------|
 | **GitHub repo** | https://github.com/Niravbodana/dangerai.com |
-| **ZIP — sab files ek click** | https://github.com/Niravbodana/dangerai.com/archive/refs/heads/main.zip |
+| **ZIP — sab files (~27 MB)** | https://github.com/Niravbodana/dangerai.com/releases/download/v1.0.0-share/rasoira-full.zip |
+| **ZIP backup** | https://codeload.github.com/Niravbodana/dangerai.com/zip/refs/heads/main |
 | **App folder** | https://github.com/Niravbodana/dangerai.com/tree/main/aaj-kyabanayein |
 | **Share guide (Hindi)** | [SHARE.md](./SHARE.md) |
 

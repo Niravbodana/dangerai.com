@@ -2,12 +2,17 @@
 
 ## Sabse aasaan: ZIP download (Git ki zaroorat nahi)
 
-**Poora project ek saath download:**
+**Poora project ek saath download (~27 MB):**
 
-👉 **https://github.com/Niravbodana/dangerai.com/archive/refs/heads/main.zip**
+👉 **https://github.com/Niravbodana/dangerai.com/releases/download/v1.0.0-share/rasoira-full.zip**
+
+(Agar 0 KB dikhe to 10–20 sec wait karo — download complete hone do. Wi‑Fi use karo.)
+
+**Backup link:**
+https://codeload.github.com/Niravbodana/dangerai.com/zip/refs/heads/main
 
 1. Link phone/PC browser mein kholo  
-2. ZIP download hogi (~5–8 MB code + recipes)  
+2. ZIP download hogi (~27 MB)  
 3. Extract / unzip karo  
 4. Folder ka naam hoga: `dangerai.com-main`  
 5. Andar jao: `dangerai.com-main/aaj-kyabanayein` — **yahi app hai**
