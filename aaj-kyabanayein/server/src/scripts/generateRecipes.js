@@ -227,5 +227,31 @@ for (const batch of BATCHES) {
 
 console.log(`\nTotal: ${total.toLocaleString()} recipes`);
 
+// Build lightweight index for fast server startup
+console.log("Building recipe index...");
+const index = [];
+for (const batch of BATCHES) {
+  const recipes = JSON.parse(fs.readFileSync(path.join(OUT_DIR, batch.file), "utf-8"));
+  for (const r of recipes) {
+    index.push({
+      id: r.id,
+      name: r.name,
+      nameHi: r.nameHi,
+      mealType: r.mealType,
+      diet: r.diet,
+      cuisine: r.cuisine || "indian",
+      category: r.category,
+      budget: r.budget,
+      cookTime: r.cookTime,
+      calories: r.calories,
+      spice: r.spice,
+      tags: r.tags,
+      shard: batch.file,
+    });
+  }
+}
+fs.writeFileSync(path.join(OUT_DIR, "index.json"), JSON.stringify(index));
+console.log(`Index: ${index.length.toLocaleString()} entries`);
+
 const oldFile = path.join(__dirname, "../data/generatedRecipes.json");
 if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);

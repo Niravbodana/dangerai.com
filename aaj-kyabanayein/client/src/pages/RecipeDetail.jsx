@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { fetchRecipe, fetchRecipeRating, fetchReviews, fetchTrendingRecipes, submitReview } from "../api";
+import { fetchRecipe, fetchRecipeRating, fetchReviews, fetchTrendingRecipes, submitReview, addSavedMeal } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import { getGuestId, isFavorite, shareOnWhatsApp, toggleFavorite } from "../lib/guest";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -54,47 +54,30 @@ export default function RecipeDetail() {
   const [isFav, setIsFav] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [enriching, setEnriching] = useState(false);
+  const [planAdded, setPlanAdded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
   const [similar, setSimilar] = useState([]);
 
   const load = () => {
     setLoading(true);
-    fetchRecipe(id)
-      .then(async (recipeData) => {
-        const r = recipeData.recipe;
-        setRecipe(r);
-        setLoading(false);
-
-        if (recipeData.enriching) {
-          setEnriching(true);
-          for (let i = 0; i < 12; i++) {
-            await new Promise((res) => setTimeout(res, 2000));
-            const updated = await fetchRecipe(id);
-            if (!updated.enriching) {
-              setRecipe(updated.recipe);
-              break;
-            }
-          }
-          setEnriching(false);
-        }
-      })
-      .catch(() => setLoading(false));
-
-    Promise.all([fetchRecipeRating(id), fetchReviews(id), fetchTrendingRecipes(20)]).then(
-      ([ratingData, reviewsData, trendingData]) => {
+    Promise.all([
+      fetchRecipe(id),
+      fetchRecipeRating(id),
+      fetchReviews(id),
+      fetchTrendingRecipes(12),
+    ])
+      .then(([recipeData, ratingData, reviewsData, trendingData]) => {
+        setRecipe(recipeData.recipe);
         setRating(ratingData);
         setReviews(reviewsData.reviews || []);
         setIsFav(isFavorite(id));
         const trending = trendingData.recipes || [];
         setIsTrending(trending.some((tr) => tr.id === id));
-        fetchRecipe(id).then((d) => {
-          const cuisine = d.recipe?.cuisine;
-          setSimilar(trending.filter((tr) => tr.id !== id && tr.cuisine === cuisine).slice(0, 4));
-        });
-      }
-    );
+        const cuisine = recipeData.recipe?.cuisine;
+        setSimilar(trending.filter((tr) => tr.id !== id && tr.cuisine === cuisine).slice(0, 4));
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [id]);
@@ -119,15 +102,19 @@ export default function RecipeDetail() {
     setRating(ratingData);
   };
 
+  const handleAddToPlan = async () => {
+    try {
+      await addSavedMeal({ recipeId: id, mealType: recipe.mealType || "lunch", guestId: getGuestId() });
+      setPlanAdded(true);
+    } catch {
+      /* ignore */
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <LoadingSpinner />
-        {enriching && (
-          <p className="text-sm text-[var(--text-secondary)]">
-            {lang === "hi" ? "Google/Wiki se recipe details la rahe hain..." : "Fetching recipe details from web..."}
-          </p>
-        )}
       </div>
     );
   }
@@ -326,6 +313,14 @@ export default function RecipeDetail() {
       {/* Sticky bottom CTA */}
       <div className="recipe-detail-cta safe-bottom">
         <div className="mx-auto flex max-w-3xl gap-3 px-4">
+          <button
+            type="button"
+            onClick={handleAddToPlan}
+            disabled={planAdded}
+            className="premium-btn-outline tap-smooth shrink-0 px-4 py-4 text-sm"
+          >
+            {planAdded ? t("addedToPlan") : t("addToPlan")}
+          </button>
           <button
             type="button"
             onClick={() => shareOnWhatsApp(recipe)}

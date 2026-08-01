@@ -2,11 +2,13 @@ import { Router } from "express";
 import {
   CUISINES,
   getCategoryCounts,
+  getRecipeById,
+  filterRecipeIndex,
+  RECIPE_INDEX,
   isNonVegRecipe,
   isVegRecipe,
   PRICING_PLANS,
   RECIPE_CATEGORIES,
-  RECIPES,
 } from "../data/recipes.js";
 import { optionalAuth } from "../middleware/auth.js";
 import { generateWeeklyHealthyPlan } from "../services/healthyPlanService.js";
@@ -20,14 +22,13 @@ import {
   suggestFromPantry,
 } from "../services/pantryService.js";
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
-import { getEnrichedRecipe, getEnrichmentStatus, getCachedRecipeOverlay, enrichRecipeInBackground, isRecipeEnriched } from "../services/recipeEnrichmentService.js";
+import { getEnrichedRecipe, getEnrichmentStatus } from "../services/recipeEnrichmentService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
 import { attachRating } from "../services/ratingsStore.js";
 import {
   ensureRecipeImage,
   readCachedImage,
-  warmRecipeImage,
 } from "../services/recipeImageService.js";
 import path from "path";
 
@@ -37,33 +38,40 @@ const DEFAULT_IMAGE_ID = "_default";
 
 router.get("/recipes/image/:id", async (req, res) => {
   const { id } = req.params;
+  res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+
+  const cached = readCachedImage(id);
+  if (cached) {
+    res.type("image/jpeg");
+    return res.sendFile(path.resolve(cached));
+  }
+
   const recipe = id === DEFAULT_IMAGE_ID
     ? { id: DEFAULT_IMAGE_ID, name: "Indian thali food" }
-    : RECIPES.find((r) => r.id === id);
+    : getRecipeById(id);
 
-  if (!recipe) {
+  if (!recipe && id !== DEFAULT_IMAGE_ID) {
+    const fallback = readCachedImage(DEFAULT_IMAGE_ID);
+    if (fallback) return res.sendFile(path.resolve(fallback));
     return res.status(404).json({ success: false, message: "Recipe not found" });
   }
 
+  // Return default instantly — fetch real image in background
+  const fallback = readCachedImage(DEFAULT_IMAGE_ID);
+  if (fallback) {
+    res.type("image/jpeg");
+    res.sendFile(path.resolve(fallback));
+    if (recipe && id !== DEFAULT_IMAGE_ID) {
+      ensureRecipeImage(recipe).catch(() => {});
+    }
+    return;
+  }
+
   try {
-    const file = readCachedImage(id) || await ensureRecipeImage(recipe);
-    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    const file = await ensureRecipeImage(recipe || { id: DEFAULT_IMAGE_ID, name: "Indian thali food" });
     res.type("image/jpeg");
     return res.sendFile(path.resolve(file));
-  } catch (err) {
-    console.warn(`Image fetch failed for ${id}:`, err.message);
-    if (id !== DEFAULT_IMAGE_ID) {
-      const fallback = readCachedImage(DEFAULT_IMAGE_ID);
-      if (fallback) {
-        return res.sendFile(path.resolve(fallback));
-      }
-      try {
-        const file = await ensureRecipeImage({ id: DEFAULT_IMAGE_ID, name: "Indian thali food" });
-        return res.sendFile(path.resolve(file));
-      } catch {
-        return res.status(502).json({ success: false, message: "Image unavailable" });
-      }
-    }
+  } catch {
     return res.status(502).json({ success: false, message: "Image unavailable" });
   }
 });
@@ -75,7 +83,7 @@ router.get("/recipes/categories", (_req, res) => {
     categories: RECIPE_CATEGORIES,
     counts: counts.categories,
     cuisineCounts: counts.cuisines,
-    totalRecipes: RECIPES.length,
+    totalRecipes: RECIPE_INDEX.length,
     cuisines: CUISINES,
   });
 });
@@ -88,24 +96,11 @@ router.get("/recipes/trending", (req, res) => {
 });
 
 router.get("/recipes/suggest", (req, res) => {
-  const q = (req.query.q || "").trim().toLowerCase();
+  const q = (req.query.q || "").trim();
   const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 8));
-  if (!q || q.length < 1) {
-    return res.json({ success: true, suggestions: [] });
-  }
-  const matches = [];
-  for (const r of RECIPES) {
-    if (
-      r.name.toLowerCase().includes(q) ||
-      r.nameHi?.toLowerCase().includes(q) ||
-      r.tags?.some((t) => t.toLowerCase().includes(q)) ||
-      r.cuisine?.toLowerCase().includes(q) ||
-      r.ingredients?.some((i) => i.name.toLowerCase().includes(q))
-    ) {
-      matches.push(attachRating(r));
-      if (matches.length >= limit) break;
-    }
-  }
+  if (!q) return res.json({ success: true, suggestions: [] });
+
+  const matches = filterRecipeIndex({ search: q }).slice(0, limit).map(attachRating);
   res.json({ success: true, suggestions: matches });
 });
 
@@ -114,96 +109,31 @@ router.get("/recipes/enrichment-status", (_req, res) => {
 });
 
 router.post("/recipes/:id/enrich", async (req, res) => {
-  const recipe = RECIPES.find((r) => r.id === req.params.id);
-  if (!recipe) {
-    return res.status(404).json({ success: false, message: "Recipe nahi mili" });
-  }
+  const recipe = getRecipeById(req.params.id);
+  if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   try {
     const enriched = await getEnrichedRecipe(recipe, { force: true });
-    const full = enrichRecipeWithFlow(enriched);
-    res.json({ success: true, recipe: full });
+    res.json({ success: true, recipe: enrichRecipeWithFlow(enriched) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.get("/recipes/:id", async (req, res) => {
-  const recipe = RECIPES.find((r) => r.id === req.params.id);
-  if (!recipe) {
-    return res.status(404).json({ success: false, message: "Recipe nahi mili" });
-  }
-
-  const waitEnrich = req.query.wait === "1";
-  const skipEnrich = req.query.enrich === "0";
-
-  if (skipEnrich) {
-    const full = enrichRecipeWithFlow(recipe);
-    return res.json({ success: true, recipe: full, enriched: false });
-  }
-
-  // Fast path: serve cache immediately
-  const cached = getCachedRecipeOverlay(recipe);
-  const isEnriched = isRecipeEnriched(recipe.id);
-
-  if (!waitEnrich && isEnriched) {
-    const full = enrichRecipeWithFlow(cached);
-    return res.json({ success: true, recipe: full, enriched: true });
-  }
-
-  if (!waitEnrich) {
-    // Return base/cached data instantly, enrich in background
-    const full = enrichRecipeWithFlow(cached);
-    enrichRecipeInBackground(recipe);
-    return res.json({
-      success: true,
-      recipe: full,
-      enriched: isEnriched,
-      enriching: !isEnriched,
-    });
-  }
-
-  // wait=1 for prefetch script
-  const enriched = await getEnrichedRecipe(recipe);
-  const full = enrichRecipeWithFlow(enriched);
-  res.json({ success: true, recipe: full, enriched: true });
+router.get("/recipes/:id", (req, res) => {
+  const recipe = getRecipeById(req.params.id);
+  if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+  const full = enrichRecipeWithFlow(recipe);
+  res.json({ success: true, recipe: full });
 });
 
 router.get("/recipes", (req, res) => {
   const { category, mealType, diet, cuisine, search, page = 1, limit = 24 } = req.query;
-  let filtered = RECIPES;
-
-  if (cuisine && cuisine !== "all") {
-    filtered = filtered.filter((r) => r.cuisine === cuisine);
-  }
-  if (category && category !== "all") {
-    if (category === "snack") {
-      filtered = filtered.filter((r) => r.mealType === "snack");
-    } else {
-      filtered = filtered.filter((r) => r.category === category);
-    }
-  }
-  if (mealType) filtered = filtered.filter((r) => r.mealType === mealType);
-  if (diet === "veg") filtered = filtered.filter(isVegRecipe);
-  if (diet === "non-veg") filtered = filtered.filter(isNonVegRecipe);
-  if (search) {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.nameHi.includes(search) ||
-        r.tags?.some((t) => t.includes(q))
-    );
-  }
+  const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search });
 
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
   const start = (pageNum - 1) * limitNum;
   const paginated = filtered.slice(start, start + limitNum);
-
-  // Warm image cache slowly in background (max 3 per page to avoid Wikipedia 429)
-  for (const recipe of paginated.slice(0, 3)) {
-    warmRecipeImage(recipe);
-  }
 
   res.json({
     success: true,
@@ -268,7 +198,7 @@ router.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "Rasoira API is running",
-    totalRecipes: RECIPES.length,
+    totalRecipes: RECIPE_INDEX.length,
   });
 });
 

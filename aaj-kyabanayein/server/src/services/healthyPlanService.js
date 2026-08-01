@@ -1,4 +1,4 @@
-import { RECIPES } from "../data/recipes.js";
+import { filterRecipeIndex, getRecipeById } from "../data/recipes.js";
 
 const DAY_LABELS = [
   "Somvar - Healthy Start",
@@ -26,44 +26,32 @@ function pickHealthy(pool, usedIds, dayIndex, mealType) {
   );
   if (available.length === 0) return null;
 
-  available.sort((a, b) => (b.healthScore || 5) - (a.healthScore || 5));
   const idx = (dayIndex + mealType.length) % available.length;
-  const recipe = available[idx];
-  usedIds.add(recipe.id);
-  return recipe;
+  const meta = available[idx];
+  return getRecipeById(meta.id);
 }
 
 export function generateWeeklyHealthyPlan(diet = "veg") {
-  const pool = RECIPES.filter((r) => {
-    if (diet === "veg") return r.diet.includes("veg");
-    if (diet === "non-veg") return true;
-    return true;
-  }).filter(
-    (r) =>
-      (r.healthScore || 0) >= 6 ||
-      r.tags?.includes("healthy") ||
-      r.tags?.includes("diabetic-friendly") ||
-      r.category === "healthy"
-  );
-
+  const pool = filterRecipeIndex({ diet, cuisine: "healthy" });
+  const fallbackPool = filterRecipeIndex({ diet });
   const usedIds = new Set();
   const plans = [];
 
   for (let day = 0; day < 7; day++) {
     const date = new Date();
     date.setDate(date.getDate() + day);
-
     const meals = [];
-    for (const mealType of ["breakfast", "lunch", "snack", "dinner"]) {
-      const recipe = pickHealthy(pool, usedIds, day, mealType);
+
+    for (const mealType of ["breakfast", "lunch", "dinner"]) {
+      let recipe = pickHealthy(pool.length ? pool : fallbackPool, usedIds, day, mealType);
+      if (recipe) usedIds.add(recipe.id);
       if (recipe) meals.push({ mealType, recipe });
     }
 
     plans.push({
       date: date.toISOString().split("T")[0],
       dayLabel: DAY_LABELS[day],
-      healthTip: HEALTH_TIPS[day],
-      totalCalories: meals.reduce((sum, m) => sum + (m.recipe.calories || 0), 0),
+      tip: HEALTH_TIPS[day],
       meals,
     });
   }

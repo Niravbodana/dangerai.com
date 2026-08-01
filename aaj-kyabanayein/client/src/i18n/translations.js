@@ -86,6 +86,10 @@ export const translations = {
     sevenDays: "7 Day Plan",
     trustedBy: "Trusted by home cooks across India",
     viewRecipe: "View Recipe",
+    myMeals: "My Meals",
+    addMeal: "Add Meal",
+    addToPlan: "Add to Plan",
+    addedToPlan: "Added!",
   },
   hi: {
     appName: "Rasoira",
@@ -151,5 +155,9 @@ export const translations = {
     noFavorites: "Abhi koi favorite nahi hai.",
     steps: "Kaise banayein",
     similarRecipes: "Aisi hi hot recipes",
+    myMeals: "Mere Meals",
+    addMeal: "Meal Add",
+    addToPlan: "Plan mein Add",
+    addedToPlan: "Add ho gaya!",
   },
 };

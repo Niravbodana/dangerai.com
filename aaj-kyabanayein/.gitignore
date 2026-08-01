@@ -14,3 +14,5 @@ server/src/data/generatedRecipes.json
 server/data/image-cache/
 server/data/image-cache-meta/
 server/data/enriched-cache/
+server/src/data/saved-meals.json
+server/src/data/custom-meals.json

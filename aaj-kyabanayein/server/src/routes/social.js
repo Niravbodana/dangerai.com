@@ -2,7 +2,7 @@ import { Router } from "express";
 import { optionalAuth } from "../middleware/auth.js";
 import { getRating, getReviews, rateRecipe, submitReview } from "../services/ratingsStore.js";
 import { addFavorite, getFavorites, removeFavorite } from "../services/favoritesStore.js";
-import { RECIPES } from "../data/recipes.js";
+import { getRecipeById } from "../data/recipes.js";
 
 const router = Router();
 
@@ -36,7 +36,7 @@ router.get("/favorites", optionalAuth, (req, res) => {
   const userId = req.userId || req.query.guestId;
   if (!userId) return res.json({ success: true, favorites: [] });
   const ids = getFavorites(userId);
-  const recipes = ids.map((id) => RECIPES.find((r) => r.id === id)).filter(Boolean);
+  const recipes = ids.map((id) => getRecipeById(id)).filter(Boolean);
   res.json({ success: true, favorites: recipes, ids });
 });
 

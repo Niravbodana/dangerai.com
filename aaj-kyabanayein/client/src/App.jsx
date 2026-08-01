@@ -18,6 +18,8 @@ import Pantry from './pages/Pantry';
 import HealthyWeek from './pages/HealthyWeek';
 import Pricing from './pages/Pricing';
 import RecipeReview from './pages/RecipeReview';
+import AddMeal from './pages/AddMeal';
+import MyMeals from './pages/MyMeals';
 import NotFound from './pages/NotFound';
 
 function AuthRouteHandler() {
@@ -53,6 +55,8 @@ function AppContent() {
           <Route path="/login" element={<Navigate to="/?auth=login" replace />} />
           <Route path="/signup" element={<Navigate to="/?auth=signup" replace />} />
           <Route path="/recipe/:id/review" element={<RecipeReview />} />
+          <Route path="/add-meal" element={<AddMeal />} />
+          <Route path="/my-meals" element={<MyMeals />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

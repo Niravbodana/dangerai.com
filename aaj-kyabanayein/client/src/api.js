@@ -92,12 +92,8 @@ export async function fetchHealthyPlan(diet = 'veg') {
 
 export const createHealthyPlan = fetchHealthyPlan;
 
-export async function fetchRecipe(id, { enrich = true, wait = false } = {}) {
-  const params = new URLSearchParams();
-  if (!enrich) params.set('enrich', '0');
-  if (wait) params.set('wait', '1');
-  const q = params.toString() ? `?${params}` : '';
-  const res = await fetch(`${API_BASE}/recipes/${id}${q}`);
+export async function fetchRecipe(id) {
+  const res = await fetch(`${API_BASE}/recipes/${id}`);
   if (!res.ok) throw new Error('Recipe not found');
   return res.json();
 }
@@ -105,6 +101,41 @@ export async function fetchRecipe(id, { enrich = true, wait = false } = {}) {
 export async function enrichRecipe(id) {
   const res = await fetch(`${API_BASE}/recipes/${id}/enrich`, { method: 'POST' });
   if (!res.ok) throw new Error('Enrichment failed');
+  return res.json();
+}
+
+export async function addSavedMeal({ recipeId, date, mealType, guestId }) {
+  const res = await fetch(`${API_BASE}/meals/saved`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipeId, date, mealType, guestId }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchSavedMeals(guestId) {
+  const res = await fetch(`${API_BASE}/meals/saved?guestId=${guestId}`);
+  if (!res.ok) return { meals: [] };
+  return res.json();
+}
+
+export async function removeSavedMeal(mealId, guestId) {
+  const res = await fetch(`${API_BASE}/meals/saved/${mealId}?guestId=${guestId}`, { method: 'DELETE' });
+  return handleResponse(res);
+}
+
+export async function addCustomMeal(body) {
+  const res = await fetch(`${API_BASE}/meals/custom`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchCustomMeals(guestId) {
+  const res = await fetch(`${API_BASE}/meals/custom?guestId=${guestId}`);
+  if (!res.ok) return { meals: [] };
   return res.json();
 }
 

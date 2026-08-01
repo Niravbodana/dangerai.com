@@ -1,4 +1,4 @@
-import { RECIPES } from "../data/recipes.js";
+import { RECIPE_INDEX, filterRecipeIndex, getRecipeById } from "../data/recipes.js";
 
 const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
 const WEEKLY_DAYS = 7;
@@ -19,12 +19,8 @@ function matchesBudget(recipe, budget) {
 }
 
 function filterRecipes(prefs, mealType) {
-  return RECIPES.filter(
-    (r) =>
-      r.mealType === mealType &&
-      matchesDiet(r, prefs.diet) &&
-      matchesBudget(r, prefs.budget) &&
-      r.cookTime <= prefs.maxCookTime
+  return filterRecipeIndex({ mealType, diet: prefs.diet }).filter(
+    (r) => matchesBudget(r, prefs.budget) && r.cookTime <= prefs.maxCookTime
   );
 }
 
@@ -47,10 +43,11 @@ function generateDayPlan(prefs, dayOffset, usedIds) {
     const pool = filterRecipes(prefs, mealType);
     if (pool.length === 0) continue;
 
-    const recipe = pickRecipe(pool, usedIds, seed + MEAL_ORDER.indexOf(mealType));
-    if (recipe) {
-      usedIds.add(recipe.id);
-      meals.push({ mealType, recipe });
+    const meta = pickRecipe(pool, usedIds, seed + MEAL_ORDER.indexOf(mealType));
+    if (meta) {
+      usedIds.add(meta.id);
+      const recipe = getRecipeById(meta.id);
+      if (recipe) meals.push({ mealType, recipe });
     }
   }
 

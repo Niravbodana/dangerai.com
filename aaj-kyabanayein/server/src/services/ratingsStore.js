@@ -2,13 +2,13 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { mergeRatings, mergeReviews } from "../data/seedRatings.js";
-import { RECIPES } from "../data/recipes.js";
+import { getRecipeById } from "../data/recipes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RATINGS_FILE = path.join(__dirname, "../data/ratings.json");
 
 function recipeName(recipeId) {
-  return RECIPES.find((r) => r.id === recipeId)?.name || "";
+  return getRecipeById(recipeId)?.name || "";
 }
 
 function ensure() {

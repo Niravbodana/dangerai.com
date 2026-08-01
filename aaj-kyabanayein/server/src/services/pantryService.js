@@ -1,4 +1,4 @@
-import { RECIPES } from "../data/recipes.js";
+import { filterRecipeIndex, getRecipeById } from "../data/recipes.js";
 
 const PANTRY_ALIASES = {
   aloo: ["aloo", "potato", "आलू"],
@@ -83,19 +83,16 @@ export function suggestFromPantry({
 }) {
   const userPantry = expandPantry(ingredients);
 
-  let pool = RECIPES.filter((r) => {
-    if (mealType && r.mealType !== mealType) return false;
-    if (category && r.category !== category) return false;
-    if (diet === "veg" && !r.diet.includes("veg")) return false;
-    if (diet === "non-veg" && !r.diet.includes("non-veg")) return false;
-    return true;
-  });
+  let pool = filterRecipeIndex({ mealType, category, diet }).slice(0, 300);
 
   const scored = pool
-    .map((recipe) => {
+    .map((meta) => {
+      const recipe = getRecipeById(meta.id);
+      if (!recipe) return null;
       const score = scoreRecipe(recipe, userPantry);
       return { recipe, ...score };
     })
+    .filter(Boolean)
     .filter((s) => s.matchCount > 0)
     .sort((a, b) => b.matchPercent - a.matchPercent || b.matchCount - a.matchCount);
 

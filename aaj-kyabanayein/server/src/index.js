@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import authRouter from "./routes/auth.js";
 import mealsRouter from "./routes/meals.js";
+import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js";
 import socialRouter from "./routes/social.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,7 @@ function loadEnv() {
 }
 
 loadEnv();
+loadCustomMealsOnStartup();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +35,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use("/api", socialRouter);
+app.use("/api", mealsUserRouter);
 app.use("/api", mealsRouter);
 
 app.get("/", (_req, res) => {
