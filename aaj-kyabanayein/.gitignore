@@ -1,6 +1,9 @@
 node_modules/
 dist/
-.env*
+.env
+.env.local
+.env.*.local
+!.env.example
 .DS_Store
 *.log
 server/src/data/users.json
@@ -10,3 +13,4 @@ server/src/data/generated/
 server/src/data/generatedRecipes.json
 server/data/image-cache/
 server/data/image-cache-meta/
+server/data/enriched-cache/
