@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import { useSpeech } from "../hooks/useSpeech";
+import { useVoiceCommands } from "../hooks/useVoiceCommands";
+import { useWakeLock } from "../hooks/useWakeLock";
+import { useStepTimers } from "../hooks/useStepTimers";
 import RecipeImage from "../components/RecipeImage";
 import { COOK_LANGS, getCookUI, getIngredientLabel, getRecipeName } from "../i18n/cookingLang";
 import { track } from "../lib/analytics";
+import { clearCookSession, loadCookSession, saveCookSession } from "../lib/cookSession";
+import { getOfflinePack } from "../lib/offlinePacks";
 import { recordCookFinish, recordVoiceUse } from "../lib/streak";
 import { shouldShowAccountWall } from "../lib/accountWall";
 import { getStreak } from "../lib/streak";
@@ -37,50 +42,53 @@ function VoiceButton({ text, lang, label, onSpeak }) {
   );
 }
 
-function StepTimer({ minutes }) {
+function StepTimer({ timerKey, minutes, timers, ensureTimer, toggleTimer, resetTimer }) {
   const total = Math.max(1, Math.round(minutes || 0)) * 60;
-  const [left, setLeft] = useState(total);
-  const [running, setRunning] = useState(false);
 
   useEffect(() => {
-    setLeft(total);
-    setRunning(false);
-  }, [total]);
+    if (minutes) ensureTimer(String(timerKey), total);
+  }, [timerKey, minutes, total, ensureTimer]);
 
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => {
-      setLeft((s) => {
-        if (s <= 1) {
-          setRunning(false);
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [running]);
+  const timer = timers[String(timerKey)];
+  if (!minutes || !timer) return null;
 
-  if (!minutes) return null;
-  const mm = String(Math.floor(left / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
+  const mm = String(Math.floor(timer.left / 60)).padStart(2, "0");
+  const ss = String(timer.left % 60).padStart(2, "0");
 
   return (
     <div className="mt-4 flex items-center justify-center gap-3">
       <span className="font-display text-2xl tabular-nums text-[var(--accent-soft)]">{mm}:{ss}</span>
       <button
         type="button"
-        onClick={() => setRunning((r) => !r)}
+        onClick={() => toggleTimer(String(timerKey))}
         className="rounded-full border border-white/15 px-3 py-1 text-xs text-[var(--text-secondary)]"
       >
-        {running ? "Pause" : left === 0 ? "Reset" : "Timer"}
+        {timer.running ? "Pause" : timer.left === 0 ? "Reset" : "Timer"}
       </button>
-      {left === 0 && (
-        <button type="button" onClick={() => setLeft(total)} className="text-xs text-[var(--accent-soft)]">
+      {timer.left === 0 && (
+        <button type="button" onClick={() => resetTimer(String(timerKey))} className="text-xs text-[var(--accent-soft)]">
           Restart
         </button>
       )}
+    </div>
+  );
+}
+
+function ActiveTimers({ timers, toggleTimer }) {
+  const active = Object.entries(timers).filter(([, t]) => t.running || (t.left < t.total && t.left > 0));
+  if (!active.length) return null;
+  return (
+    <div className="mx-auto mt-2 flex max-w-2xl flex-wrap justify-center gap-2 px-4">
+      {active.map(([key, t]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => toggleTimer(key)}
+          className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-[var(--text-secondary)]"
+        >
+          Step {key}: {String(Math.floor(t.left / 60)).padStart(2, "0")}:{String(t.left % 60).padStart(2, "0")}
+        </button>
+      ))}
     </div>
   );
 }
@@ -97,73 +105,56 @@ export default function CookingMode() {
   const { user } = useAuth();
   const { openSignup } = useAuthModal();
   const [recipe, setRecipe] = useState(null);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [started, setStarted] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
   const [handsFree, setHandsFree] = useState(false);
   const [cookLang, setCookLang] = useState(() => localStorage.getItem("akb-cook-lang") || lang || "en");
   const { speak, stop, speaking, supported } = useSpeech(cookLang === "hinglish" ? "hi" : cookLang);
-  const wakeLockRef = useRef(null);
-  const recognitionRef = useRef(null);
+  const { timers, setTimers, ensureTimer, toggleTimer, resetTimer } = useStepTimers();
+  const savedSession = useMemo(() => loadCookSession(id), [id]);
+  const stepTextRef = useRef("");
+
+  useWakeLock(started);
 
   useEffect(() => {
     localStorage.setItem("akb-cook-lang", cookLang);
   }, [cookLang]);
 
   useEffect(() => {
-    fetchRecipeLoad(id).then((data) => setRecipe(data.recipe));
+    let cancelled = false;
+    setRecipe(null);
+    setOfflineMode(false);
+    setLoadError(false);
+
+    fetchRecipeLoad(id)
+      .then((data) => {
+        if (!cancelled) setRecipe(data.recipe);
+      })
+      .catch(() => {
+        const offline = getOfflinePack(id);
+        if (offline && !cancelled) {
+          setRecipe(offline);
+          setOfflineMode(true);
+        } else if (!cancelled) {
+          setLoadError(true);
+        }
+      });
+
     document.body.classList.add("cooking-active");
     return () => {
+      cancelled = true;
       document.body.classList.remove("cooking-active");
       stop();
-      wakeLockRef.current?.release?.().catch(() => {});
-      recognitionRef.current?.stop?.();
     };
   }, [id, stop]);
 
   useEffect(() => {
-    if (!started) return;
-    track("cook_start", { id });
-    if ("wakeLock" in navigator) {
-      navigator.wakeLock.request("screen").then((lock) => {
-        wakeLockRef.current = lock;
-      }).catch(() => {});
-    }
-  }, [started, id]);
-
-  // Hands-free: listen for "next" / "अगला"
-  useEffect(() => {
-    if (!handsFree || !started) {
-      recognitionRef.current?.stop?.();
-      return;
-    }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    const rec = new SR();
-    rec.lang = cookLang === "en" ? "en-IN" : "hi-IN";
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.onresult = (event) => {
-      const last = event.results[event.results.length - 1]?.[0]?.transcript?.toLowerCase() || "";
-      if (/next| आगे|अगला|aage|agla|done|खत्म/.test(last)) {
-        setStepIndex((i) => Math.min(i + 1, 999));
-        track("voice_next");
-      }
-      if (/back|पीछे|peeche|previous/.test(last)) {
-        setStepIndex((i) => Math.max(0, i - 1));
-      }
-    };
-    rec.onerror = () => {};
-    try {
-      rec.start();
-      recognitionRef.current = rec;
-    } catch {
-      /* ignore */
-    }
-    return () => {
-      try { rec.stop(); } catch { /* ignore */ }
-    };
-  }, [handsFree, started, cookLang]);
+    if (!started || !recipe) return;
+    saveCookSession(id, { stepIndex, started, checkedItems, handsFree, timers });
+  }, [id, started, recipe, stepIndex, checkedItems, handsFree, timers]);
 
   const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
     ? recipe.stepsHi
@@ -188,8 +179,52 @@ export default function CookingMode() {
 
   const voiceLang = cookLang === "en" ? "en" : "hi";
   const stepMinutes = estimateStepMinutes(stepText);
+  const stepCountRef = useRef(0);
+  stepCountRef.current = steps.length;
+
+  useEffect(() => {
+    stepTextRef.current = stepText;
+  }, [stepText]);
+
+  const goNext = useCallback(() => {
+    stop();
+    setStepIndex((i) => Math.min(stepCountRef.current - 1, i + 1));
+  }, [stop]);
+
+  const goPrevious = useCallback(() => {
+    stop();
+    setStepIndex((i) => Math.max(0, i - 1));
+  }, [stop]);
+
+  const repeatStep = useCallback(() => {
+    if (stepTextRef.current) {
+      speak(stepTextRef.current);
+      recordVoiceUse();
+    }
+  }, [speak]);
+
+  useVoiceCommands({
+    enabled: handsFree && started,
+    lang: voiceLang,
+    onNext: goNext,
+    onPrevious: goPrevious,
+    onRepeat: repeatStep,
+  });
+
+  const startCooking = useCallback((resume = false) => {
+    if (resume && savedSession) {
+      setStepIndex(savedSession.stepIndex ?? 0);
+      setCheckedItems(savedSession.checkedItems ?? {});
+      setHandsFree(savedSession.handsFree ?? false);
+      if (savedSession.timers) setTimers(savedSession.timers);
+    } else {
+      track("cook_start", { id });
+    }
+    setStarted(true);
+  }, [id, savedSession, setTimers]);
 
   const finishCook = () => {
+    clearCookSession(id);
     recordCookFinish(id);
     track("cook_finish", { id });
     const streak = getStreak();
@@ -201,8 +236,15 @@ export default function CookingMode() {
 
   if (!recipe) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent)]" />
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-4">
+        {loadError ? (
+          <>
+            <p className="text-center text-sm text-[var(--text-secondary)]">Recipe unavailable offline. Save it while online to cook without a connection.</p>
+            <button type="button" onClick={() => navigate(`/recipe/${id}`)} className="text-sm text-[var(--accent-soft)]">Go back</button>
+          </>
+        ) : (
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent)]" />
+        )}
       </div>
     );
   }
@@ -222,6 +264,9 @@ export default function CookingMode() {
             {getRecipeName(recipe, cookLang)}
           </h1>
           <p className="mt-2 text-center text-sm text-[var(--text-secondary)]">{steps.length} {ui.steps}</p>
+          {offlineMode && (
+            <p className="mt-1 text-center text-xs text-[var(--accent-soft)]">Offline pack — cooking without network</p>
+          )}
 
           <div className="glass-strong mt-6 rounded-2xl p-5 sm:p-6">
             <div className="mb-4 flex flex-wrap gap-2">
@@ -240,7 +285,7 @@ export default function CookingMode() {
             </div>
             <label className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} className="accent-[var(--accent)]" />
-              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo;
+              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
             </label>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               {ui.ingredients}
@@ -267,7 +312,16 @@ export default function CookingMode() {
               ))}
             </ol>
           </div>
-          <button onClick={() => setStarted(true)} className="premium-btn tap-smooth mt-6 w-full py-4 text-base">
+          {savedSession?.started && (
+            <button
+              type="button"
+              onClick={() => startCooking(true)}
+              className="premium-btn-outline tap-smooth mt-4 w-full py-4 text-base"
+            >
+              Resume from step {(savedSession.stepIndex ?? 0) + 1}
+            </button>
+          )}
+          <button onClick={() => startCooking(false)} className="premium-btn tap-smooth mt-4 w-full py-4 text-base">
             {ui.startCooking}
           </button>
         </div>
@@ -288,6 +342,7 @@ export default function CookingMode() {
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((Math.min(stepIndex + 1, steps.length)) / steps.length) * 100}%` }} />
         </div>
+        <ActiveTimers timers={timers} toggleTimer={toggleTimer} />
       </div>
 
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 pb-32">
@@ -296,7 +351,14 @@ export default function CookingMode() {
             {isDone ? "☺️" : stepIndex + 1}
           </div>
           <p className="mt-6 text-lg leading-relaxed text-[var(--text-primary)] sm:text-xl">{stepText}</p>
-          <StepTimer minutes={stepMinutes} />
+          <StepTimer
+            timerKey={stepIndex}
+            minutes={stepMinutes}
+            timers={timers}
+            ensureTimer={ensureTimer}
+            toggleTimer={toggleTimer}
+            resetTimer={resetTimer}
+          />
           {supported && stepText && (
             <div className="mt-5 flex justify-center gap-2">
               <VoiceButton
@@ -314,7 +376,7 @@ export default function CookingMode() {
         <div className="mx-auto flex max-w-2xl gap-3">
           <button
             type="button"
-            onClick={() => { stop(); setStepIndex((i) => Math.max(0, i - 1)); }}
+            onClick={goPrevious}
             disabled={stepIndex === 0}
             className="premium-btn-outline flex-1 py-3 text-sm disabled:opacity-30"
           >
@@ -337,7 +399,7 @@ export default function CookingMode() {
           ) : (
             <button
               type="button"
-              onClick={() => { stop(); setStepIndex((i) => Math.min(steps.length - 1, i + 1)); }}
+              onClick={goNext}
               className="premium-btn flex-1 py-3 text-sm"
             >
               {ui.next}
