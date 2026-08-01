@@ -1,4 +1,4 @@
-import cors from "cors";
+import os from "os";
 import express from "express";
 import fs from "fs";
 import path from "path";
@@ -29,6 +29,7 @@ loadCustomMealsOnStartup();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || "0.0.0.0";
 
 app.use(cors());
 app.use(express.json());
@@ -62,6 +63,18 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+function localIpv4() {
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === "IPv4" && !net.internal) return net.address;
+    }
+  }
+  return null;
+}
+
+app.listen(PORT, HOST, () => {
+  const lan = localIpv4();
   console.log(`Server running on http://localhost:${PORT}`);
+  if (lan) console.log(`Phone (same Wi‑Fi): http://${lan}:${PORT}/api/health`);
 });

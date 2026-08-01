@@ -59,6 +59,23 @@ npm run dev:client    # http://localhost:3000 (separate terminal)
 
 > **Note:** `npm install` no longer downloads recipes from the internet. Curated ~900 recipes ship with the repo. To rebuild from APIs (slow): `npm run build-recipe-books -- --force`
 
+### Phone on same Wi‑Fi (Mac)
+
+`localhost` sirf Mac par chalta hai. Phone se khulne ke liye Mac ka IP use karo:
+
+```bash
+# Mac par IP dekho (Wi‑Fi)
+ipconfig getifaddr en0
+```
+
+Phir dono servers chalao (`dev:server` + `dev:client`). Terminal mein Vite **Network** URL dikhega, jaise:
+
+`http://192.168.1.42:3000`
+
+Wahi URL phone browser mein kholo (Mac aur phone **same Wi‑Fi**).
+
+Agar na khule: Mac **System Settings → Network → Firewall** mein Node/Vite allow karo, ya firewall temporarily off karke try karo.
+
 ## Regenerate Recipes
 
 ```bash

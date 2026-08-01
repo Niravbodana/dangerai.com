@@ -6,7 +6,7 @@
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client",
     "dev:server": "npm run dev --prefix server",
-    "dev:client": "npm run dev --prefix client",
+    "dev:client": "npm run dev --prefix client -- --host",
     "start:server": "npm start --prefix server",
     "build:client": "npm run build --prefix client",
     "generate-recipes": "npm run generate-recipes --prefix server",
