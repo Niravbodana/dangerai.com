@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchRecipe, fetchRecipeLoad, fetchRecipeRating, fetchReviews, fetchTrendingRecipes, submitReview, addSavedMeal, rateRecipe } from "../api";
 import { useLanguage } from "../context/LanguageContext";
@@ -11,6 +11,8 @@ import ReviewForm from "../components/ReviewForm";
 import { IconArrowLeft, IconClock, IconHeart, IconShare, IconStar } from "../components/Icons";
 import { track } from "../lib/analytics";
 import { canSaveOfflinePack, saveOfflinePack } from "../lib/offlinePacks";
+import usePageSeo from "../hooks/usePageSeo";
+import { breadcrumbSchema, recipeSchema } from "../lib/seo";
 
 function StarRating({ value, onRate, interactive = false }) {
   return (
@@ -116,6 +118,30 @@ export default function RecipeDetail() {
   };
 
   useEffect(load, [id]);
+
+  const pageSeo = useMemo(() => {
+    if (!recipe) return null;
+    const name = lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name;
+    return {
+      seo: {
+        title: `${name} Recipe — ${recipe.cookTime || 30} min | Rasoira`,
+        description: `How to make ${recipe.name} at home. ${recipe.ingredients?.length || 0} ingredients, step-by-step cooking on Rasoira.`,
+        path: `/recipe/${recipe.id}`,
+        image: recipe.thumbUrl || `/api/recipes/image/${recipe.id}`,
+        type: "article",
+      },
+      jsonLd: [
+        recipeSchema(recipe, rating),
+        breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Recipes", path: "/recipes" },
+          { name, path: `/recipe/${recipe.id}` },
+        ]),
+      ],
+    };
+  }, [recipe, rating, lang]);
+
+  usePageSeo(pageSeo);
 
   const handleReview = async (score, comment) => {
     setSubmitting(true);

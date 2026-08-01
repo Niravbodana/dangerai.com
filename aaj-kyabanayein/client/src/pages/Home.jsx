@@ -127,7 +127,7 @@ export default function Home() {
           <div className="home-gallery-track">
             {[...GALLERY, ...GALLERY].map((food, i) => (
               <Link key={`${food.name}-${i}`} to="/recipes" className="home-gallery-card group">
-                <img src={food.img} alt={food.name} loading="lazy" />
+                <img src={food.img} alt={`${food.name} — ${food.tag} Indian recipe`} loading="lazy" />
                 <div className="home-gallery-card__overlay">
                   <span className="home-gallery-card__tag">{food.tag}</span>
                   <p className="font-semibold text-white">{food.name}</p>

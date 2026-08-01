@@ -7,6 +7,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import Footer from './components/Footer';
+import GlobalSeo from './components/GlobalSeo';
 import AuthModal from './components/AuthModal';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
@@ -45,6 +46,7 @@ function AuthRouteHandler() {
 function AppContent() {
   return (
     <div className="app-shell">
+      <GlobalSeo />
       <AuthRouteHandler />
       <Navbar />
       <main className="pb-20 md:pb-8">

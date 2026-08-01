@@ -12,6 +12,7 @@
     "generate-recipes": "npm run generate-recipes --prefix server",
     "build-recipe-books": "npm run build-recipe-books --prefix server",
     "prefetch-images": "npm run prefetch-images --prefix server",
-    "verify": "node scripts/verify-project.mjs"
+    "verify": "node scripts/verify-project.mjs",
+    "generate-sitemap": "node scripts/generate-sitemap.mjs"
   }
 }

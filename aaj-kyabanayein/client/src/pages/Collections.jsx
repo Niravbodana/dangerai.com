@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchCollection, fetchCollections } from "../api";
 import RecipeCard from "../components/RecipeCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { track } from "../lib/analytics";
+import usePageSeo from "../hooks/usePageSeo";
+import { breadcrumbSchema } from "../lib/seo";
 
 export default function Collections() {
   const { id } = useParams();
@@ -28,6 +30,27 @@ export default function Collections() {
       setDetail(null);
     }
   }, [id]);
+
+  const pageSeo = useMemo(() => {
+    if (!id || !detail?.collection) return null;
+    const c = detail.collection;
+    return {
+      seo: {
+        title: `${c.name} — Recipe Collection | Rasoira`,
+        description: c.description || `${c.nameHi || c.name} recipes on Rasoira.`,
+        path: `/collections/${id}`,
+      },
+      jsonLd: [
+        breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Collections", path: "/collections" },
+          { name: c.name, path: `/collections/${id}` },
+        ]),
+      ],
+    };
+  }, [id, detail]);
+
+  usePageSeo(pageSeo);
 
   if (loading) {
     return (
