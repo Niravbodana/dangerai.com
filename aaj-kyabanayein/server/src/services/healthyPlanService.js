@@ -1,4 +1,5 @@
 import { filterRecipeIndex, getRecipeById } from "../data/recipes.js";
+import { nutritionFromMeals } from "./nutritionService.js";
 
 const DAY_LABELS = [
   "Somvar - Healthy Start",
@@ -78,12 +79,15 @@ function buildDayPlan(pool, dayOffset, diet) {
     }
   }
 
+  const nutrition = nutritionFromMeals(meals);
+
   return {
     date: date.toISOString().split("T")[0],
     dayLabel: DAY_LABELS[dayOffset % 7],
     healthTip: HEALTH_TIPS[dayOffset % 7],
     diet,
-    totalCalories: meals.reduce((sum, m) => sum + (m.recipe.calories || 0), 0),
+    totalCalories: nutrition.calories,
+    nutrition,
     meals,
   };
 }
@@ -94,5 +98,16 @@ export function generateDailyHealthyPlan(diet = "veg") {
 
 export function generateWeeklyHealthyPlan(diet = "veg") {
   const pool = getHealthyPool(diet);
-  return Array.from({ length: 7 }, (_, day) => buildDayPlan(pool, day, diet));
+  const plans = Array.from({ length: 7 }, (_, day) => buildDayPlan(pool, day, diet));
+  const weeklyNutrition = plans.reduce(
+    (acc, day) => ({
+      calories: acc.calories + (day.nutrition?.calories || 0),
+      protein: acc.protein + (day.nutrition?.protein || 0),
+      carbs: acc.carbs + (day.nutrition?.carbs || 0),
+      fat: acc.fat + (day.nutrition?.fat || 0),
+      fiber: acc.fiber + (day.nutrition?.fiber || 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+  );
+  return { plans, weeklyNutrition };
 }

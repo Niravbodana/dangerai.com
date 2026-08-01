@@ -249,13 +249,14 @@ router.get("/collections/:id", (req, res) => {
 
 router.post("/plan/healthy", optionalAuth, (req, res) => {
   const diet = req.body.diet || "veg";
-  const plans = generateWeeklyHealthyPlan(diet);
+  const { plans, weeklyNutrition } = generateWeeklyHealthyPlan(diet);
   const groceryList = generateGroceryList(plans);
 
   res.json({
     success: true,
     diet,
     plans,
+    weeklyNutrition,
     groceryList,
     message: "7 din ka healthy meal plan — sehat ke liye best!",
   });
