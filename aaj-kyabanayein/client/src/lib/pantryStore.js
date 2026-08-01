@@ -57,6 +57,43 @@ export function getExpired() {
   return loadPantry().filter((i) => i.expiry && new Date(i.expiry).getTime() < now);
 }
 
+export function parseQuantity(qty) {
+  const n = parseFloat(String(qty || "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : 1;
+}
+
+export function getLowStock(maxQty = 1) {
+  return loadPantry().filter((i) => parseQuantity(i.quantity) <= maxQty);
+}
+
+export function getExpiringKeys(withinDays = 3) {
+  return getExpiringSoon(withinDays).map((i) => i.key);
+}
+
+export function getPantryPayload() {
+  const items = loadPantry();
+  return {
+    ingredients: items.map((i) => i.key),
+    expiringKeys: getExpiringKeys(3),
+    lowStockKeys: getLowStock(1).map((i) => i.key),
+    items,
+  };
+}
+
+export function getLocalPantryAnalytics() {
+  const items = loadPantry();
+  const expiring = getExpiringSoon(3);
+  const expired = getExpired();
+  const lowStock = getLowStock(1);
+  return {
+    totalItems: items.length,
+    withExpiry: items.filter((i) => i.expiry).length,
+    expiringSoon: expiring.length,
+    expired: expired.length,
+    lowStock: lowStock.length,
+  };
+}
+
 export function pantryKeysForSuggest() {
   return loadPantry().map((i) => i.key);
 }

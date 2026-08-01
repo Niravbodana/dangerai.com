@@ -8,10 +8,12 @@ import {
   clearPantry,
   getExpired,
   getExpiringSoon,
+  getLocalPantryAnalytics,
+  getLowStock,
+  getPantryPayload,
   loadPantry,
   openInstamartSearch,
   openWhatsAppShare,
-  pantryKeysForSuggest,
   removePantryItem,
   upsertPantryItem,
 } from "../lib/pantryStore";
@@ -39,7 +41,11 @@ export default function Pantry() {
   const [items, setItems] = useState(loadPantry);
   const [diet, setDiet] = useState("veg");
   const [mealType, setMealType] = useState("");
+  const [pantryOnly, setPantryOnly] = useState(false);
+  const [budgetMode, setBudgetMode] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [grocery, setGrocery] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [qtyDraft, setQtyDraft] = useState({});
@@ -67,21 +73,35 @@ export default function Pantry() {
   const isSelected = (key) => items.some((i) => i.key === key);
 
   const handleSuggest = async () => {
-    const keys = pantryKeysForSuggest();
-    if (keys.length === 0) return;
+    const payload = getPantryPayload();
+    if (payload.ingredients.length === 0) return;
     setLoading(true);
     setSearched(true);
     try {
       const data = await suggestFromPantry({
-        ingredients: keys,
+        ingredients: payload.ingredients,
+        expiringKeys: payload.expiringKeys,
         diet,
         mealType: mealType || undefined,
+        pantryOnly,
+        budget: budgetMode ? "low" : undefined,
         limit: 24,
+        includeAnalytics: true,
+        includeGrocery: true,
       });
       setSuggestions(data.suggestions || []);
-      track("pantry_suggest", { count: keys.length, results: data.suggestions?.length || 0 });
+      setAnalytics(data.analytics || null);
+      setGrocery(data.grocery || []);
+      track("pantry_suggest", {
+        count: payload.ingredients.length,
+        results: data.suggestions?.length || 0,
+        pantryOnly,
+        budget: budgetMode,
+      });
     } catch {
       setSuggestions([]);
+      setAnalytics(null);
+      setGrocery([]);
     } finally {
       setLoading(false);
     }
@@ -89,6 +109,8 @@ export default function Pantry() {
 
   const expiring = getExpiringSoon(3);
   const expired = getExpired();
+  const lowStock = getLowStock(1);
+  const localStats = getLocalPantryAnalytics();
 
   const shareGrocery = () => {
     const text = buildGroceryWhatsAppText(
@@ -106,11 +128,18 @@ export default function Pantry() {
           Quantity + expiry ke saath smart pantry — jo pada hai usi se recipes.
         </p>
 
-        {(expiring.length > 0 || expired.length > 0) && (
+        {(expiring.length > 0 || expired.length > 0 || lowStock.length > 0) && (
           <div className="mb-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-3 text-sm text-[var(--accent-soft)]">
             {expired.length > 0 && <p>⚠️ {expired.length} item(s) expired — use or remove.</p>}
             {expiring.length > 0 && <p>⏰ {expiring.length} item(s) expiring in 3 days.</p>}
+            {lowStock.length > 0 && <p>📉 {lowStock.length} item(s) low stock — restock soon.</p>}
           </div>
+        )}
+
+        {items.length > 0 && (
+          <p className="mb-4 text-xs text-[var(--text-secondary)]">
+            Pantry: {localStats.totalItems} items · {localStats.withExpiry} with expiry · {localStats.lowStock} low stock
+          </p>
         )}
 
         <div className="glass-strong mb-6 rounded-2xl p-6">
@@ -127,6 +156,12 @@ export default function Pantry() {
                 {type || t("allCuisines")}
               </Chip>
             ))}
+          </div>
+
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Smart filters</h3>
+          <div className="mb-5 flex flex-wrap gap-2">
+            <Chip active={pantryOnly} onClick={() => setPantryOnly((v) => !v)}>Pantry only</Chip>
+            <Chip active={budgetMode} onClick={() => setBudgetMode((v) => !v)}>Budget meals</Chip>
           </div>
 
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -210,8 +245,20 @@ export default function Pantry() {
 
         {searched && (
           <div>
+            {analytics && (
+              <div className="mb-6 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-[var(--text-secondary)]">
+                <span className="font-medium text-[var(--text-primary)]">Pantry analytics: </span>
+                {analytics.possibleRecipes} recipes possible · avg {analytics.avgMatchPercent}% match
+                {analytics.topMissing?.length > 0 && (
+                  <span> · Top missing: {analytics.topMissing.map((m) => m.ingredient).join(", ")}</span>
+                )}
+              </div>
+            )}
+
             <h2 className="font-display text-xl text-[var(--text-primary)]">
               {suggestions.length} matching recipes
+              {pantryOnly && " (pantry only)"}
+              {budgetMode && " (budget)"}
             </h2>
             <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {suggestions.map((recipe) => (
@@ -220,6 +267,12 @@ export default function Pantry() {
                   {recipe.matchPercent != null && (
                     <p className="mt-1 text-center text-xs text-[var(--accent-soft)]">
                       {recipe.matchPercent}% pantry match
+                      {recipe.usesExpiring && " · uses expiring item"}
+                    </p>
+                  )}
+                  {recipe.substitutions?.length > 0 && (
+                    <p className="mt-1 text-center text-[10px] text-[var(--text-secondary)]">
+                      Swap: {recipe.substitutions.map((s) => `${s.missing}→${s.substitute}`).join(", ")}
                     </p>
                   )}
                 </div>
@@ -227,8 +280,33 @@ export default function Pantry() {
             </div>
             {suggestions.length === 0 && (
               <p className="mt-6 text-center text-[var(--text-secondary)]">
-                No matches — <Link to="/today" className="text-[var(--accent-soft)]">try Aaj Kya Banaye</Link>
+                No matches — {pantryOnly ? "try turning off Pantry only" : <><Link to="/today" className="text-[var(--accent-soft)]">try Aaj Kya Banaye</Link></>}
               </p>
+            )}
+
+            {grocery.length > 0 && (
+              <div className="mt-10 rounded-2xl border border-white/8 bg-white/[0.03] p-5">
+                <h3 className="font-display text-lg text-[var(--text-primary)]">Smart grocery picks</h3>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">Buy these to unlock more recipes from your pantry</p>
+                <ul className="mt-4 space-y-2">
+                  {grocery.map((g) => (
+                    <li key={g.ingredient} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="text-[var(--text-primary)] capitalize">{g.ingredient}</span>
+                      <span className="text-xs text-[var(--text-secondary)]">
+                        unlocks {g.recipesUnlocked} recipe{g.recipesUnlocked > 1 ? "s" : ""}
+                        {g.substitute && ` · or use ${g.substitute}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { openInstamartSearch(g.ingredient); track("instamart_open", { item: g.ingredient }); }}
+                        className="text-xs text-[var(--accent-soft)]"
+                      >
+                        Buy →
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         )}

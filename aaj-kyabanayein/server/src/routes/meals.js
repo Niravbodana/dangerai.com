@@ -19,6 +19,8 @@ import {
 } from "../services/mealPlanner.js";
 import {
   COMMON_PANTRY_ITEMS,
+  getGroceryRecommendations,
+  getPantryAnalytics,
   suggestFromPantry,
 } from "../services/pantryService.js";
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
@@ -187,9 +189,23 @@ router.get("/pantry/items", (_req, res) => {
 });
 
 router.post("/pantry/suggest", (req, res) => {
-  const { ingredients, diet, mealType, category, limit } = req.body;
-  const result = suggestFromPantry({ ingredients, diet, mealType, category, limit });
+  const { ingredients, diet, mealType, category, limit, pantryOnly, budget, expiringKeys, includeAnalytics, includeGrocery } = req.body;
+  const result = suggestFromPantry({ ingredients, diet, mealType, category, limit, pantryOnly, budget, expiringKeys, includeAnalytics, includeGrocery });
   res.json({ success: true, ...result });
+});
+
+router.post("/pantry/analytics", (req, res) => {
+  const { ingredients, diet, mealType } = req.body;
+  const { suggestions } = suggestFromPantry({ ingredients, diet, mealType, limit: 30 });
+  const analytics = getPantryAnalytics({ ingredients, suggestions });
+  res.json({ success: true, analytics });
+});
+
+router.post("/pantry/grocery", (req, res) => {
+  const { ingredients, diet, mealType, limit } = req.body;
+  const { suggestions } = suggestFromPantry({ ingredients, diet, mealType, limit: 20 });
+  const grocery = getGroceryRecommendations({ ingredients, suggestions, limit: limit || 8 });
+  res.json({ success: true, grocery });
 });
 
 router.get("/plan/healthy/daily", optionalAuth, (req, res) => {
