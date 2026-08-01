@@ -98,10 +98,7 @@ export default function RecipeDetail() {
     fetchTrendingRecipes(12).then((trendingData) => {
       const trending = trendingData.recipes || [];
       setIsTrending(trending.some((tr) => tr.id === id));
-      setSimilar((prev) => {
-        const cuisine = prev?.cuisine;
-        return trending.filter((tr) => tr.id !== id).slice(0, 4);
-      });
+      setSimilar(trending.filter((tr) => tr.id !== id).slice(0, 4));
     }).catch(() => {});
 
     // Enrich ingredients + photo in background (Groq pipeline, budgeted)

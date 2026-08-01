@@ -1,4 +1,4 @@
-import { apiFetch, parseJsonResponse, ApiError } from './lib/apiFetch.js';
+import { apiFetch, parseJsonResponse } from './lib/apiFetch.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -63,14 +63,6 @@ export async function savePreferences(preferences) {
   return handleResponse(res);
 }
 
-export const updatePreferences = savePreferences;
-
-export async function fetchPricing() {
-  const res = await apiFetch(`${API_BASE}/pricing`);
-  if (!res.ok) throw new Error('Pricing fetch failed');
-  return res.json();
-}
-
 export async function fetchMealPlan(preferences) {
   const res = await apiFetch(`${API_BASE}/plan`, {
     method: 'POST',
@@ -80,8 +72,6 @@ export async function fetchMealPlan(preferences) {
   if (!res.ok) throw new Error('Meal plan fetch failed');
   return res.json();
 }
-
-export const createPlan = fetchMealPlan;
 
 export async function fetchHealthyPlan(diet = 'veg', options = {}) {
   const res = await apiFetch(`${API_BASE}/plan/healthy`, {
@@ -98,8 +88,6 @@ export async function fetchDailyHealthyPlan(diet = 'veg') {
   if (!res.ok) throw new Error('Daily healthy plan fetch failed');
   return res.json();
 }
-
-export const createHealthyPlan = fetchHealthyPlan;
 
 export async function fetchRecipe(id) {
   const res = await apiFetch(`${API_BASE}/recipes/${id}`);
@@ -252,7 +240,7 @@ export async function suggestFromPantry(body) {
 }
 
 export async function fetchPantryAnalytics(body) {
-  const res = await fetch(`${API_BASE}/pantry/analytics`, {
+  const res = await apiFetch(`${API_BASE}/pantry/analytics`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -262,7 +250,7 @@ export async function fetchPantryAnalytics(body) {
 }
 
 export async function fetchGroceryRecommendations(body) {
-  const res = await fetch(`${API_BASE}/pantry/grocery`, {
+  const res = await apiFetch(`${API_BASE}/pantry/grocery`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -270,8 +258,6 @@ export async function fetchGroceryRecommendations(body) {
   if (!res.ok) throw new Error('Grocery recommendations failed');
   return res.json();
 }
-
-export const pantrySuggest = suggestFromPantry;
 
 export async function fetchDailyBrief(profile) {
   const res = await apiFetch(`${API_BASE}/plan/daily-brief`, {

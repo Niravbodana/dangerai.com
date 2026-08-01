@@ -9,7 +9,7 @@ import MoodTonight from "../components/MoodTonight";
 import QuickMeals from "../components/QuickMeals";
 import { getStreak } from "../lib/streak";
 import { getHomeRecommendations } from "../lib/growth";
-import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry, IconStar } from "../components/Icons";
+import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry } from "../components/Icons";
 
 const GALLERY = [
   { name: "Ghar ka Thali", img: "/home/gallery-thali.png", tag: "Comfort food" },
@@ -27,16 +27,6 @@ const FEATURES = [
   { to: "/collections", icon: IconCalendar, title: "Collections", desc: "Sunday lunch, sweets, budget meals." },
   { to: "/favorites", icon: IconHeart, title: "Favourites", desc: "Pasand save karo, streak banao." },
 ];
-
-function Stars({ n }) {
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <IconStar key={s} filled={s <= n} className={`h-3.5 w-3.5 ${s <= n ? "text-[var(--accent-soft)]" : "text-white/20"}`} />
-      ))}
-    </div>
-  );
-}
 
 export default function Home() {
   const { openLogin, openSignup } = useAuthModal();

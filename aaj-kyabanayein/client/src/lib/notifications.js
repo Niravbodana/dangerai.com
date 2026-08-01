@@ -358,10 +358,6 @@ export function scheduleDemoReminder(title = "Aaj Kya Banaye?", body = "Breakfas
 }
 
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function weekKey() {
   const d = new Date();
   return `${d.getFullYear()}-W${Math.ceil((d.getDate() + 6 - d.getDay()) / 7)}`;
