@@ -60,14 +60,6 @@ export async function savePreferences(preferences) {
   return handleResponse(res);
 }
 
-export const updatePreferences = savePreferences;
-
-export async function fetchPricing() {
-  const res = await fetch(`${API_BASE}/pricing`);
-  if (!res.ok) throw new Error('Pricing fetch failed');
-  return res.json();
-}
-
 export async function fetchMealPlan(preferences) {
   const res = await fetch(`${API_BASE}/plan`, {
     method: 'POST',
@@ -77,8 +69,6 @@ export async function fetchMealPlan(preferences) {
   if (!res.ok) throw new Error('Meal plan fetch failed');
   return res.json();
 }
-
-export const createPlan = fetchMealPlan;
 
 export async function fetchHealthyPlan(diet = 'veg') {
   const res = await fetch(`${API_BASE}/plan/healthy`, {
@@ -96,8 +86,6 @@ export async function fetchDailyHealthyPlan(diet = 'veg') {
   return res.json();
 }
 
-export const createHealthyPlan = fetchHealthyPlan;
-
 export async function fetchRecipe(id) {
   const res = await fetch(`${API_BASE}/recipes/${id}`);
   if (!res.ok) throw new Error('Recipe not found');
@@ -108,12 +96,6 @@ export async function fetchRecipe(id) {
 export async function fetchRecipeLoad(id) {
   const res = await fetch(`${API_BASE}/recipes/${id}/load`);
   if (!res.ok) throw new Error('Recipe load failed');
-  return res.json();
-}
-
-export async function enrichRecipe(id) {
-  const res = await fetch(`${API_BASE}/recipes/${id}/enrich`, { method: 'POST' });
-  if (!res.ok) throw new Error('Enrichment failed');
   return res.json();
 }
 
@@ -247,8 +229,6 @@ export async function suggestFromPantry(body) {
   if (!res.ok) throw new Error('Pantry suggest failed');
   return res.json();
 }
-
-export const pantrySuggest = suggestFromPantry;
 
 export async function fetchDailyBrief(profile) {
   const res = await fetch(`${API_BASE}/plan/daily-brief`, {

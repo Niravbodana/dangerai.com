@@ -45,7 +45,6 @@ export async function toggleFavorite(recipeId) {
 }
 
 export const isFavorite = isLocalFavorite;
-export const toggleLocalFavorite = toggleFavorite;
 
 export function shareOnWhatsApp(recipe) {
   const text = `${recipe.name}\n\nRasoira — home cooked food, step by step recipe\n${window.location.origin}/recipe/${recipe.id}`;

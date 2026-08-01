@@ -6,15 +6,7 @@ import RecipeCard from "../components/RecipeCard";
 import RecipeSearch from "../components/RecipeSearch";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
-
-function useDebounce(value, delay = 400) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
+import useDebounce from "../hooks/useDebounce";
 
 export default function Recipes() {
   const { t } = useLanguage();
@@ -29,7 +21,7 @@ export default function Recipes() {
   const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || "all");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const debouncedSearch = useDebounce(search);
+  const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);

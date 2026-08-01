@@ -6,15 +6,7 @@ import RecipeImage from "./RecipeImage";
 import { IconArrowRight, IconSearch } from "./Icons";
 import { addRecentSearch, getRecentSearches } from "../lib/recentSearches";
 import { track } from "../lib/analytics";
-
-function useDebounce(value, delay = 220) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
+import useDebounce from "../hooks/useDebounce";
 
 export default function RecipeSearch({ className = "", large = false }) {
   const navigate = useNavigate();
@@ -25,7 +17,7 @@ export default function RecipeSearch({ className = "", large = false }) {
   const [loading, setLoading] = useState(false);
   const [suggestType, setSuggestType] = useState("popular");
   const [recent, setRecent] = useState(getRecentSearches);
-  const debounced = useDebounce(query);
+  const debounced = useDebounce(query, 220);
   const wrapRef = useRef(null);
 
   useEffect(() => {
