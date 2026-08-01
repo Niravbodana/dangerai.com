@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchDailyBrief } from "../api";
-import { getTasteProfile } from "../lib/tasteProfile";
+import { buildDailyBriefProfile } from "../lib/buildDailyBriefProfile";
 import { canUseDailyBrief, markDailyBriefUsed } from "../lib/subscription";
 import { track } from "../lib/analytics";
 import { getStreak } from "../lib/streak";
@@ -34,7 +34,7 @@ export default function Today() {
     }
     setLoading(true);
     setError(false);
-    const profile = getTasteProfile();
+    const profile = buildDailyBriefProfile();
     fetchDailyBrief(profile)
       .then((data) => {
         setBrief(data.brief);

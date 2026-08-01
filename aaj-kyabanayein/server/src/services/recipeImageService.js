@@ -19,6 +19,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
+import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
+
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com)";
 const IMAGE_FETCH_TIMEOUT_MS = 7000;
 const DOWNLOAD_TIMEOUT_MS = 6000;
@@ -279,10 +281,20 @@ export async function cacheImageFromUrl(recipeId, imageUrl, source = "external")
   return dest;
 }
 
-/** Prefer external thumb for list cards when not cached yet */
+/** Prefer CDN, then external thumb, then API route */
 export function getRecipeThumbHint(recipe) {
   if (!recipe) return null;
-  if (hasCachedImage(recipe.id)) return imageUrlForRecipe(recipe.id);
-  if (recipe.thumbUrl) return recipe.thumbUrl;
-  return imageUrlForRecipe(recipe.id);
+  return resolveRecipeImageUrl(recipe);
+}
+
+export function warmTrendingRecipeImages(getTrendingFn, limit = 16) {
+  try {
+    const trending = getTrendingFn(limit);
+    for (const entry of trending) {
+      const recipe = entry.id ? entry : { id: entry };
+      warmRecipeImage(recipe);
+    }
+  } catch {
+    /* ignore warm failures */
+  }
 }

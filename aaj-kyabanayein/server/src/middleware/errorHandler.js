@@ -1,3 +1,5 @@
+import { captureException } from "../lib/sentry.js";
+
 const isProd = process.env.NODE_ENV === "production";
 
 export function notFoundHandler(_req, res) {
@@ -10,6 +12,7 @@ export function errorHandler(err, req, res, _next) {
     console.error("[error]", err);
   } else if (status >= 500) {
     console.error("[error]", err.message || err);
+    captureException(err, { extra: { path: req.path, method: req.method } });
   }
   res.status(status).json({
     success: false,

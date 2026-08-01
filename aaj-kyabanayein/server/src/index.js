@@ -11,6 +11,11 @@ import socialRouter from "./routes/social.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
+import { initSentry, captureException } from "./lib/sentry.js";
+import { getTrendingRecipes } from "./services/trendingService.js";
+import { warmTrendingRecipeImages } from "./services/recipeImageService.js";
+
+initSentry();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -101,4 +106,5 @@ app.listen(PORT, HOST, () => {
   if (isProd && !process.env.JWT_SECRET) {
     logger.warn("JWT_SECRET is not set — set it before production deploy");
   }
+  warmTrendingRecipeImages(getTrendingRecipes, 20);
 });

@@ -26,7 +26,7 @@ import {
   suggestFromPantry,
 } from "../services/pantryService.js";
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
-import { getEnrichedRecipe, getEnrichmentStatus } from "../services/recipeEnrichmentService.js";
+import { getEnrichedRecipe, getEnrichmentStatus, getCachedRecipeOverlay, enrichRecipeInBackground } from "../services/recipeEnrichmentService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
 import { attachRating } from "../services/ratingsStore.js";
@@ -183,7 +183,9 @@ router.post("/recipes/:id/enrich", async (req, res) => {
 router.get("/recipes/:id", (req, res) => {
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
-  const full = enrichRecipeWithFlow(recipe);
+  const merged = getCachedRecipeOverlay(recipe);
+  const full = enrichRecipeWithFlow(merged);
+  enrichRecipeInBackground(recipe);
   res.json({ success: true, recipe: full });
 });
 
