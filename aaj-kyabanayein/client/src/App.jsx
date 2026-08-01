@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { AuthModalProvider, useAuthModal } from './context/AuthModalContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import Footer from './components/Footer';
@@ -102,13 +103,15 @@ export default function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
   const tree = (
-    <LanguageProvider>
-      <AuthProvider>
-        <AuthModalProvider>
-          <AppContent />
-        </AuthModalProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AuthModalProvider>
+            <AppContent />
+          </AuthModalProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 
   if (googleClientId) {

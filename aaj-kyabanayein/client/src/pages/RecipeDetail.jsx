@@ -6,8 +6,8 @@ import { getGuestId, isFavorite, shareOnWhatsApp, toggleFavorite } from "../lib/
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
 import { shouldShowFavoriteSignup } from "../lib/accountWall";
-import LoadingSpinner from "../components/LoadingSpinner";
 import RecipeCard from "../components/RecipeCard";
+import RecipeVideoEmbed from "../components/RecipeVideoEmbed";
 import RecipeImage from "../components/RecipeImage";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import ReviewForm from "../components/ReviewForm";
@@ -18,6 +18,8 @@ import usePageSeo from "../hooks/usePageSeo";
 import { breadcrumbSchema, recipeSchema } from "../lib/seo";
 import { getRecipeNutrition } from "../lib/nutrition";
 import NutritionSummary from "../components/NutritionSummary";
+import { copyIngredients, printRecipe } from "../lib/recipeShare";
+import { getRecipeVideoId } from "../lib/recipeVideo";
 
 function StarRating({ value, onRate, interactive = false }) {
   return (
@@ -73,6 +75,7 @@ export default function RecipeDetail() {
   const [imageVersion, setImageVersion] = useState(0);
   const [loadingMedia, setLoadingMedia] = useState(true);
   const [offlineSaved, setOfflineSaved] = useState(false);
+  const [copiedIngredients, setCopiedIngredients] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -201,10 +204,32 @@ export default function RecipeDetail() {
     }
   };
 
+  const handleCopyIngredients = async () => {
+    try {
+      await copyIngredients(recipe, lang);
+      setCopiedIngredients(true);
+      setTimeout(() => setCopiedIngredients(false), 2500);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
+
+  const handlePrint = () => {
+    printRecipe(recipe, lang);
+  };
+
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <LoadingSpinner />
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="skeleton-shimmer mb-6 h-72 rounded-2xl" />
+        <div className="recipe-card space-y-4 p-8">
+          <div className="skeleton-shimmer h-8 w-2/3 rounded" />
+          <div className="skeleton-shimmer h-4 w-1/3 rounded" />
+          <div className="flex gap-2">
+            <div className="skeleton-shimmer h-8 w-20 rounded-full" />
+            <div className="skeleton-shimmer h-8 w-20 rounded-full" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -325,12 +350,32 @@ export default function RecipeDetail() {
 
           {/* Ingredients — notes style */}
           <div className="recipe-card mt-4 p-6 sm:p-8">
-            <h2 className="detail-section-title">{t("ingredients")}</h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              {lang === "hi"
-                ? `इन ${recipe.ingredients.length} चीज़ों को तैयार रखें — एक-एक करके नोट्स की तरह`
-                : `Gather these ${recipe.ingredients.length} items — step by step like notes`}
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="detail-section-title">{t("ingredients")}</h2>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                  {lang === "hi"
+                    ? `इन ${recipe.ingredients.length} चीज़ों को तैयार रखें — एक-एक करके नोट्स की तरह`
+                    : `Gather these ${recipe.ingredients.length} items — step by step like notes`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 no-print">
+                <button
+                  type="button"
+                  onClick={handleCopyIngredients}
+                  className="premium-btn-outline tap-smooth px-3 py-2 text-xs"
+                >
+                  {copiedIngredients ? "Copied!" : "Copy list"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="premium-btn-outline tap-smooth px-3 py-2 text-xs"
+                >
+                  Print
+                </button>
+              </div>
+            </div>
             <ol className="mt-5 space-y-3">
               {recipe.ingredients.map((ing, i) => (
                 <li key={`${ing.name}-${i}`} className="ingredient-note">
@@ -345,6 +390,8 @@ export default function RecipeDetail() {
               ))}
             </ol>
           </div>
+
+          {getRecipeVideoId(recipe) && <RecipeVideoEmbed recipe={recipe} title={displayName} />}
 
           {/* Steps */}
           {steps?.length > 0 && (
@@ -425,7 +472,7 @@ export default function RecipeDetail() {
       </div>
 
       {/* Sticky bottom CTA */}
-      <div className="recipe-detail-cta safe-bottom">
+      <div className="recipe-detail-cta safe-bottom no-print">
         <div className="mx-auto flex max-w-3xl gap-3 px-4">
           <button
             type="button"

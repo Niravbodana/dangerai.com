@@ -3,6 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchRecipe } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
+import RecipeGridSkeleton from "../components/RecipeGridSkeleton";
+import EmptyState from "../components/EmptyState";
+import { QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
 import { getLocalFavorites } from "../lib/guest";
 import {
   addRecipeToCollection,
@@ -192,21 +195,27 @@ export default function Favorites() {
         )}
 
         {loading ? (
-          <div className="mt-12 flex justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent-soft)]" />
-          </div>
+          <RecipeGridSkeleton count={6} className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" />
         ) : visibleRecipes.length === 0 ? (
-          <div className="recipe-card mt-8 p-12 text-center">
-            <p className="text-[var(--text-secondary)]">
-              {activeCollectionId && !activeCollection
-                ? "Folder not found."
-                : activeCollection
-                  ? "No recipes in this folder yet."
-                  : t("noFavorites")}
-            </p>
-            <Link to="/recipes" className="mt-4 inline-block text-sm font-medium text-[var(--accent)] hover:underline">
-              {t("browseRecipes")}
-            </Link>
+          <div className="mt-8">
+            <EmptyState
+              icon="❤️"
+              title={activeCollection ? "Folder empty" : t("noFavorites")}
+              message={
+                activeCollectionId && !activeCollection
+                  ? "Folder not found."
+                  : activeCollection
+                    ? "Add recipes from the heart icon on any recipe card."
+                    : "Save recipes you love — try these popular picks:"
+              }
+              suggestions={!activeCollection ? QUICK_SEARCH_SUGGESTIONS.slice(0, 5) : []}
+              onSuggestionClick={(term) => window.location.assign(`/recipes?search=${encodeURIComponent(term)}`)}
+              action={
+                <Link to="/recipes" className="premium-btn inline-block px-6 py-2.5 text-sm">
+                  {t("browseRecipes")}
+                </Link>
+              }
+            />
           </div>
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

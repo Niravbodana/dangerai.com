@@ -236,6 +236,29 @@ export default function CookingMode() {
     navigate(`/recipe/${id}/review?from=cook`);
   };
 
+  useEffect(() => {
+    if (!started) return undefined;
+    const onKeyDown = (e) => {
+      if (e.target.matches("input, textarea, select, button")) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (isDone) finishCook();
+        else goNext();
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        goPrevious();
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        if (isDone) finishCook();
+        else goNext();
+      } else if (e.key === "r" || e.key === "R") {
+        repeatStep();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [started, isDone, goNext, goPrevious, repeatStep, id, navigate, openSignup, user]);
+
   if (loadError) {
     return (
       <EmptyState
@@ -352,6 +375,9 @@ export default function CookingMode() {
           <span className="text-sm font-medium">{Math.min(stepIndex + 1, steps.length)} / {steps.length}</span>
           {handsFree && <span className="text-[10px] text-[var(--accent-soft)]">🎤 Listening</span>}
         </div>
+        <p className="mx-auto mt-1 max-w-2xl text-center text-[10px] text-[var(--text-secondary)]">
+          Space = next · ← → navigate · R = repeat
+        </p>
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((Math.min(stepIndex + 1, steps.length)) / steps.length) * 100}%` }} />
         </div>

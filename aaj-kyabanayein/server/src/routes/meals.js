@@ -40,6 +40,7 @@ import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
+import { attachRecipeVideo } from "../data/recipeVideos.js";
 import path from "path";
 
 const router = Router();
@@ -98,7 +99,11 @@ router.get("/recipes/:id/load", async (req, res) => {
   try {
     const result = await loadRecipeOnSelect(req.params.id);
     if (!result) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
-    res.json({ success: true, ...result });
+    res.json({
+      success: true,
+      ...result,
+      recipe: attachRecipeVideo(result.recipe),
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -184,7 +189,7 @@ router.get("/recipes/:id", (req, res) => {
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   const merged = getCachedRecipeOverlay(recipe);
-  const full = enrichRecipeWithFlow(merged);
+  const full = attachRecipeVideo(enrichRecipeWithFlow(merged));
   enrichRecipeInBackground(recipe);
   res.json({ success: true, recipe: full });
 });

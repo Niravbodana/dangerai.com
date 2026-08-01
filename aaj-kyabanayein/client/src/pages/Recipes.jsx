@@ -3,10 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import { fetchCategories, fetchRecipeSuggestions, fetchRecipes, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
+import RecipeGridSkeleton from "../components/RecipeGridSkeleton";
 import RecipeSearch from "../components/RecipeSearch";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
-import { getEmptySearchMessage, getSearchTips } from "../lib/searchUtils";
+import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
 import useDebounce from "../hooks/useDebounce";
 
 export default function Recipes() {
@@ -210,14 +211,23 @@ export default function Recipes() {
         )}
 
         {loading ? (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/10" />
-            ))}
-          </div>
+          <RecipeGridSkeleton count={6} />
         ) : recipes.length === 0 ? (
           <div className="recipe-card mt-12 p-8 text-center sm:p-12">
-            <p className="text-[var(--text-primary)]">{getEmptySearchMessage(debouncedSearch)}</p>
+            <p className="text-lg text-[var(--text-primary)]">{getEmptySearchMessage(debouncedSearch)}</p>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">Koi recipe nahi mili? Inme se try karo:</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {QUICK_SEARCH_SUGGESTIONS.map((term) => (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => applyTrendingSearch(term)}
+                  className="rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-2 text-sm font-medium capitalize text-[var(--accent-soft)] hover:bg-[var(--accent)]/20"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
             <ul className="mx-auto mt-4 max-w-md space-y-1 text-left text-sm text-[var(--text-secondary)]">
               {getSearchTips().map((tip) => (
                 <li key={tip}>• {tip}</li>

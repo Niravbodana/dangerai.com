@@ -13,3 +13,5 @@ export function getSearchTips() {
     "Try trending picks or clear filters below",
   ];
 }
+
+export const QUICK_SEARCH_SUGGESTIONS = ["dal", "poha", "biryani", "paneer", "dosa", "chai"];
