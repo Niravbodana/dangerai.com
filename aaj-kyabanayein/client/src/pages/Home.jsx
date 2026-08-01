@@ -5,7 +5,8 @@ import RecipeSearch from "../components/RecipeSearch";
 import HotMakings from "../components/HotMakings";
 import CuisineExplorer from "../components/CuisineExplorer";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
-import VideoShorts from "../components/VideoShorts";
+import MoodTonight from "../components/MoodTonight";
+import QuickMeals from "../components/QuickMeals";
 import { getStreak } from "../lib/streak";
 import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry, IconStar } from "../components/Icons";
 
@@ -81,7 +82,7 @@ export default function Home() {
               className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-auto rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
             />
             <div className="home-float-card home-float-card--stats !left-2 !bottom-4 sm:!left-0">
-              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">840+</p>
+              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">900+</p>
               <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Recipes</p>
             </div>
           </div>
@@ -108,24 +109,8 @@ export default function Home() {
         </div>
       </section>
 
-      <VideoShorts />
-
-      <section className="border-t border-white/[0.06] py-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-2 px-4">
-          {[
-            { to: "/today", label: "🌅 Aaj Kya Banaye" },
-            { to: "/pantry", label: "🧺 Pantry" },
-            { to: "/collections", label: "📚 Collections" },
-            { to: "/taste", label: "🌶️ Taste" },
-            { to: "/pricing", label: "⭐ Plus" },
-          ].map((l) => (
-            <Link key={l.to} to={l.to} className="rounded-full border border-white/12 px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent-soft)]">
-              {l.label}
-            </Link>
-          ))}
-        </div>
-      </section>
-
+      <MoodTonight />
+      <QuickMeals />
       <HotMakings />
 
       <section className="home-section border-t border-white/[0.06]">

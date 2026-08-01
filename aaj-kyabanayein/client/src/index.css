@@ -1132,28 +1132,108 @@ body {
   pointer-events: none;
 }
 
-/* ── Video shorts (15s) ── */
-.short-card {
-  width: 9.5rem;
+/* ── Mood tonight ── */
+.mood-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
 }
 
 @media (min-width: 640px) {
-  .short-card {
-    width: 11.5rem;
+  .mood-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.short-card__media {
-  aspect-ratio: 9 / 16;
-  height: 16.5rem;
+@media (min-width: 1024px) {
+  .mood-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.mood-tile {
+  display: flex;
+  flex-direction: column;
+  min-height: 9.5rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.25rem 1.35rem;
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(212, 168, 75, 0.14), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.mood-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 168, 75, 0.35);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.mood-tile--amber {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(232, 168, 72, 0.18), transparent 50%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.mood-tile--rose {
+  background:
+    radial-gradient(120% 90% at 0% 100%, rgba(196, 110, 98, 0.2), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.mood-tile--teal {
+  background:
+    radial-gradient(120% 90% at 100% 100%, rgba(78, 160, 148, 0.2), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.mood-tile--sage {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(109, 184, 138, 0.18), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.mood-tile--gold {
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(212, 168, 75, 0.22), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.mood-tile--clay {
+  background:
+    radial-gradient(120% 90% at 100% 50%, rgba(176, 122, 90, 0.18), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+/* ── Quick meals strip ── */
+.quick-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.quick-track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  padding: 0 1rem;
+}
+
+@media (min-width: 1152px) {
+  .quick-track {
+    padding-left: max(1rem, calc((100vw - 72rem) / 2 + 1rem));
+    padding-right: max(1rem, calc((100vw - 72rem) / 2 + 1rem));
+  }
+}
+
+.quick-card {
+  width: 10.5rem;
+  flex-shrink: 0;
 }
 
 @media (min-width: 640px) {
-  .short-card__media {
-    height: 20rem;
+  .quick-card {
+    width: 12rem;
   }
-}
-
-.short-card video {
-  background: #0a0806;
 }

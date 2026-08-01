@@ -79,7 +79,7 @@ export function generateDailyBrief(profile = {}) {
 }
 
 export function matchCollectionRecipes(collection, limit = 24) {
-  let pool = filterRecipeIndex({}).slice(0, 800);
+  let pool = filterRecipeIndex({});
 
   if (collection.cuisines?.length) {
     pool = pool.filter((r) => collection.cuisines.includes(r.cuisine));
@@ -92,6 +92,9 @@ export function matchCollectionRecipes(collection, limit = 24) {
   }
   if (collection.maxCookTime) {
     pool = pool.filter((r) => (r.cookTime || 99) <= collection.maxCookTime);
+  }
+  if (collection.spice?.length) {
+    pool = pool.filter((r) => collection.spice.includes(r.spice || "medium"));
   }
   if (collection.tags?.length) {
     const tagged = pool.filter((r) =>

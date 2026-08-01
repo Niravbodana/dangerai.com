@@ -11,6 +11,7 @@ import { MORE_RECIPES } from "../data/moreRecipes.js";
 import { INDIAN_BOOK_RECIPES } from "../data/recipeBookIndian.js";
 import { MORE_INDIAN_RECIPES } from "../data/recipeBookMoreIndian.js";
 import { EVEN_MORE_INDIAN_RECIPES } from "../data/recipeBookExtra.js";
+import { POPULAR_INDIAN_RECIPES } from "../data/recipeBookPopular.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "../data/curated");
@@ -278,7 +279,11 @@ async function fetchDummyJsonRecipes() {
 
 /** Extra TheMealDB coverage via category filters (Vegetarian, Vegan, Seafood, …) */
 async function fetchTheMealDbByCategories() {
-  const cats = ["Vegetarian", "Vegan", "Seafood", "Breakfast", "Dessert", "Chicken", "Pasta", "Side"];
+  const cats = [
+    "Vegetarian", "Vegan", "Seafood", "Breakfast", "Dessert",
+    "Chicken", "Pasta", "Side", "Starter", "Miscellaneous",
+    "Beef", "Lamb", "Pork", "Goat",
+  ];
   const meals = new Map();
 
   for (const cat of cats) {
@@ -310,6 +315,49 @@ async function fetchTheMealDbByCategories() {
       diet: guessDiet(ingredients, full.strMeal),
       cuisine,
       category: full.strCategory === "Dessert" ? "snack" : undefined,
+      ingredients,
+      steps: steps.length ? steps : undefined,
+      stepsHi: steps.length ? steps : undefined,
+      tags: [full.strCategory, full.strArea].filter(Boolean).map((t) => t.toLowerCase()),
+      source: "themealdb",
+      thumbUrl: full.strMealThumb || meal.strMealThumb || undefined,
+    }));
+  }
+  return list.filter(Boolean);
+}
+
+/** Extra area coverage (Chinese, Thai, Japanese, …) with photos */
+async function fetchTheMealDbByAreas() {
+  const areas = Object.keys(AREA_TO_CUISINE);
+  const meals = new Map();
+
+  for (const area of areas) {
+    const data = await fetchJson(`${THEMEALDB}/filter.php?a=${encodeURIComponent(area)}`);
+    for (const meal of data?.meals || []) {
+      if (meal?.idMeal) meals.set(meal.idMeal, meal);
+    }
+    await new Promise((r) => setTimeout(r, 90));
+  }
+
+  const list = [];
+  for (const meal of meals.values()) {
+    let full = meal;
+    if (!meal.strInstructions) {
+      const detail = await fetchJson(`${THEMEALDB}/lookup.php?i=${meal.idMeal}`);
+      full = detail?.meals?.[0] || meal;
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    const ingredients = mealToIngredients(full);
+    if (ingredients.length < 3) continue;
+    const steps = mealToSteps(full);
+    const cuisine = AREA_TO_CUISINE[full.strArea] || "continental";
+    list.push(finalizeRecipe({
+      id: `tmdb-${full.idMeal}`,
+      name: full.strMeal,
+      nameHi: full.strMeal,
+      mealType: guessMealType(full.strMeal, full.strCategory),
+      diet: guessDiet(ingredients, full.strMeal),
+      cuisine,
       ingredients,
       steps: steps.length ? steps : undefined,
       stepsHi: steps.length ? steps : undefined,
@@ -363,7 +411,14 @@ async function main() {
   console.log("Building curated recipe books...");
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const handCrafted = [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES, ...MORE_INDIAN_RECIPES, ...EVEN_MORE_INDIAN_RECIPES];
+  const handCrafted = [
+    ...BASE_RECIPES,
+    ...MORE_RECIPES,
+    ...INDIAN_BOOK_RECIPES,
+    ...MORE_INDIAN_RECIPES,
+    ...EVEN_MORE_INDIAN_RECIPES,
+    ...POPULAR_INDIAN_RECIPES,
+  ];
   console.log(`Hand-crafted: ${handCrafted.length}`);
 
   let external = [];
@@ -374,7 +429,10 @@ async function main() {
     console.log("Fetching TheMealDB categories...");
     const byCat = await fetchTheMealDbByCategories();
     console.log(`TheMealDB categories: ${byCat.length}`);
-    external = [...byLetter, ...byCat];
+    console.log("Fetching TheMealDB areas...");
+    const byArea = await fetchTheMealDbByAreas();
+    console.log(`TheMealDB areas: ${byArea.length}`);
+    external = [...byLetter, ...byCat, ...byArea];
   } catch (e) {
     console.warn("TheMealDB fetch failed:", e.message);
   }

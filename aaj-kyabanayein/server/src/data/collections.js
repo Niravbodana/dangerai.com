@@ -83,6 +83,37 @@ export const COLLECTIONS = [
     maxCookTime: 20,
     mealTypes: ["breakfast", "snack", "lunch"],
   },
+  {
+    id: "guests-coming",
+    name: "Guests Coming",
+    nameHi: "मेहमान आ रहे हैं",
+    description: "Impression dishes — biryani, tikka, rich gravies, sweets.",
+    descriptionHi: "बिरयानी, टिक्का, रिच ग्रेवी और मिठाई।",
+    emoji: "🏡",
+    tags: ["party", "festive", "special", "biryani", "tandoor", "kebab"],
+    mealTypes: ["dinner", "lunch", "snack"],
+  },
+  {
+    id: "kids-tiffin",
+    name: "Kids Tiffin",
+    nameHi: "बच्चों का टिफ़िन",
+    description: "Packable, mild, and quick school-box winners.",
+    descriptionHi: "हल्का, जल्दी पैक — स्कूल टिफ़िन के लिए।",
+    emoji: "🎒",
+    tags: ["quick", "mild", "breakfast", "kids", "tiffin"],
+    maxCookTime: 30,
+    spice: ["mild"],
+  },
+  {
+    id: "rainy-comfort",
+    name: "Rainy Comfort",
+    nameHi: "बारिश वाला आराम",
+    description: "Chaat, pakora vibes, chai sides, warm bowls.",
+    descriptionHi: "चाट, पकोड़े, चाय और गरम आराम।",
+    emoji: "🌧️",
+    tags: ["chaat", "street-food", "comfort", "snack", "rain"],
+    mealTypes: ["snack", "breakfast"],
+  },
 ];
 
 export function getCollectionById(id) {
