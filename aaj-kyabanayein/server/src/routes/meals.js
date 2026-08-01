@@ -34,6 +34,7 @@ import {
 import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
+import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
 import path from "path";
 
 const router = Router();
@@ -126,8 +127,19 @@ router.get("/recipes/suggest", (req, res) => {
     return res.json({ success: true, suggestions: popular, type: "popular" });
   }
 
-  const matches = filterRecipeIndex({ search: q }).slice(0, limit).map(toListItem).map(attachRating);
-  res.json({ success: true, suggestions: matches, type: "search" });
+  const { results } = semanticSearch(q, { limit });
+  const suggestions = results.map(attachRating);
+  res.json({ success: true, suggestions, type: "search" });
+});
+
+router.get("/ai/status", (_req, res) => {
+  res.json({ success: true, ...getAIServiceStatus() });
+});
+
+router.post("/ai/recommend", optionalAuth, (req, res) => {
+  const { context = {}, options = {} } = req.body || {};
+  const result = recommendRecipes(context, options);
+  res.json({ success: true, ...result });
 });
 
 router.get("/recipes/enrichment-status", (_req, res) => {

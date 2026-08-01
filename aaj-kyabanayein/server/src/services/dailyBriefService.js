@@ -2,7 +2,7 @@
  * Aaj Kya Banaye — personalised daily brief (BF / lunch / snack / dinner)
  */
 import { filterRecipeIndex, getRecipeById, toListItem } from "../data/recipes.js";
-import { scoreRecipeForTaste } from "./tasteScore.js";
+import { rankRecipes } from "./ai/personalizationPipeline.js";
 
 function daySeed() {
   const d = new Date().toISOString().slice(0, 10);
@@ -12,26 +12,30 @@ function daySeed() {
 }
 
 function pickScored(pool, profile, mealType, usedIds, count = 1) {
-  const scored = pool
+  const candidates = pool
     .filter((m) => !usedIds.has(m.id))
     .filter((m) => !mealType || m.mealType === mealType)
-    .map((m) => {
-      const recipe = getRecipeById(m.id);
-      if (!recipe) return null;
-      const taste = scoreRecipeForTaste(recipe, profile);
-      if (taste <= 0) return null;
-      const seedBoost = (daySeed() + m.id.charCodeAt(0)) % 17;
-      return { recipe, score: taste + seedBoost };
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.score - a.score);
+    .map((m) => getRecipeById(m.id))
+    .filter(Boolean);
 
-  const picks = scored.slice(0, count);
+  const ranked = rankRecipes(
+    candidates,
+    {
+      taste: profile,
+      pantry: profile.pantry,
+      family: profile.family,
+      history: profile.history,
+      time: { mealType, cookTimeMax: profile.cookTimeMax },
+    },
+    { daySeed: daySeed() }
+  );
+
+  const picks = ranked.slice(0, count);
   picks.forEach((p) => usedIds.add(p.recipe.id));
   return picks.map((p) => ({
     ...toListItem(p.recipe),
-    matchScore: p.score,
-    why: explainPick(p.recipe, profile),
+    matchScore: Math.round(p.score),
+    why: p.reasons.length ? p.reasons.join(" · ") : explainPick(p.recipe, profile),
   }));
 }
 

@@ -74,6 +74,11 @@ function scoreRecipe(recipe, userPantry) {
   return { matchCount, matchPercent, missing: missing.slice(0, 5) };
 }
 
+/** Exported for AI personalization pipeline */
+export function scoreRecipePantryMatch(recipe, ingredients = []) {
+  return scoreRecipe(recipe, expandPantry(ingredients));
+}
+
 export function suggestFromPantry({
   ingredients = [],
   diet = "veg",
