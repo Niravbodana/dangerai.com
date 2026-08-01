@@ -248,6 +248,26 @@ export async function suggestFromPantry(body) {
   return res.json();
 }
 
+export async function fetchPantryAnalytics(body) {
+  const res = await fetch(`${API_BASE}/pantry/analytics`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Pantry analytics failed');
+  return res.json();
+}
+
+export async function fetchGroceryRecommendations(body) {
+  const res = await fetch(`${API_BASE}/pantry/grocery`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Grocery recommendations failed');
+  return res.json();
+}
+
 export const pantrySuggest = suggestFromPantry;
 
 export async function fetchDailyBrief(profile) {
