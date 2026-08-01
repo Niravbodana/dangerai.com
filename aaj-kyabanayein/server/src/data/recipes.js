@@ -141,6 +141,7 @@ function toIndexEntry(recipe) {
     calories: recipe.calories,
     spice: recipe.spice,
     tags: recipe.tags,
+    thumbUrl: recipe.thumbUrl || undefined,
   };
 }
 
@@ -150,11 +151,30 @@ function loadCuratedData() {
     return;
   }
 
+  // Fast path: lightweight index for lists/search (includes thumbUrl)
+  recipeIndex = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
+
+  // Full recipes loaded without per-recipe enrichment at startup
   const recipes = JSON.parse(fs.readFileSync(RECIPES_FILE, "utf-8"));
-  const enriched = recipes.map(enrichRecipe);
-  recipeById = new Map(enriched.map((r) => [r.id, r]));
-  recipeIndex = enriched.map(toIndexEntry);
+  recipeById = new Map(recipes.map((r) => [r.id, r]));
+  const enrichedCache = new Map();
+
+  // Patch getRecipeById to enrich lazily on first access
+  getRecipeByIdImpl = (id) => {
+    if (customRecipes.has(id)) return customRecipes.get(id);
+    const raw = recipeById.get(id);
+    if (!raw) return null;
+    if (!enrichedCache.has(id)) {
+      enrichedCache.set(id, enrichRecipe(raw));
+    }
+    return enrichedCache.get(id);
+  };
 }
+
+let getRecipeByIdImpl = (id) => {
+  if (customRecipes.has(id)) return customRecipes.get(id);
+  return recipeById.get(id) || null;
+};
 
 console.time("recipes-load");
 loadCuratedData();
@@ -167,13 +187,12 @@ export const RECIPE_INDEX = recipeIndex;
 export const RECIPES = [...recipeById.values(), ...customRecipes.values()];
 
 export function getRecipeById(id) {
-  if (customRecipes.has(id)) return customRecipes.get(id);
-  return recipeById.get(id) || null;
+  return getRecipeByIdImpl(id);
 }
 
 export function filterRecipeIndex(filters = {}) {
   let list = RECIPE_INDEX;
-  const { cuisine, category, mealType, diet, search } = filters;
+  const { cuisine, category, mealType, diet, search, maxCookTime } = filters;
 
   if (cuisine && cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
   if (category && category !== "all") {
@@ -182,6 +201,10 @@ export function filterRecipeIndex(filters = {}) {
   if (mealType) list = list.filter((r) => r.mealType === mealType);
   if (diet === "veg") list = list.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
   if (diet === "non-veg") list = list.filter((r) => r.diet?.includes("non-veg"));
+  if (maxCookTime) {
+    const max = parseInt(maxCookTime, 10);
+    if (!Number.isNaN(max)) list = list.filter((r) => (r.cookTime || 99) <= max);
+  }
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(

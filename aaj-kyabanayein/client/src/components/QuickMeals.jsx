@@ -9,15 +9,13 @@ export default function QuickMeals() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRecipes({ limit: 48, page: 1 })
-      .then((data) => {
-        const quick = (data.recipes || [])
-          .filter((r) => (r.cookTime || 99) <= 20)
-          .slice(0, 12);
-        setRecipes(quick.length ? quick : (data.recipes || []).slice(0, 8));
-      })
-      .catch(() => setRecipes([]))
-      .finally(() => setLoading(false));
+    const timer = window.setTimeout(() => {
+      fetchRecipes({ limit: 8, maxCookTime: 20 })
+        .then((data) => setRecipes((data.recipes || []).slice(0, 8)))
+        .catch(() => setRecipes([]))
+        .finally(() => setLoading(false));
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (loading) {

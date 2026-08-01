@@ -153,8 +153,8 @@ router.get("/recipes/:id", (req, res) => {
 });
 
 router.get("/recipes", (req, res) => {
-  const { category, mealType, diet, cuisine, search, page = 1, limit = 24 } = req.query;
-  const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search });
+  const { category, mealType, diet, cuisine, search, maxCookTime, page = 1, limit = 24 } = req.query;
+  const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search, maxCookTime });
 
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.min(50, Math.max(1, parseInt(limit)));

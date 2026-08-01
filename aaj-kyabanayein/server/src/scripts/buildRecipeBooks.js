@@ -408,6 +408,16 @@ function toIndexEntry(recipe) {
 }
 
 async function main() {
+  const force = process.argv.includes("--force") || process.env.FORCE_RECIPE_BUILD === "1";
+  const hasCurated = fs.existsSync(RECIPES_FILE) && fs.existsSync(INDEX_FILE);
+
+  if (hasCurated && !force) {
+    const existing = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
+    console.log(`Curated recipes already present (${existing.length}). Skipping network fetch.`);
+    console.log("To rebuild from APIs: npm run build-recipe-books -- --force");
+    return;
+  }
+
   console.log("Building curated recipe books...");
   fs.mkdirSync(OUT_DIR, { recursive: true });
 

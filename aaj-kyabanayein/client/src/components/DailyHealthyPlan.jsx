@@ -5,7 +5,7 @@ import { useLanguage } from "../context/LanguageContext";
 import RecipeImage from "./RecipeImage";
 import { IconArrowRight, IconClock } from "./Icons";
 
-export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDietChange }) {
+export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDietChange, deferMs = 0 }) {
   const { lang, t } = useLanguage();
   const [dietLocal, setDietLocal] = useState("veg");
   const diet = dietProp ?? dietLocal;
@@ -15,11 +15,14 @@ export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDi
 
   useEffect(() => {
     setLoading(true);
-    fetchDailyHealthyPlan(diet)
-      .then((data) => setPlan(data.plan))
-      .catch(() => setPlan(null))
-      .finally(() => setLoading(false));
-  }, [diet]);
+    const timer = window.setTimeout(() => {
+      fetchDailyHealthyPlan(diet)
+        .then((data) => setPlan(data.plan))
+        .catch(() => setPlan(null))
+        .finally(() => setLoading(false));
+    }, deferMs);
+    return () => window.clearTimeout(timer);
+  }, [diet, deferMs]);
 
   if (loading) {
     return (

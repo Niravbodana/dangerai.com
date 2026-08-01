@@ -115,7 +115,7 @@ export default function Home() {
 
       <section className="home-section border-t border-white/[0.06]">
         <div className="mx-auto max-w-6xl px-4">
-          <DailyHealthyPlan />
+          <DailyHealthyPlan deferMs={900} />
         </div>
       </section>
 

@@ -9,8 +9,7 @@
     "dev": "node --watch src/index.js",
     "generate-recipes": "node src/scripts/generateRecipes.js",
     "build-recipe-books": "node src/scripts/buildRecipeBooks.js",
-    "prefetch-images": "node src/scripts/prefetchRecipeImages.js",
-    "postinstall": "node src/scripts/buildRecipeBooks.js"
+    "prefetch-images": "node src/scripts/prefetchRecipeImages.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

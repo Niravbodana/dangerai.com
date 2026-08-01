@@ -50,21 +50,14 @@ Restart both server and client after setting env vars. Login/signup modal will s
 
 ## Run Locally
 
-### Backend
-
 ```bash
-cd server
-npm install          # auto-generates 570k recipes on first install (~3s)
-npm run dev          # http://localhost:5000
+cd aaj-kyabanayein
+npm run install:all   # fast — no API fetch (recipes already in repo)
+npm run dev:server    # http://localhost:5000
+npm run dev:client    # http://localhost:3000 (separate terminal)
 ```
 
-### Frontend
-
-```bash
-cd client
-npm install
-npm run dev          # http://localhost:3000
-```
+> **Note:** `npm install` no longer downloads recipes from the internet. Curated ~900 recipes ship with the repo. To rebuild from APIs (slow): `npm run build-recipe-books -- --force`
 
 ## Regenerate Recipes
 

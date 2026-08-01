@@ -12,12 +12,15 @@ export default function HotMakings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTrendingRecipes(8)
-      .then((data) => {
-        setRecipes(data.recipes || []);
-        setTrendingDate(data.trendingDate || null);
-      })
-      .finally(() => setLoading(false));
+    const timer = window.setTimeout(() => {
+      fetchTrendingRecipes(6)
+        .then((data) => {
+          setRecipes(data.recipes || []);
+          setTrendingDate(data.trendingDate || null);
+        })
+        .finally(() => setLoading(false));
+    }, 700);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const todayLabel = trendingDate
