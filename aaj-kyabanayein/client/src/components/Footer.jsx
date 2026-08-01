@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="max-w-sm">
             <BrandLogo light className="h-8 w-auto" />
             <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-              Ghar ka khana, naye andaaz mein. 5.7 Lakh+ recipes — step-by-step cooking, pantry suggestions, abhi ke liye free.
+              Ghar ka khana, naye andaaz mein. 770+ real recipes with authentic ingredients — step-by-step cooking, pantry suggestions, abhi ke liye free.
             </p>
             <p className="mt-3 text-xs text-[var(--accent-soft)]">Made with ❤️ for Indian home cooks</p>
           </div>

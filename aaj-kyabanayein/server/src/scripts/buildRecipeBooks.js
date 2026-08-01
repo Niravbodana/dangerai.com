@@ -9,6 +9,10 @@ import { fileURLToPath } from "url";
 import { BASE_RECIPES } from "../data/baseRecipes.js";
 import { MORE_RECIPES } from "../data/moreRecipes.js";
 import { INDIAN_BOOK_RECIPES } from "../data/recipeBookIndian.js";
+import { ENGLISH_STEPS } from "../data/recipeTemplates.js";
+
+const GENERIC_STEP_RE =
+  /prepare all ingredients for|Cook following traditional method|Season to taste and serve hot/i;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "../data/curated");
@@ -114,15 +118,45 @@ function inferCategory(recipe) {
   return `${isVeg ? "veg" : "nonveg"}-${mt}`;
 }
 
+function isGenericSteps(steps) {
+  if (!steps?.length) return true;
+  return steps.every((s) => GENERIC_STEP_RE.test(s));
+}
+
+function recipeRichness(raw) {
+  const ing = raw.ingredients?.filter((i) => i.name?.trim()).length || 0;
+  const steps = raw.steps?.length && !isGenericSteps(raw.steps) ? raw.steps.length : 0;
+  const stepsHi = raw.stepsHi?.length && !isGenericSteps(raw.stepsHi) ? raw.stepsHi.length : 0;
+  const bookBonus = raw.source === "indian-book" ? 10 : 0;
+  return ing * 2 + steps * 4 + stepsHi * 2 + bookBonus;
+}
+
+function resolveSteps(raw) {
+  const id = raw.id || slug(raw.name);
+  let steps =
+    raw.steps?.length && !isGenericSteps(raw.steps) ? raw.steps : ENGLISH_STEPS[id];
+  let stepsHi =
+    raw.stepsHi?.length && !isGenericSteps(raw.stepsHi) ? raw.stepsHi : undefined;
+
+  if (!steps?.length && stepsHi?.length) steps = stepsHi;
+  if (!stepsHi?.length && steps?.length) stepsHi = steps;
+
+  return { steps, stepsHi };
+}
+
 function finalizeRecipe(raw) {
   const ingredients = raw.ingredients?.filter((i) => i.name?.trim()) || [];
   if (ingredients.length < 2) return null;
 
   const diet = raw.diet || guessDiet(ingredients, raw.name);
   const mealType = raw.mealType || guessMealType(raw.name);
-  const cuisine = raw.cuisine || "continental";
+  const isExternal = raw.source === "themealdb";
+  const cuisine = raw.cuisine || (isExternal ? "continental" : "indian");
 
-  const recipe = {
+  const { steps, stepsHi } = resolveSteps(raw);
+  if (!steps?.length) return null;
+
+  return {
     id: raw.id || slug(raw.name),
     name: raw.name.trim(),
     nameHi: raw.nameHi || raw.name,
@@ -135,20 +169,13 @@ function finalizeRecipe(raw) {
     calories: raw.calories || 300,
     spice: raw.spice || "medium",
     ingredients,
-    steps: raw.steps?.length ? raw.steps : undefined,
-    stepsHi: raw.stepsHi?.length ? raw.stepsHi : undefined,
+    steps,
+    stepsHi: stepsHi || steps,
     tags: raw.tags || [],
     healthScore: raw.healthScore ?? (cuisine === "healthy" || raw.tags?.includes("healthy") ? 8 : 5),
     pantryKeys: ingredients.map((i) => i.name.toLowerCase()),
     source: raw.source || "curated",
   };
-
-  if (!recipe.steps?.length) {
-    recipe.steps = [`Prepare all ingredients for ${recipe.name}.`, `Cook following traditional method until done.`, `Season to taste and serve hot.`];
-    recipe.stepsHi = recipe.steps;
-  }
-
-  return recipe;
 }
 
 async function fetchJson(url) {
@@ -198,20 +225,27 @@ async function fetchTheMealDbRecipes() {
 }
 
 function deduplicateRecipes(recipes) {
-  const result = [];
-  const seenNames = [];
+  const bestByName = [];
 
   for (const recipe of recipes) {
-    const finalized = finalizeRecipe(recipe);
+    const tagged = {
+      ...recipe,
+      source: recipe.source || (recipe.cuisine ? "indian-book" : "curated"),
+    };
+    const idx = bestByName.findIndex((r) => isSimilar(r.name, tagged.name));
+    if (idx === -1) {
+      bestByName.push(tagged);
+    } else if (recipeRichness(tagged) > recipeRichness(bestByName[idx])) {
+      bestByName[idx] = tagged;
+    }
+  }
+
+  const result = [];
+  for (const raw of bestByName) {
+    const finalized = finalizeRecipe(raw);
     if (!finalized) continue;
-
-    const dup = seenNames.some((n) => isSimilar(n, finalized.name));
-    if (dup) continue;
-
     const idDup = result.some((r) => r.id === finalized.id);
     if (idDup) finalized.id = `${finalized.id}-${result.length}`;
-
-    seenNames.push(finalized.name);
     result.push(finalized);
   }
   return result;
@@ -238,7 +272,11 @@ async function main() {
   console.log("Building curated recipe books...");
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const handCrafted = [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES];
+  const handCrafted = [
+    ...INDIAN_BOOK_RECIPES.map((r) => ({ ...r, source: "indian-book" })),
+    ...BASE_RECIPES,
+    ...MORE_RECIPES,
+  ];
   console.log(`Hand-crafted: ${handCrafted.length}`);
 
   let external = [];

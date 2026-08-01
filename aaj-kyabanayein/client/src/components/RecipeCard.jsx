@@ -68,12 +68,17 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
     return (
       <Link
         to={`/recipe/${recipe.id}`}
-        className={`recipe-card catalog-card group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
+        className={`recipe-card catalog-card catalog-card--list group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
       >
         <div className="flex items-start gap-4 p-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/8 text-2xl">
-            {mealEmoji(recipe.mealType)}
-          </span>
+          <div className="catalog-thumb relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#242018] ring-1 ring-white/10">
+            <RecipeImage
+              src={`/api/recipes/image/${recipe.id}`}
+              alt={displayName}
+              recipeId={recipe.id}
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">

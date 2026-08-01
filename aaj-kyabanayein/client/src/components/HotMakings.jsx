@@ -64,7 +64,7 @@ export default function HotMakings() {
           </div>
           <Link
             to="/recipes?sort=trending"
-            className="hidden items-center gap-1.5 text-sm font-medium text-stone-600 transition hover:text-orange-600 sm:flex"
+            className="hidden items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--accent-soft)] sm:flex"
           >
             {t('viewAll')}
             <IconArrowRight className="w-4 h-4" />
@@ -84,7 +84,7 @@ export default function HotMakings() {
 
         <Link
           to="/recipes?sort=trending"
-          className="mt-6 flex items-center justify-center gap-1.5 text-sm font-medium text-stone-600 sm:hidden"
+          className="mt-6 flex items-center justify-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] sm:hidden"
         >
           {t('viewAll')}
           <IconArrowRight className="w-4 h-4" />

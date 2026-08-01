@@ -1,6 +1,3 @@
-/**
- * English cooking steps for hand-crafted recipes (keyed by recipe id).
- */
 export const ENGLISH_STEPS = {
   poha: [
     "Rinse flattened rice and drain well.",
@@ -122,6 +119,45 @@ export const ENGLISH_STEPS = {
     "Sauté onion, tomato and spices.",
     "Mix in mashed eggplant.",
     "Garnish with coriander. Serve with roti.",
+  ],
+  "kadhi-pakora": [
+    "Make besan pakoras and fry until golden.",
+    "Whisk yogurt and besan with water for smooth kadhi.",
+    "Simmer kadhi with turmeric and salt.",
+    "Add fried pakoras. Temper with cumin and fenugreek.",
+    "Serve hot with steamed rice.",
+  ],
+  "misal-pav": [
+    "Cook sprouted moth beans with misal masala.",
+    "Prepare spicy kat gravy separately.",
+    "Layer usal, farsan, onion and coriander in bowl.",
+    "Pour kat over and serve with buttered pav and lemon.",
+  ],
+  "dal-tadka": [
+    "Pressure cook yellow dal with turmeric until soft.",
+    "Mash lightly and adjust consistency with water.",
+    "Temper ghee with cumin, garlic and dried red chilli.",
+    "Pour sizzling tadka over dal.",
+    "Serve with rice or roti.",
+  ],
+  "sabudana-khichdi": [
+    "Soak sabudana 4 hours until soft.",
+    "Roast and crush peanuts.",
+    "Sauté cumin, potato and green chilli.",
+    "Add sabudana, peanuts, salt and lemon.",
+    "Cook 5 min until pearls turn translucent. Garnish with coriander.",
+  ],
+  lassi: [
+    "Blend yogurt, cold water and sugar until frothy.",
+    "Add cardamom powder and rose water.",
+    "Pour over ice and serve immediately.",
+  ],
+  "butter-chicken": [
+    "Marinate chicken in yogurt and spices for 30 min.",
+    "Grill or pan-fry chicken until charred.",
+    "Cook tomato puree with butter and spices.",
+    "Add cream and chicken, simmer 10 min.",
+    "Finish with kasuri methi and serve with naan.",
   ],
 };
 

@@ -1,12 +1,12 @@
 # Rasoira
 
-Ghar ka khana — free meal planner for Indian home cooks. 5.7 Lakh+ recipes, Hot Makings, pantry suggestions, and step-by-step cooking.
+Ghar ka khana — free meal planner for Indian home cooks. 770+ real recipes with authentic ingredients, Hot Makings, pantry suggestions, and step-by-step cooking.
 
 **Stack:** Node.js (Express) + React (Vite) + Tailwind CSS
 
 ## Features
 
-- **5.7 Lakh+ recipes** across 11 cuisines (Indian, Chinese, Thai, Korean, Italian, Mexican, and more)
+- **770+ real recipes** across 11 cuisines (Indian, Chinese, Thai, Korean, Italian, Mexican, and more) — authentic ingredients & cooking steps
 - **Hot Makings** — trending recipes by ratings and cook popularity
 - **Veg / Non-Veg filters** + cuisine and category browsing
 - **Step-by-step Cooking Mode** with timers
@@ -23,7 +23,7 @@ Ghar ka khana — free meal planner for Indian home cooks. 5.7 Lakh+ recipes, Ho
 aaj-kyabanayein/
 ├── server/          # Express API
 │   └── src/
-│       ├── data/generated/   # 570k recipes (gitignored, auto-generated)
+│       ├── data/curated/     # 770+ real recipes (TheMealDB + hand-crafted Indian)
 │       ├── routes/
 │       └── services/
 └── client/          # React Vite frontend
@@ -54,7 +54,7 @@ Restart both server and client after setting env vars. Login/signup modal will s
 
 ```bash
 cd server
-npm install          # auto-generates 570k recipes on first install (~3s)
+npm install          # builds curated recipe books on first install
 npm run dev          # http://localhost:5000
 ```
 

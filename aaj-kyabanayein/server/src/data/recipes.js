@@ -2,6 +2,15 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ENGLISH_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
+import { BASE_RECIPES } from "./baseRecipes.js";
+import { MORE_RECIPES } from "./moreRecipes.js";
+import { INDIAN_BOOK_RECIPES } from "./recipeBookIndian.js";
+
+const HAND_CRAFTED_STEPS_HI = Object.fromEntries(
+  [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES]
+    .filter((r) => r.stepsHi?.length)
+    .map((r) => [r.id, r.stepsHi])
+);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED_DIR = path.join(__dirname, "curated");
@@ -12,6 +21,13 @@ let recipeIndex = [];
 let recipeById = new Map();
 const customRecipes = new Map();
 
+const GENERIC_STEP_RE =
+  /prepare all ingredients for|Cook following traditional method|Season to taste and serve hot/i;
+
+function isGenericSteps(steps) {
+  if (!steps?.length) return true;
+  return steps.every((s) => GENERIC_STEP_RE.test(s));
+}
 function expandThinIngredients(recipe) {
   const ings = recipe.ingredients || [];
   if (ings.length >= 3) return ings;
@@ -34,8 +50,17 @@ export function enrichRecipe(recipe) {
         : `veg-${recipe.mealType}`);
 
   const ingredients = expandThinIngredients(recipe);
-  let steps = recipe.steps?.length ? recipe.steps : ENGLISH_STEPS[recipe.id];
-  let stepsHi = recipe.stepsHi?.length ? recipe.stepsHi : undefined;
+  let steps =
+    recipe.steps?.length && !isGenericSteps(recipe.steps)
+      ? recipe.steps
+      : ENGLISH_STEPS[recipe.id];
+  let stepsHi =
+    recipe.stepsHi?.length && !isGenericSteps(recipe.stepsHi) ? recipe.stepsHi : undefined;
+
+  if (!steps?.length && stepsHi?.length) steps = stepsHi;
+  if (!stepsHi?.length || isGenericSteps(stepsHi)) {
+    stepsHi = HAND_CRAFTED_STEPS_HI[recipe.id] || steps;
+  }
 
   if (!steps?.length && ingredients[0]) {
     const isNonVeg = recipe.diet?.includes("non-veg");
