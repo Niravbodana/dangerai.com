@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addFamilyMember,
@@ -7,6 +7,7 @@ import {
   setActiveMember,
   updateFamilyMember,
 } from "../lib/familyProfiles";
+import { getProfileCompletion, getTasteProfile } from "../lib/tasteProfile";
 import { canAddFamilyMember } from "../lib/subscription";
 import { track } from "../lib/analytics";
 
@@ -15,6 +16,7 @@ export default function Family() {
   const [name, setName] = useState("");
   const [diet, setDiet] = useState("veg");
   const [msg, setMsg] = useState("");
+  const completion = useMemo(() => getProfileCompletion(getTasteProfile()), [data]);
 
   const refresh = () => setData(getFamilyProfiles());
 
@@ -38,6 +40,21 @@ export default function Family() {
       <p className="mt-2 text-sm text-[var(--text-secondary)]">
         Different diets in one home — plan meals that work for everyone.
       </p>
+
+      <div className="glass-strong mt-6 rounded-2xl p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Household taste profile</p>
+            <p className="mt-1 text-sm text-[var(--text-primary)]">{completion.percent}% complete</p>
+          </div>
+          <Link to="/taste" className="text-xs text-[var(--accent-soft)] hover:underline">
+            {completion.percent < 100 ? "Complete profile" : "Edit profile"}
+          </Link>
+        </div>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full bg-[var(--accent)]" style={{ width: `${completion.percent}%` }} />
+        </div>
+      </div>
 
       <div className="mt-6 space-y-3">
         {data.members.map((m) => (
