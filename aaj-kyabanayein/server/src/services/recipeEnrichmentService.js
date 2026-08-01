@@ -45,9 +45,9 @@ function cleanRecipeName(name = "") {
 
 function needsEnrichment(recipe) {
   const ingCount = recipe.ingredients?.length || 0;
-  const hasSteps = (recipe.steps?.length || 0) >= 4 || (recipe.stepsHi?.length || 0) >= 4;
+  const hasSteps = (recipe.steps?.length || 0) >= 5 || (recipe.stepsHi?.length || 0) >= 5;
   const genericSteps = /prepare all ingredients|cook following traditional/i.test((recipe.steps || []).join(" "));
-  return ingCount < 5 || !hasSteps || genericSteps;
+  return ingCount < 8 || !hasSteps || genericSteps;
 }
 
 function mergeIngredients(existing, incoming) {
@@ -121,7 +121,12 @@ function applyWebResults(recipe, webResults) {
   for (const r of webResults) {
     sources.push(r.source);
     if (r.ingredients?.length) {
-      ingredients = mergeIngredients(ingredients, r.ingredients);
+      // Prefer richer ingredient lists from AI/web sources
+      if (r.ingredients.length >= ingredients.length) {
+        ingredients = mergeIngredients([], r.ingredients);
+      } else {
+        ingredients = mergeIngredients(ingredients, r.ingredients);
+      }
     }
     if (r.steps?.length && (!steps || steps.length < r.steps.length)) {
       steps = r.steps;
@@ -132,8 +137,8 @@ function applyWebResults(recipe, webResults) {
     if (r.imageUrl && !imageUrl) imageUrl = r.imageUrl;
   }
 
-  // Template fallback for still-thin recipes
-  if (ingredients.length < 5 && ingredients[0]) {
+  // Template fallback only when still very thin
+  if (ingredients.length < 6 && ingredients[0]) {
     const isNonVeg = recipe.diet?.includes("non-veg");
     const styleMatch = (recipe.name || "").match(
       /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i

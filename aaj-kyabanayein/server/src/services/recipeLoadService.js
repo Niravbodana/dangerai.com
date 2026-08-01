@@ -26,7 +26,10 @@ export async function loadRecipeOnSelect(recipeId) {
   }
 
   return {
-    recipe,
+    recipe: {
+      ...recipe,
+      image: imageUrlForRecipe(recipeId),
+    },
     image: {
       url: imageUrlForRecipe(recipeId),
       ready: imageReady,

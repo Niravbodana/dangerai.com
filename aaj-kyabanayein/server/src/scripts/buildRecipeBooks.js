@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { BASE_RECIPES } from "../data/baseRecipes.js";
 import { MORE_RECIPES } from "../data/moreRecipes.js";
 import { INDIAN_BOOK_RECIPES } from "../data/recipeBookIndian.js";
+import { MORE_INDIAN_RECIPES } from "../data/recipeBookMoreIndian.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "../data/curated");
@@ -159,8 +160,15 @@ async function fetchJson(url) {
 
 async function fetchTheMealDbRecipes() {
   const meals = new Map();
-  const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 
+  // Fetch all Indian-area recipes first (priority)
+  const indianData = await fetchJson(`${THEMEALDB}/filter.php?a=Indian`);
+  for (const meal of indianData?.meals || []) {
+    if (meal?.idMeal) meals.set(meal.idMeal, meal);
+  }
+  await new Promise((r) => setTimeout(r, 120));
+
+  const letters = "abcdefghijklmnopqrstuvwxyz".split("");
   for (const letter of letters) {
     const data = await fetchJson(`${THEMEALDB}/search.php?f=${letter}`);
     for (const meal of data?.meals || []) {
@@ -170,27 +178,34 @@ async function fetchTheMealDbRecipes() {
     await new Promise((r) => setTimeout(r, 120));
   }
 
+  // Fetch full details for filter results (only id + name from filter)
   const list = [];
   for (const meal of meals.values()) {
-    const ingredients = mealToIngredients(meal);
+    let full = meal;
+    if (!meal.strInstructions) {
+      const detail = await fetchJson(`${THEMEALDB}/lookup.php?i=${meal.idMeal}`);
+      full = detail?.meals?.[0] || meal;
+      await new Promise((r) => setTimeout(r, 80));
+    }
+    const ingredients = mealToIngredients(full);
     if (ingredients.length < 3) continue;
 
-    const steps = mealToSteps(meal);
-    const cuisine = AREA_TO_CUISINE[meal.strArea] || "continental";
-    const diet = guessDiet(ingredients, meal.strMeal);
+    const steps = mealToSteps(full);
+    const cuisine = AREA_TO_CUISINE[full.strArea] || "continental";
+    const diet = guessDiet(ingredients, full.strMeal);
 
     list.push(finalizeRecipe({
-      id: `tmdb-${meal.idMeal}`,
-      name: meal.strMeal,
-      nameHi: meal.strMeal,
-      mealType: guessMealType(meal.strMeal, meal.strCategory),
+      id: `tmdb-${full.idMeal}`,
+      name: full.strMeal,
+      nameHi: full.strMeal,
+      mealType: guessMealType(full.strMeal, full.strCategory),
       diet,
       cuisine,
-      category: meal.strCategory === "Dessert" ? "snack" : undefined,
+      category: full.strCategory === "Dessert" ? "snack" : undefined,
       ingredients,
       steps: steps.length ? steps : undefined,
       stepsHi: steps.length ? steps : undefined,
-      tags: [meal.strCategory, meal.strArea].filter(Boolean).map((t) => t.toLowerCase()),
+      tags: [full.strCategory, full.strArea].filter(Boolean).map((t) => t.toLowerCase()),
       source: "themealdb",
     }));
   }
@@ -238,7 +253,7 @@ async function main() {
   console.log("Building curated recipe books...");
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const handCrafted = [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES];
+  const handCrafted = [...BASE_RECIPES, ...MORE_RECIPES, ...INDIAN_BOOK_RECIPES, ...MORE_INDIAN_RECIPES];
   console.log(`Hand-crafted: ${handCrafted.length}`);
 
   let external = [];

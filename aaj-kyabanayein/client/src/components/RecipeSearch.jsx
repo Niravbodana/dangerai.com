@@ -14,7 +14,7 @@ function useDebounce(value, delay = 300) {
   return debounced;
 }
 
-export default function RecipeSearch({ className = "", large = false, autoFocus = false }) {
+export default function RecipeSearch({ className = "", large = false }) {
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const [query, setQuery] = useState("");
@@ -59,11 +59,13 @@ export default function RecipeSearch({ className = "", large = false, autoFocus 
         <input
           type="search"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setQuery(v);
+            setOpen(v.trim().length > 0);
+          }}
           onKeyDown={(e) => e.key === "Enter" && goSearch()}
           placeholder="Search biryani, dosa, paneer, pasta..."
-          autoFocus={autoFocus}
           className={`glass-input w-full pl-11 pr-28 ${large ? "py-4 text-base" : "py-3"}`}
         />
         <button

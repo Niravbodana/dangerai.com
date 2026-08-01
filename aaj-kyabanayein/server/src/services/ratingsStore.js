@@ -27,10 +27,12 @@ function write(data) {
   fs.writeFileSync(RATINGS_FILE, JSON.stringify(data, null, 2));
 }
 
-export function getRating(recipeId) {
+export function getRating(recipeId, userId = null) {
   const data = read();
   const live = data[recipeId];
-  return mergeRatings(recipeId, live, recipeName(recipeId));
+  const merged = mergeRatings(recipeId, live, recipeName(recipeId));
+  const userScore = userId && live?.users?.[userId] ? live.users[userId] : 0;
+  return { ...merged, userScore };
 }
 
 export function rateRecipe(recipeId, score, userId = "guest") {

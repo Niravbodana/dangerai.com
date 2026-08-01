@@ -2,8 +2,28 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import { useSpeech } from "../hooks/useSpeech";
 import RecipeImage from "../components/RecipeImage";
 import { COOK_LANGS, getCookUI, getIngredientLabel, getRecipeName } from "../i18n/cookingLang";
+
+function VoiceButton({ text, lang, label }) {
+  const { speak, stop, speaking, supported } = useSpeech(lang);
+  if (!supported) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => (speaking ? stop() : speak(text))}
+      className={`tap-smooth flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition ${
+        speaking
+          ? "bg-[var(--accent)] text-[#14110e]"
+          : "border border-white/15 bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+      }`}
+      aria-label={label}
+    >
+      {speaking ? "⏹ Stop" : "🔊 Listen"}
+    </button>
+  );
+}
 
 export default function CookingMode() {
   const { id } = useParams();
@@ -14,6 +34,7 @@ export default function CookingMode() {
   const [started, setStarted] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
   const [cookLang, setCookLang] = useState(() => localStorage.getItem("akb-cook-lang") || lang || "en");
+  const { speak, stop, speaking, supported } = useSpeech(cookLang === "hinglish" ? "hi" : cookLang);
 
   useEffect(() => {
     localStorage.setItem("akb-cook-lang", cookLang);
@@ -22,8 +43,11 @@ export default function CookingMode() {
   useEffect(() => {
     fetchRecipeLoad(id).then((data) => setRecipe(data.recipe));
     document.body.classList.add("cooking-active");
-    return () => document.body.classList.remove("cooking-active");
-  }, [id]);
+    return () => {
+      document.body.classList.remove("cooking-active");
+      stop();
+    };
+  }, [id, stop]);
 
   const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
     ? recipe.stepsHi
@@ -46,6 +70,8 @@ export default function CookingMode() {
         : current.title || current.titleHi
     : "";
 
+  const voiceLang = cookLang === "en" ? "en" : "hi";
+
   if (!recipe) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -58,34 +84,63 @@ export default function CookingMode() {
     return (
       <div className="cooking-shell min-h-screen pb-28">
         <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
-          <RecipeImage src={recipe.image} recipeId={recipe.id} alt={recipe.name} eager className="mx-auto mb-5 h-48 w-full max-w-sm rounded-2xl object-cover shadow-lg sm:h-56" />
-          <h1 className="text-center font-display text-2xl text-[var(--text-primary)] sm:text-3xl">{getRecipeName(recipe, cookLang)}</h1>
+          <RecipeImage
+            src={recipe.image || `/api/recipes/image/${recipe.id}`}
+            recipeId={recipe.id}
+            alt={recipe.name}
+            eager
+            className="mx-auto mb-5 h-48 w-full max-w-sm rounded-2xl object-cover shadow-lg sm:h-56"
+          />
+          <h1 className="text-center font-display text-2xl text-[var(--text-primary)] sm:text-3xl">
+            {getRecipeName(recipe, cookLang)}
+          </h1>
           <p className="mt-2 text-center text-sm text-[var(--text-secondary)]">{steps.length} {ui.steps}</p>
 
           <div className="glass-strong mt-6 rounded-2xl p-5 sm:p-6">
-            <div className="mb-4 flex flex-wrap gap-2">
-              {COOK_LANGS.map((l) => (
-                <button key={l.id} type="button" onClick={() => setCookLang(l.id)}
-                  className={`tap-smooth rounded-full px-3 py-1.5 text-xs font-medium ${cookLang === l.id ? "bg-[var(--accent)] text-[#14110e]" : "border border-white/10 bg-white/5 text-[var(--text-secondary)]"}`}>
-                  {l.label}
-                </button>
-              ))}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
+                {COOK_LANGS.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setCookLang(l.id)}
+                    className={`tap-smooth rounded-full px-3 py-1.5 text-xs font-medium ${
+                      cookLang === l.id ? "bg-[var(--accent)] text-[#14110e]" : "border border-white/10 bg-white/5 text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{ui.ingredients}</h2>
-            <ul className="max-h-64 space-y-2 overflow-y-auto">
-              {recipe.ingredients?.map((ing) => (
-                <li key={ing.name}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 active:bg-white/5">
-                    <input type="checkbox" checked={checkedItems[ing.name] || false}
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+              {ui.ingredients}
+            </h2>
+            <ol className="max-h-72 space-y-2 overflow-y-auto">
+              {recipe.ingredients?.map((ing, i) => (
+                <li key={`${ing.name}-${i}`}>
+                  <label className="ingredient-note flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={checkedItems[ing.name] || false}
                       onChange={() => setCheckedItems((p) => ({ ...p, [ing.name]: !p[ing.name] }))}
-                      className="h-5 w-5 rounded accent-[var(--accent)]" />
-                    <span className="text-sm">{getIngredientLabel(ing, cookLang)}</span>
+                      className="mt-1 h-5 w-5 shrink-0 rounded accent-[var(--accent)]"
+                    />
+                    <span className="ingredient-note__num shrink-0">{i + 1}</span>
+                    <span className="min-w-0 flex-1 text-sm">
+                      <span className="font-medium text-[var(--text-primary)]">
+                        {getIngredientLabel(ing, cookLang).split(" — ")[0]}
+                      </span>
+                      <span className="ingredient-note__qty">{ing.quantity}</span>
+                    </span>
                   </label>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
-          <button onClick={() => setStarted(true)} className="premium-btn tap-smooth mt-6 w-full py-4 text-base">{ui.startCooking}</button>
+          <button onClick={() => setStarted(true)} className="premium-btn tap-smooth mt-6 w-full py-4 text-base">
+            {ui.startCooking}
+          </button>
         </div>
       </div>
     );
@@ -95,7 +150,9 @@ export default function CookingMode() {
     <div className="cooking-shell flex min-h-screen flex-col">
       <div className="sticky top-0 z-50 border-b border-white/10 bg-[#14110e]/95 px-4 py-3 backdrop-blur-xl safe-top">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <button type="button" onClick={() => navigate(`/recipe/${id}`)} className="text-sm text-[var(--text-secondary)]">{ui.close}</button>
+          <button type="button" onClick={() => navigate(`/recipe/${id}`)} className="text-sm text-[var(--text-secondary)]">
+            {ui.close}
+          </button>
           <span className="text-sm font-medium">{stepIndex + 1} / {steps.length}</span>
         </div>
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
@@ -109,19 +166,56 @@ export default function CookingMode() {
             {isDone ? "☺️" : stepIndex}
           </div>
           <p className="mt-6 text-lg leading-relaxed text-[var(--text-primary)] sm:text-xl">{stepText}</p>
+          {supported && stepText && (
+            <div className="mt-5 flex justify-center gap-2">
+              <VoiceButton text={stepText} lang={voiceLang} label="Listen to step" />
+              {cookLang === "hinglish" && current?.titleHi && (
+                <VoiceButton text={current.titleHi} lang="hi" label="Hindi" />
+              )}
+              {cookLang === "hinglish" && current?.title && (
+                <VoiceButton text={current.title} lang="en" label="English" />
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="safe-bottom fixed bottom-0 left-0 right-0 border-t border-white/10 bg-[#14110e]/95 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl gap-3">
-          <button type="button" onClick={() => setStepIndex((i) => Math.max(0, i - 1))} disabled={stepIndex === 0}
-            className="premium-btn-outline flex-1 py-3 text-sm disabled:opacity-30">{ui.back}</button>
+          <button
+            type="button"
+            onClick={() => { stop(); setStepIndex((i) => Math.max(0, i - 1)); }}
+            disabled={stepIndex === 0}
+            className="premium-btn-outline flex-1 py-3 text-sm disabled:opacity-30"
+          >
+            {ui.back}
+          </button>
+          {supported && stepText && !speaking && (
+            <button
+              type="button"
+              onClick={() => speak(stepText)}
+              className="premium-btn-outline flex h-12 w-12 shrink-0 items-center justify-center text-lg"
+              aria-label="Read step aloud"
+            >
+              🔊
+            </button>
+          )}
           {isDone ? (
-            <button type="button" onClick={() => navigate(`/recipe/${id}/review?from=cook`)}
-              className="premium-btn flex-1 py-3 text-sm">{ui.review}</button>
+            <button
+              type="button"
+              onClick={() => navigate(`/recipe/${id}/review?from=cook`)}
+              className="premium-btn flex-1 py-3 text-sm"
+            >
+              {ui.review}
+            </button>
           ) : (
-            <button type="button" onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))}
-              className="premium-btn flex-1 py-3 text-sm">{ui.next}</button>
+            <button
+              type="button"
+              onClick={() => { stop(); setStepIndex((i) => Math.min(steps.length - 1, i + 1)); }}
+              className="premium-btn flex-1 py-3 text-sm"
+            >
+              {ui.next}
+            </button>
           )}
         </div>
       </div>

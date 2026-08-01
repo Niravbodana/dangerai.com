@@ -1,16 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconStar } from "./Icons";
 
 export default function ReviewForm({ initialScore = 0, onSubmit, loading = false, submitLabel = "Submit Review" }) {
   const [score, setScore] = useState(initialScore);
   const [comment, setComment] = useState("");
   const [hover, setHover] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (initialScore) setScore(initialScore);
+  }, [initialScore]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!score) return;
-    onSubmit(score, comment);
+    await onSubmit(score, comment);
+    setSubmitted(true);
+    setComment("");
   };
+
+  if (submitted) {
+    return (
+      <p className="rounded-xl bg-[var(--accent-green)]/10 px-4 py-3 text-sm text-[var(--accent-green)]">
+        Thank you! Your review has been saved.
+      </p>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">

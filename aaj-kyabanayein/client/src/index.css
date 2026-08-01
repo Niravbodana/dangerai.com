@@ -654,6 +654,38 @@ body {
   color: var(--text-secondary);
 }
 
+.ingredient-note {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.125rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(212, 168, 75, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border: 1px solid rgba(212, 168, 75, 0.12);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.ingredient-note__num {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.75rem;
+  width: 1.75rem;
+  border-radius: 0.5rem;
+  background: rgba(212, 168, 75, 0.15);
+  color: var(--accent-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ingredient-note__qty {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
 .ingredient-row {
   display: flex;
   align-items: flex-start;

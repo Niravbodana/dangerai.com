@@ -126,7 +126,7 @@ function scoreTitle(title, name) {
 
 function pickBest(candidates, name) {
   return candidates
-    .filter((c) => c?.imageUrl && scoreTitle(c.title || "", name) >= 0.35)
+    .filter((c) => c?.imageUrl && scoreTitle(c.title || "", name) >= 0.45)
     .sort((a, b) => (b.score ?? scoreTitle(b.title, name)) - (a.score ?? scoreTitle(a.title, name)))[0] || null;
 }
 
@@ -159,7 +159,7 @@ async function searchWikipediaTitle(title, originalName) {
   const page = Object.values(data.query?.pages || {})[0];
   if (!page || page.missing || !page.thumbnail?.source) return null;
   const score = scoreTitle(page.title, originalName);
-  if (score < 0.35) return null;
+  if (score < 0.45) return null;
   return { title: page.title, imageUrl: page.thumbnail.source, score };
 }
 

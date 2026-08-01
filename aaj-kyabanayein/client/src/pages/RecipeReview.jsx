@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { fetchRecipe, submitReview } from "../api";
+import { fetchRecipeLoad, submitReview } from "../api";
 import { getGuestId } from "../lib/guest";
 import BrandLogo from "../components/BrandLogo";
+import RecipeImage from "../components/RecipeImage";
 import ReviewForm from "../components/ReviewForm";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -17,7 +18,7 @@ export default function RecipeReview() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    fetchRecipe(id)
+    fetchRecipeLoad(id)
       .then((data) => setRecipe(data.recipe))
       .finally(() => setLoading(false));
   }, [id]);
@@ -77,7 +78,13 @@ export default function RecipeReview() {
             </p>
 
             <div className="mt-6 flex items-center gap-4 rounded-2xl bg-white/5 p-4">
-              <img src={recipe.image} alt="" className="h-16 w-16 rounded-xl object-cover" />
+              <RecipeImage
+                src={`/api/recipes/image/${recipe.id}`}
+                recipeId={recipe.id}
+                alt={recipe.name}
+                eager
+                className="h-16 w-16 shrink-0 rounded-xl object-cover"
+              />
               <div>
                 <p className="font-semibold text-[var(--text-primary)]">{recipe.name}</p>
                 <p className="text-xs capitalize text-[var(--text-secondary)]">{recipe.cuisine}</p>

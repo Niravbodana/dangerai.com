@@ -173,9 +173,10 @@ export async function fetchRecipeCategories() {
 
 export const fetchCategories = fetchRecipeCategories;
 
-export async function fetchRecipeRating(id) {
-  const res = await fetch(`${API_BASE}/recipes/${id}/rating`);
-  if (!res.ok) return { average: 0, count: 0 };
+export async function fetchRecipeRating(id, guestId) {
+  const q = guestId ? `?guestId=${encodeURIComponent(guestId)}` : "";
+  const res = await fetch(`${API_BASE}/recipes/${id}/rating${q}`);
+  if (!res.ok) return { average: 0, count: 0, userScore: 0 };
   return res.json();
 }
 

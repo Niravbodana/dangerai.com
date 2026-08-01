@@ -28,8 +28,8 @@ function buildRecipePrompt(recipeName, cuisine) {
   "imageSearchQuery": "3-4 word Google image search for this exact dish"
 }
 Rules:
-- Minimum 6 ingredients with realistic quantities
-- Minimum 4 cooking steps in both English and Hindi
+- Minimum 10 ingredients with realistic quantities (include spices, oil, garnish)
+- Minimum 6 detailed cooking steps in both English and Hindi
 - wikiImageTitle must be a real Wikipedia food article (e.g. "Aloo gobhi", "Flattened rice", "Paneer butter masala")
 - imageSearchQuery must match the actual dish, not generic food
 - Return JSON only, no markdown`;
@@ -101,7 +101,7 @@ export async function fetchRecipeFromGroq(recipeName, cuisine = "indian") {
 
   return {
     source: "groq",
-    ingredients: data.ingredients.slice(0, 15),
+    ingredients: data.ingredients.slice(0, 25),
     steps: data.steps?.length >= 2 ? data.steps : undefined,
     stepsHi: data.stepsHi?.length >= 2 ? data.stepsHi : data.steps,
     wikiImageTitle: data.wikiImageTitle,

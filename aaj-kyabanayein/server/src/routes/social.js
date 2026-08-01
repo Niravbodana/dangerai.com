@@ -7,7 +7,8 @@ import { getRecipeById } from "../data/recipes.js";
 const router = Router();
 
 router.get("/recipes/:id/rating", (req, res) => {
-  res.json({ success: true, ...getRating(req.params.id) });
+  const userId = req.userId || req.query.guestId || null;
+  res.json({ success: true, ...getRating(req.params.id, userId) });
 });
 
 router.get("/recipes/:id/reviews", (req, res) => {

@@ -107,7 +107,7 @@ export default function Recipes() {
         </div>
 
         <div className="mx-auto mt-6 max-w-2xl">
-          <RecipeSearch autoFocus />
+          <RecipeSearch />
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
