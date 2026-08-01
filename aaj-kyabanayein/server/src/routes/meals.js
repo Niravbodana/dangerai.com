@@ -14,6 +14,7 @@ import { optionalAuth } from "../middleware/auth.js";
 import { generateDailyHealthyPlan, generateWeeklyHealthyPlan } from "../services/healthyPlanService.js";
 import {
   generateGroceryList,
+  buildGroceryList,
   generateWeeklyPlan,
   getDefaultPreferences,
 } from "../services/mealPlanner.js";
@@ -247,10 +248,18 @@ router.get("/collections/:id", (req, res) => {
   res.json({ success: true, collection, recipes });
 });
 
+function groceryOptions(body, prefs) {
+  return {
+    pantryKeys: body.pantry || [],
+    familySize: prefs.familySize || 4,
+    deductPantry: body.deductPantry !== false,
+  };
+}
+
 router.post("/plan/healthy", optionalAuth, (req, res) => {
   const diet = req.body.diet || "veg";
   const { plans, weeklyNutrition } = generateWeeklyHealthyPlan(diet);
-  const groceryList = generateGroceryList(plans);
+  const groceryList = buildGroceryList(plans, groceryOptions(req.body, { familySize: 4 }));
 
   res.json({
     success: true,
@@ -298,7 +307,7 @@ router.post("/plan", optionalAuth, (req, res) => {
   }
 
   const plans = generateWeeklyPlan(prefs);
-  const groceryList = generateGroceryList(plans);
+  const groceryList = buildGroceryList(plans, groceryOptions(req.body, prefs));
 
   res.json({
     success: true,

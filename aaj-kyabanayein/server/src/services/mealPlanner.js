@@ -69,40 +69,7 @@ export function generateWeeklyPlan(prefs) {
   return plans;
 }
 
-function getCategory(name) {
-  const lower = name.toLowerCase();
-  if (lower.includes("dal") || lower.includes("bean")) return "Dals & Pulses";
-  if (lower.includes("rice") || lower.includes("flour") || lower.includes("semolina")) return "Grains";
-  if (lower.includes("paneer") || lower.includes("milk") || lower.includes("cream") || lower.includes("yogurt") || lower.includes("ghee") || lower.includes("butter")) return "Dairy";
-  if (lower.includes("egg") || lower.includes("chicken") || lower.includes("fish")) return "Protein";
-  if (lower.includes("onion") || lower.includes("tomato") || lower.includes("potato") || lower.includes("spinach") || lower.includes("vegetable") || lower.includes("cucumber") || lower.includes("cauliflower")) return "Vegetables";
-  return "Other";
-}
-
-export function generateGroceryList(plans) {
-  const map = new Map();
-
-  for (const day of plans) {
-    for (const meal of day.meals) {
-      for (const ing of meal.recipe.ingredients) {
-        const key = ing.name.toLowerCase();
-        const existing = map.get(key);
-        if (existing) {
-          existing.quantity = `${existing.quantity} + ${ing.quantity}`;
-        } else {
-          map.set(key, {
-            name: ing.name,
-            nameHi: ing.nameHi,
-            quantity: ing.quantity,
-            category: getCategory(ing.name),
-          });
-        }
-      }
-    }
-  }
-
-  return Array.from(map.values()).sort((a, b) => a.category.localeCompare(b.category));
-}
+export { generateGroceryList, buildGroceryList } from "./groceryService.js";
 
 export function getDefaultPreferences() {
   return {

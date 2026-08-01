@@ -10,6 +10,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { buildPlannerContext } from "../lib/plannerContext";
 import { nutritionFromPlans } from "../lib/nutrition";
 import { getNutritionGoals } from "../lib/nutritionGoals";
+import { saveGroceryFromPlan } from "../lib/groceryStore";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -43,6 +44,7 @@ export default function Planner() {
     try {
       const result = await fetchMealPlan({ ...preferences, ...buildPlannerContext() });
       setData(result);
+      if (result.groceryList) saveGroceryFromPlan(result.groceryList, { diet: preferences.diet });
       localStorage.setItem("akb-prefs", JSON.stringify(preferences));
     } catch {
       setError("Plan generate nahi ho paya. Server check karein.");

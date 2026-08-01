@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchHealthyPlan } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import { loadPantry } from "../lib/pantryStore";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
@@ -19,7 +20,7 @@ export default function HealthyWeek() {
   const load = () => {
     setLoading(true);
     setError(false);
-    fetchHealthyPlan(diet)
+    fetchHealthyPlan(diet, { pantry: loadPantry().map((i) => i.key) })
       .then(setData)
       .catch(() => {
         setData(null);

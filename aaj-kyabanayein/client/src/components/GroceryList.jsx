@@ -1,18 +1,44 @@
-import { useState } from "react";
-import { buildGroceryWhatsAppText, openInstamartSearch, openWhatsAppShare } from "../lib/pantryStore";
+import { useEffect, useState } from "react";
+import { buildGroceryWhatsAppText, openWhatsAppShare } from "../lib/pantryStore";
+import {
+  getCheckedState,
+  getGroceryCompletion,
+  openProviderSearch,
+  toggleGroceryChecked,
+} from "../lib/groceryStore";
+import { getGroceryProviders } from "../lib/groceryProviders";
 import { track } from "../lib/analytics";
 
-export default function GroceryList({ items }) {
-  const [checked, setChecked] = useState({});
+export default function GroceryList({ items, persist = true }) {
+  const [checked, setChecked] = useState(() => (persist ? getCheckedState() : {}));
+
+  useEffect(() => {
+    if (persist) setChecked(getCheckedState());
+  }, [items, persist]);
+
   const grouped = items.reduce((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
+    const cat = item.category || "Other";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
     return acc;
   }, {});
-  const doneCount = Object.values(checked).filter(Boolean).length;
+
+  const { done, total } = getGroceryCompletion(items);
+  const providers = getGroceryProviders();
+
+  const itemKey = (item) => item.id || item.name;
+
+  const handleToggle = (id) => {
+    if (persist) {
+      setChecked(toggleGroceryChecked(id));
+    } else {
+      setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+    }
+  };
 
   const shareWa = () => {
-    openWhatsAppShare(buildGroceryWhatsAppText(items));
+    const pending = items.filter((i) => !checked[itemKey(i)]);
+    openWhatsAppShare(buildGroceryWhatsAppText(pending.length ? pending : items));
     track("grocery_whatsapp", { count: items.length });
   };
 
@@ -20,7 +46,7 @@ export default function GroceryList({ items }) {
     <div className="glass-strong rounded-2xl p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-lg text-[var(--text-primary)]">Bazaar List</h3>
-        <span className="text-sm text-[var(--text-secondary)]">{doneCount}/{items.length}</span>
+        <span className="text-sm text-[var(--text-secondary)]">{done}/{total}</span>
       </div>
 
       {items.length === 0 ? (
@@ -31,34 +57,41 @@ export default function GroceryList({ items }) {
             <button type="button" onClick={shareWa} className="premium-btn-outline px-3 py-1.5 text-xs">
               WhatsApp share
             </button>
-            <button
-              type="button"
-              onClick={() => { openInstamartSearch(items[0]?.name || "groceries"); track("instamart_open"); }}
-              className="premium-btn-outline px-3 py-1.5 text-xs"
-            >
-              Open Instamart
-            </button>
+            {providers.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => { openProviderSearch(p.id, items[0]?.name || "groceries"); track("grocery_provider", { provider: p.id }); }}
+                className="premium-btn-outline px-3 py-1.5 text-xs"
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
           <div className="space-y-4">
             {Object.entries(grouped).map(([category, catItems]) => (
               <div key={category}>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent-green)]">{category}</h4>
                 <ul className="space-y-2">
-                  {catItems.map((item) => (
-                    <li key={item.name}>
-                      <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/40">
-                        <input
-                          type="checkbox"
-                          checked={checked[item.name] ?? false}
-                          onChange={() => setChecked((prev) => ({ ...prev, [item.name]: !prev[item.name] }))}
-                          className="h-4 w-4 rounded accent-[var(--accent-green)]"
-                        />
-                        <span className={checked[item.name] ? "text-sm text-[var(--text-secondary)] line-through" : "text-sm text-[var(--text-primary)]"}>
-                          {item.nameHi} ({item.name}) — {item.quantity}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
+                  {catItems.map((item) => {
+                    const id = itemKey(item);
+                    const isChecked = checked[id] ?? false;
+                    return (
+                      <li key={id}>
+                        <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/40">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggle(id)}
+                            className="h-4 w-4 rounded accent-[var(--accent-green)]"
+                          />
+                          <span className={isChecked ? "text-sm text-[var(--text-secondary)] line-through" : "text-sm text-[var(--text-primary)]"}>
+                            {item.nameHi} ({item.name}) — {item.quantity}
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
