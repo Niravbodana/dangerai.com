@@ -6,6 +6,11 @@ if [ -f "$ENV_FILE" ]; then
   exit 0
 fi
 cp "$(dirname "$0")/.env.example" "$ENV_FILE"
-echo "Created $ENV_FILE — paste your Gemini API key from https://aistudio.google.com/apikey"
+echo "Created $ENV_FILE"
+echo ""
+echo "Add your API keys:"
+echo "  GROQ_API_KEY  — https://console.groq.com/keys (fast, recommended)"
+echo "  GEMINI_API_KEY — https://aistudio.google.com/apikey (fallback)"
+echo ""
 echo "Edit: nano $ENV_FILE"
 echo "Then restart: npm run dev:server"

@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 import { buildIngredients, buildStepsEn, buildStepsHi } from "../data/recipeTemplates.js";
 import { searchGoogleImage, searchGoogleRecipeData, isGoogleSearchConfigured } from "./googleSearchService.js";
-import { fetchRecipeFromGemini, isGeminiConfigured } from "./geminiRecipeService.js";
+import { fetchRecipeFromAI, getAIProviderStatus, isAIConfigured } from "./aiRecipeService.js";
 import { searchTheMealDb } from "./theMealDbService.js";
 import { ensureRecipeImage, hasCachedImage, cacheImageFromUrl } from "./recipeImageService.js";
 
@@ -84,14 +84,13 @@ async function fetchFromWeb(recipe) {
   const searchName = cleanRecipeName(recipe.name) || recipe.name;
   const results = [];
 
-  // 1. Gemini (primary — uses your Google API key)
-  if (isGeminiConfigured()) {
-    const gemini = await fetchRecipeFromGemini(searchName, recipe.cuisine || "indian");
-    if (gemini) {
-      results.push(gemini);
-      // Fast Wikipedia thumb from Gemini's suggested title
-      const thumb = await fetchWikiThumb(gemini.wikiImageTitle, 480);
-      if (thumb) results.push({ source: "gemini-wiki", imageUrl: thumb });
+  // 1. Groq (fast) → Gemini fallback
+  if (isAIConfigured()) {
+    const ai = await fetchRecipeFromAI(searchName, recipe.cuisine || "indian");
+    if (ai) {
+      results.push(ai);
+      const thumb = await fetchWikiThumb(ai.wikiImageTitle, 480);
+      if (thumb) results.push({ source: `${ai.source}-wiki`, imageUrl: thumb });
     }
   }
 
@@ -189,7 +188,7 @@ async function runEnrichment(recipe) {
     enriched: true,
     enrichedAt: new Date().toISOString(),
     enrichmentSources: applied.sources,
-    googleEnabled: isGeminiConfigured() || isGoogleSearchConfigured(),
+    googleEnabled: isAIConfigured() || isGoogleSearchConfigured(),
   };
 
   writeCache(recipe.id, enriched);
@@ -226,8 +225,9 @@ export async function getEnrichedRecipe(recipe, { force = false } = {}) {
 }
 
 export function getEnrichmentStatus() {
+  const ai = getAIProviderStatus();
   return {
-    gemini: isGeminiConfigured(),
+    ...ai,
     googleSearch: isGoogleSearchConfigured(),
     cacheDir: CACHE_DIR,
   };

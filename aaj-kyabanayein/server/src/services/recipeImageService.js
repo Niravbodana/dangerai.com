@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 import { isGoogleSearchConfigured, searchGoogleImage } from "./googleSearchService.js";
-import { fetchRecipeFromGemini, isGeminiConfigured } from "./geminiRecipeService.js";
+import { fetchRecipeFromAI, isAIConfigured } from "./aiRecipeService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -25,7 +25,7 @@ const NOISE_WORDS = new Set([
 const WRONG_DISHES = ["dosa", "pizza", "burger", "sushi", "taco", "sandwich", "pasta"];
 
 const inFlight = new Map();
-const geminiHints = new Map();
+const aiHints = new Map();
 let lastWikiCall = 0;
 let fetchQueue = Promise.resolve();
 
@@ -130,20 +130,20 @@ function pickBest(candidates, name) {
     .sort((a, b) => (b.score ?? scoreTitle(b.title, name)) - (a.score ?? scoreTitle(a.title, name)))[0] || null;
 }
 
-async function getGeminiImageHints(recipe) {
+async function getAIImageHints(recipe) {
   const key = recipe.id || recipe.name;
-  if (geminiHints.has(key)) return geminiHints.get(key);
+  if (aiHints.has(key)) return aiHints.get(key);
 
-  if (!isGeminiConfigured()) return null;
+  if (!isAIConfigured()) return null;
 
   try {
-    const data = await fetchRecipeFromGemini(recipe.name, recipe.cuisine || "indian");
+    const data = await fetchRecipeFromAI(recipe.name, recipe.cuisine || "indian");
     if (!data) return null;
     const hints = {
       wikiImageTitle: data.wikiImageTitle,
       imageSearchQuery: data.imageSearchQuery || recipe.name,
     };
-    geminiHints.set(key, hints);
+    aiHints.set(key, hints);
     return hints;
   } catch {
     return null;
@@ -239,7 +239,7 @@ function buildSearchQueries(name, hints) {
 
 async function findImageUrl(recipe) {
   const name = recipe.name || recipe.id || "food";
-  const hints = await getGeminiImageHints(recipe);
+  const hints = await getAIImageHints(recipe);
   const candidates = [];
 
   const curatedTitle = getCuratedWikiTitle(recipe);
@@ -250,7 +250,7 @@ async function findImageUrl(recipe) {
 
   if (hints?.wikiImageTitle) {
     const geminiWiki = await searchWikipediaTitle(hints.wikiImageTitle, name);
-    if (geminiWiki) candidates.push({ ...geminiWiki, source: "gemini-wikipedia" });
+    if (geminiWiki) candidates.push({ ...geminiWiki, source: "ai-wikipedia" });
   }
 
   if (isGoogleSearchConfigured()) {
