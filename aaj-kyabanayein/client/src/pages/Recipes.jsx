@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { fetchCategories, fetchRecipes, fetchTrendingRecipes } from "../api";
+import { fetchCategories, fetchRecipeSuggestions, fetchRecipes, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeSearch from "../components/RecipeSearch";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
+import { getEmptySearchMessage, getSearchTips } from "../lib/searchUtils";
 
 function useDebounce(value, delay = 400) {
   const [debounced, setDebounced] = useState(value);
@@ -34,6 +35,7 @@ export default function Recipes() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [trendingSearches, setTrendingSearches] = useState([]);
 
   useEffect(() => {
     fetchCategories().then((data) => {
@@ -41,6 +43,9 @@ export default function Recipes() {
       setCategories(data.categories || []);
       setTotal(data.totalRecipes || 0);
     });
+    fetchRecipeSuggestions("").then((data) => {
+      setTrendingSearches(data.trendingSearches || []);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -93,6 +98,21 @@ export default function Recipes() {
   };
 
   const activeFilters = [diet !== "all", cuisine !== "all", category !== "all"].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setDiet("all");
+    setCuisine("all");
+    setCategory("all");
+    setSearch("");
+    setPage(1);
+    setSearchParams({});
+  };
+
+  const applyTrendingSearch = (term) => {
+    setSearch(term);
+    setPage(1);
+    setSearchParams({ search: term });
+  };
 
   return (
     <div className="min-h-screen">
@@ -204,8 +224,41 @@ export default function Recipes() {
             ))}
           </div>
         ) : recipes.length === 0 ? (
-          <div className="recipe-card mt-12 p-12 text-center">
-            <p className="text-[var(--text-secondary)]">No recipes found. Try a different search or filter.</p>
+          <div className="recipe-card mt-12 p-8 text-center sm:p-12">
+            <p className="text-[var(--text-primary)]">{getEmptySearchMessage(debouncedSearch)}</p>
+            <ul className="mx-auto mt-4 max-w-md space-y-1 text-left text-sm text-[var(--text-secondary)]">
+              {getSearchTips().map((tip) => (
+                <li key={tip}>• {tip}</li>
+              ))}
+            </ul>
+            {trendingSearches.length > 0 && (
+              <div className="mt-6">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Trending searches
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {trendingSearches.map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => applyTrendingSearch(term)}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-[var(--text-primary)] hover:bg-white/10"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(activeFilters > 0 || debouncedSearch) && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="premium-btn-outline tap-smooth mt-6 px-5 py-2.5 text-sm"
+              >
+                Clear search &amp; filters
+              </button>
+            )}
           </div>
         ) : (
           <>
