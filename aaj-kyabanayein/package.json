@@ -9,6 +9,7 @@
     "dev:client": "npm run dev --prefix client -- --host",
     "start:server": "npm start --prefix server",
     "build:client": "npm run build --prefix client",
+    "test": "npm run test --prefix client",
     "generate-recipes": "npm run generate-recipes --prefix server",
     "build-recipe-books": "npm run build-recipe-books --prefix server",
     "prefetch-images": "npm run prefetch-images --prefix server",
