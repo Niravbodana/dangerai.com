@@ -6,6 +6,7 @@ import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
 import PreferencesPanel from "../components/PreferencesPanel";
 import { useLanguage } from "../context/LanguageContext";
+import { trackPlannerUse } from "../lib/analytics";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -40,6 +41,7 @@ export default function Planner() {
       const result = await fetchMealPlan(preferences);
       setData(result);
       localStorage.setItem("akb-prefs", JSON.stringify(preferences));
+      trackPlannerUse("generate", { diet: preferences.diet, days: result?.plans?.length || 0 });
     } catch {
       setError("Plan generate nahi ho paya. Server check karein.");
     } finally {
@@ -62,6 +64,7 @@ export default function Planner() {
       const { diet, budget, familySize, maxCookTime, spice } = prefs;
       const result = await savePreferences({ diet, budget, familySize, maxCookTime, spice });
       updateUser(result.user);
+      trackPlannerUse("save_prefs", { diet, budget });
     } catch (err) {
       setError(err.message);
     } finally {

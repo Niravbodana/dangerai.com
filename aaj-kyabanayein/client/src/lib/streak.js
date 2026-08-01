@@ -1,4 +1,6 @@
 /** Cook streak + badges — local habit loop */
+import { trackStreak } from "./analytics";
+
 const KEY = "akb-streak";
 
 const BADGES = [
@@ -79,7 +81,9 @@ export function recordCookFinish(recipeId) {
   data.lastRecipeId = recipeId;
   unlockBadges(data);
   write(data);
-  return getStreak();
+  const streak = getStreak();
+  trackStreak("cook_finish", { recipeId, current: streak.current, totalCooks: streak.totalCooks });
+  return streak;
 }
 
 export function recordVoiceUse() {
