@@ -80,6 +80,9 @@ export default function Home() {
               src="/home/hero-homemaker.png"
               alt="Indian homemaker cooking with Rasoira"
               className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-auto rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
             <div className="home-float-card home-float-card--stats !left-2 !bottom-4 sm:!left-0">
               <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">900+</p>

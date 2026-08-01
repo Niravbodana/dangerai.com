@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 const PLACEHOLDER_SVG =
   "data:image/svg+xml," +
@@ -14,7 +14,7 @@ function isExternal(url) {
   return typeof url === "string" && /^https?:\/\//i.test(url);
 }
 
-export default function RecipeImage({ src, alt, className = "", recipeId = "", eager = false, version = 0 }) {
+export default memo(function RecipeImage({ src, alt, className = "", recipeId = "", eager = false, version = 0 }) {
   const [url, setUrl] = useState(() => (isExternal(src) ? src : PLACEHOLDER_SVG));
   const [failed, setFailed] = useState(false);
 
@@ -82,6 +82,6 @@ export default function RecipeImage({ src, alt, className = "", recipeId = "", e
       onError={() => setFailed(true)}
     />
   );
-}
+});
 
 export { PLACEHOLDER_SVG as FALLBACK };

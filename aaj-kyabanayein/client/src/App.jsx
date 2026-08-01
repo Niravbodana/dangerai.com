@@ -1,5 +1,5 @@
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, useSearchParams, useNavigate, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { AuthModalProvider, useAuthModal } from './context/AuthModalContext';
@@ -9,24 +9,26 @@ import MobileNav from './components/MobileNav';
 import Footer from './components/Footer';
 import GlobalSeo from './components/GlobalSeo';
 import AuthModal from './components/AuthModal';
+import LoadingSpinner from './components/LoadingSpinner';
 import Home from './pages/Home';
-import Recipes from './pages/Recipes';
-import RecipeDetail from './pages/RecipeDetail';
-import CookingMode from './pages/CookingMode';
-import Favorites from './pages/Favorites';
-import Planner from './pages/Planner';
-import Pantry from './pages/Pantry';
-import HealthyWeek from './pages/HealthyWeek';
-import Pricing from './pages/Pricing';
-import RecipeReview from './pages/RecipeReview';
-import AddMeal from './pages/AddMeal';
-import MyMeals from './pages/MyMeals';
-import Today from './pages/Today';
-import Collections from './pages/Collections';
-import TasteProfilePage from './pages/TasteProfile';
-import Family from './pages/Family';
-import StreakPage from './pages/Streak';
-import NotFound from './pages/NotFound';
+
+const Recipes = lazy(() => import('./pages/Recipes'));
+const RecipeDetail = lazy(() => import('./pages/RecipeDetail'));
+const CookingMode = lazy(() => import('./pages/CookingMode'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const Planner = lazy(() => import('./pages/Planner'));
+const Pantry = lazy(() => import('./pages/Pantry'));
+const HealthyWeek = lazy(() => import('./pages/HealthyWeek'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const RecipeReview = lazy(() => import('./pages/RecipeReview'));
+const AddMeal = lazy(() => import('./pages/AddMeal'));
+const MyMeals = lazy(() => import('./pages/MyMeals'));
+const Today = lazy(() => import('./pages/Today'));
+const Collections = lazy(() => import('./pages/Collections'));
+const TasteProfilePage = lazy(() => import('./pages/TasteProfile'));
+const Family = lazy(() => import('./pages/Family'));
+const StreakPage = lazy(() => import('./pages/Streak'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function AuthRouteHandler() {
   const [params] = useSearchParams();
@@ -43,6 +45,14 @@ function AuthRouteHandler() {
   return null;
 }
 
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <LoadingSpinner />
+    </div>
+  );
+}
+
 function AppContent() {
   return (
     <div className="app-shell">
@@ -50,29 +60,31 @@ function AppContent() {
       <AuthRouteHandler />
       <Navbar />
       <main className="pb-20 md:pb-8">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/today" element={<Today />} />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/collections/:id" element={<Collections />} />
-          <Route path="/taste" element={<TasteProfilePage />} />
-          <Route path="/family" element={<Family />} />
-          <Route path="/streak" element={<StreakPage />} />
-          <Route path="/recipes" element={<Recipes />} />
-          <Route path="/recipe/:id" element={<RecipeDetail />} />
-          <Route path="/cook/:id" element={<CookingMode />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/pantry" element={<Pantry />} />
-          <Route path="/healthy-week" element={<HealthyWeek />} />
-          <Route path="/login" element={<Navigate to="/?auth=login" replace />} />
-          <Route path="/signup" element={<Navigate to="/?auth=signup" replace />} />
-          <Route path="/recipe/:id/review" element={<RecipeReview />} />
-          <Route path="/add-meal" element={<AddMeal />} />
-          <Route path="/my-meals" element={<MyMeals />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/today" element={<Today />} />
+            <Route path="/collections" element={<Collections />} />
+            <Route path="/collections/:id" element={<Collections />} />
+            <Route path="/taste" element={<TasteProfilePage />} />
+            <Route path="/family" element={<Family />} />
+            <Route path="/streak" element={<StreakPage />} />
+            <Route path="/recipes" element={<Recipes />} />
+            <Route path="/recipe/:id" element={<RecipeDetail />} />
+            <Route path="/cook/:id" element={<CookingMode />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/planner" element={<Planner />} />
+            <Route path="/pantry" element={<Pantry />} />
+            <Route path="/healthy-week" element={<HealthyWeek />} />
+            <Route path="/login" element={<Navigate to="/?auth=login" replace />} />
+            <Route path="/signup" element={<Navigate to="/?auth=signup" replace />} />
+            <Route path="/recipe/:id/review" element={<RecipeReview />} />
+            <Route path="/add-meal" element={<AddMeal />} />
+            <Route path="/my-meals" element={<MyMeals />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       <Footer />
       <MobileNav />
