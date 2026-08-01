@@ -30,6 +30,7 @@ import { getEnrichedRecipe, getEnrichmentStatus } from "../services/recipeEnrich
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
 import { attachRating } from "../services/ratingsStore.js";
+import { getQuerySuggestions, getTrendingSearches } from "../lib/searchUtils.js";
 import {
   ensureRecipeImage,
   readCachedImage,
@@ -125,15 +126,33 @@ router.get("/recipes/trending", (req, res) => {
 router.get("/recipes/suggest", (req, res) => {
   const q = (req.query.q || "").trim();
   const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 8));
+  const ingredientNames = COMMON_PANTRY_ITEMS.map((i) => i.name || i);
 
   if (!q) {
     const popular = getTrendingRecipes(limit).map(toListItem).map(attachRating);
-    return res.json({ success: true, suggestions: popular, type: "popular" });
+    return res.json({
+      success: true,
+      suggestions: popular,
+      trendingSearches: getTrendingSearches(8),
+      querySuggestions: getTrendingSearches(6),
+      type: "popular",
+    });
   }
 
-  const { results } = semanticSearch(q, { limit });
-  const suggestions = results.map(attachRating);
-  res.json({ success: true, suggestions, type: "search" });
+  const filtered = filterRecipeIndex({ search: q });
+  const matches = filtered.slice(0, limit).map(toListItem).map(attachRating);
+  const querySuggestions = getQuerySuggestions(q, { ingredients: ingredientNames });
+  const ingredientMatch = filtered.some((r) =>
+    r.pantryKeys?.some((k) => k.includes(q.toLowerCase())),
+  );
+
+  res.json({
+    success: true,
+    suggestions: matches,
+    querySuggestions,
+    matchType: ingredientMatch ? "ingredient" : "recipe",
+    type: "search",
+  });
 });
 
 router.get("/ai/status", (_req, res) => {

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { recipeMatchesSearch, scoreRecipeSearch } from "../lib/searchUtils.js";
 import { ENGLISH_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
 import { logger } from "../lib/logger.js";
 
@@ -158,6 +159,14 @@ function loadCuratedData() {
   // Full recipes loaded without per-recipe enrichment at startup
   const recipes = JSON.parse(fs.readFileSync(RECIPES_FILE, "utf-8"));
   recipeById = new Map(recipes.map((r) => [r.id, r]));
+
+  recipeIndex = recipeIndex.map((entry) => {
+    const full = recipeById.get(entry.id);
+    const pantryKeys = full?.pantryKeys
+      || full?.ingredients?.map((i) => (i.name || "").toLowerCase()).filter(Boolean)
+      || [];
+    return pantryKeys.length ? { ...entry, pantryKeys } : entry;
+  });
   const enrichedCache = new Map();
 
   // Patch getRecipeById to enrich lazily on first access
@@ -211,14 +220,8 @@ export function filterRecipeIndex(filters = {}) {
     if (!Number.isNaN(max)) list = list.filter((r) => (r.cookTime || 99) <= max);
   }
   if (search) {
-    const q = search.toLowerCase();
-    list = list.filter(
-      (r) =>
-        r.name?.toLowerCase().includes(q) ||
-        r.nameHi?.toLowerCase().includes(q) ||
-        r.cuisine?.toLowerCase().includes(q) ||
-        r.tags?.some((t) => t.toLowerCase().includes(q))
-    );
+    list = list.filter((r) => recipeMatchesSearch(r, search));
+    list = [...list].sort((a, b) => scoreRecipeSearch(b, search) - scoreRecipeSearch(a, search));
   }
   return list;
 }
