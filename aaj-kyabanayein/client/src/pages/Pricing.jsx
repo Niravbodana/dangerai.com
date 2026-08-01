@@ -4,14 +4,14 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Pricing() {
   const { t } = useLanguage();
   const features = [
-    '5.7 Lakh+ recipes across 11 cuisines',
+    '770+ real recipes with authentic ingredients',
     'Veg / Non-Veg filter',
     'Hot Makings trending',
     'Ratings & Favorites',
     'WhatsApp Share',
     'Hindi / English',
-    '7-day meal plan',
-    'Cooking mode with timers',
+    'Daily & weekly healthy meal plan',
+    'Step-by-step cooking mode',
   ];
 
   return (

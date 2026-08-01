@@ -25,7 +25,7 @@ export default function MealCard({ mealType, recipe }) {
             <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{recipe.nameHi}</h3>
             <p className="text-sm text-[var(--text-secondary)]">{recipe.name}</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <span className="flex items-center gap-1 rounded-lg bg-white/40 px-2 py-0.5 text-xs text-[var(--text-secondary)]">
+              <span className="flex items-center gap-1 rounded-lg bg-white/8 px-2 py-0.5 text-xs text-[var(--text-secondary)]">
                 <IconClock className="w-3 h-3" />
                 {recipe.cookTime} min
               </span>

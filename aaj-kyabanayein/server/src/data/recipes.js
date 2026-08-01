@@ -12,6 +12,65 @@ let recipeIndex = [];
 let recipeById = new Map();
 const customRecipes = new Map();
 
+const GENERIC_STEP_RE = /prepare all ingredients|cook following traditional|season to taste and serve/i;
+
+function isGenericSteps(steps) {
+  if (!steps?.length) return true;
+  if (steps.length <= 3 && GENERIC_STEP_RE.test(steps.join(" "))) return true;
+  return false;
+}
+
+function hasDevanagari(text) {
+  return /[\u0900-\u097F]/.test(text || "");
+}
+
+function inferCuisine(recipe) {
+  const name = (recipe.name || "").toLowerCase();
+  const tags = (recipe.tags || []).map((t) => t.toLowerCase());
+  const tagStr = tags.join(" ");
+
+  if (tags.includes("south-indian") || /dosa|idli|sambar|rasam|uttapam|pongal|vada|appam|puttu/i.test(name)) {
+    return "south-indian";
+  }
+  if (tags.includes("punjabi") || tags.includes("north-indian") || /paratha|rajma|chole|bhature|makhani|tandoori|butter chicken/i.test(name)) {
+    return "north-indian";
+  }
+  if (tags.includes("gujarati") || /dhokla|thepla|khandvi|fafda/i.test(name)) {
+    return "indian";
+  }
+  if (tags.includes("maharashtrian") || /vada pav|pav bhaji|misal|puran/i.test(name)) {
+    return "indian";
+  }
+  if (tags.includes("bengali") || /fish curry|rosogolla|mishti/i.test(name)) {
+    return "indian";
+  }
+  if (/poha|upma|khichdi|dal|paneer|biryani|roti|sabzi|kheer|samosa|lassi|aloo|gobi|masala/i.test(name)) {
+    return "indian";
+  }
+  if (tagStr.includes("chinese") || /noodle|manchurian|fried rice|dim sum|wonton/i.test(name)) {
+    return "chinese";
+  }
+  if (tagStr.includes("italian") || /pasta|pizza|risotto|lasagna|carbonara/i.test(name)) {
+    return "italian";
+  }
+  if (tagStr.includes("thai") || /pad thai|curry|tom yum/i.test(name)) {
+    return "thai";
+  }
+  if (tagStr.includes("mexican") || /taco|burrito|quesadilla|nacho/i.test(name)) {
+    return "mexican";
+  }
+  if (recipe.cuisine === "continental" && recipe.source === "curated") return "indian";
+  return recipe.cuisine || "indian";
+}
+
+function inferHealthy(recipe) {
+  if (recipe.tags?.includes("healthy")) return true;
+  if (recipe.category === "healthy") return true;
+  if ((recipe.calories || 999) <= 280) return true;
+  if (/salad|sprout|steamed|soup|oats|fruit|smoothie|khichdi|rasam|idli/i.test(recipe.name || "")) return true;
+  return false;
+}
+
 function expandThinIngredients(recipe) {
   const ings = recipe.ingredients || [];
   if (ings.length >= 3) return ings;
@@ -25,17 +84,21 @@ function expandThinIngredients(recipe) {
 }
 
 export function enrichRecipe(recipe) {
+  const cuisine = inferCuisine(recipe);
+  const isHealthy = inferHealthy(recipe);
   const category =
-    recipe.category ||
-    (recipe.diet?.includes("non-veg")
-      ? `nonveg-${recipe.mealType}`
-      : recipe.tags?.includes("healthy")
+    recipe.category && recipe.category !== "healthy" && !isHealthy
+      ? recipe.category
+      : isHealthy
         ? "healthy"
-        : `veg-${recipe.mealType}`);
+        : recipe.diet?.includes("non-veg")
+          ? `nonveg-${recipe.mealType}`
+          : `veg-${recipe.mealType}`;
 
   const ingredients = expandThinIngredients(recipe);
-  let steps = recipe.steps?.length ? recipe.steps : ENGLISH_STEPS[recipe.id];
-  let stepsHi = recipe.stepsHi?.length ? recipe.stepsHi : undefined;
+
+  let steps = !isGenericSteps(recipe.steps) ? recipe.steps : ENGLISH_STEPS[recipe.id];
+  let stepsHi = recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" ")) ? recipe.stepsHi : undefined;
 
   if (!steps?.length && ingredients[0]) {
     const isNonVeg = recipe.diet?.includes("non-veg");
@@ -47,15 +110,20 @@ export function enrichRecipe(recipe) {
     stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
   }
 
+  if (!stepsHi?.length && steps?.length) {
+    stepsHi = steps;
+  }
+
   return {
     ...recipe,
     category,
+    cuisine,
     ingredients,
     steps,
     stepsHi,
     pantryKeys: recipe.pantryKeys || ingredients.map((i) => i.name.toLowerCase()),
-    healthScore: recipe.healthScore ?? 5,
-    cuisine: recipe.cuisine || "indian",
+    healthScore: isHealthy ? 8 : (recipe.healthScore ?? 5),
+    tags: isHealthy && !recipe.tags?.includes("healthy") ? [...(recipe.tags || []), "healthy"] : (recipe.tags || []),
   };
 }
 
@@ -82,20 +150,20 @@ function loadCuratedData() {
     return;
   }
 
-  recipeIndex = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
   const recipes = JSON.parse(fs.readFileSync(RECIPES_FILE, "utf-8"));
-  recipeById = new Map(recipes.map((r) => [r.id, enrichRecipe(r)]));
+  const enriched = recipes.map(enrichRecipe);
+  recipeById = new Map(enriched.map((r) => [r.id, r]));
+  recipeIndex = enriched.map(toIndexEntry);
 }
 
 console.time("recipes-load");
 loadCuratedData();
 console.timeEnd("recipes-load");
-console.log(`Ready: ${recipeIndex.length} curated real recipes`);
 
-/** Lightweight list for browsing — names & meta only, no images or ingredients */
+export const RECIPE_COUNT = recipeIndex.length;
+console.log(`Ready: ${RECIPE_COUNT} curated real recipes`);
+
 export const RECIPE_INDEX = recipeIndex;
-
-/** Backward compat — full recipe objects */
 export const RECIPES = [...recipeById.values(), ...customRecipes.values()];
 
 export function getRecipeById(id) {
@@ -146,20 +214,34 @@ export const RECIPE_CATEGORIES = [
   { id: "snack", label: "Snacks", labelHi: "स्नैक" },
 ];
 
-export const CUISINES = [
-  { id: "all", label: "All", labelHi: "सभी" },
-  { id: "indian", label: "Indian", labelHi: "भारतीय" },
-  { id: "north-indian", label: "North Indian", labelHi: "उत्तर भारतीय" },
-  { id: "south-indian", label: "South Indian", labelHi: "दक्षिण भारतीय" },
-  { id: "chinese", label: "Chinese", labelHi: "चाइनीज़" },
-  { id: "italian", label: "Italian", labelHi: "इटालियन" },
-  { id: "korean", label: "Korean", labelHi: "कोरियन" },
-  { id: "thai", label: "Thai", labelHi: "थाई" },
-  { id: "mexican", label: "Mexican", labelHi: "मेक्सिकन" },
-  { id: "continental", label: "Continental", labelHi: "कॉन्टिनेंटल" },
-  { id: "healthy", label: "Healthy", labelHi: "स्वस्थ" },
-];
+function buildCuisinesList() {
+  const counts = {};
+  for (const r of RECIPE_INDEX) {
+    counts[r.cuisine] = (counts[r.cuisine] || 0) + 1;
+  }
 
+  const labels = {
+    indian: { en: "Indian", hi: "भारतीय" },
+    "north-indian": { en: "North Indian", hi: "उत्तर भारतीय" },
+    "south-indian": { en: "South Indian", hi: "दक्षिण भारतीय" },
+    chinese: { en: "Chinese", hi: "चाइनीज़" },
+    italian: { en: "Italian", hi: "इटालियन" },
+    thai: { en: "Thai", hi: "थाई" },
+    mexican: { en: "Mexican", hi: "मेक्सिकन" },
+    continental: { en: "Continental", hi: "कॉन्टिनेंटल" },
+    healthy: { en: "Healthy", hi: "स्वस्थ" },
+  };
+
+  const list = [{ id: "all", label: "All", labelHi: "सभी" }];
+  for (const [id, count] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+    if (count > 0 && labels[id]) {
+      list.push({ id, label: labels[id].en, labelHi: labels[id].hi, count });
+    }
+  }
+  return list;
+}
+
+export const CUISINES = buildCuisinesList();
 export const FUTURE_CUISINES = CUISINES;
 
 export const PRICING_PLANS = [
@@ -171,7 +253,7 @@ export const PRICING_PLANS = [
     period: "for now",
     popular: true,
     features: [
-      "770+ real recipes",
+      `${RECIPE_COUNT}+ real recipes`,
       "Ratings & Favorites",
       "Step-by-step cooking",
       "Pantry suggestions",
@@ -204,7 +286,6 @@ export function isNonVegRecipe(r) {
   return r.diet?.includes("non-veg");
 }
 
-/** Strip full recipe to list-safe metadata (no ingredients, no image) */
 export function toListItem(meta) {
   return {
     id: meta.id,
@@ -217,5 +298,6 @@ export function toListItem(meta) {
     calories: meta.calories,
     spice: meta.spice,
     tags: meta.tags,
+    imageUrl: `/api/recipes/image/${meta.id}`,
   };
 }

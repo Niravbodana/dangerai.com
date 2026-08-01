@@ -33,7 +33,7 @@ export default function Favorites() {
 
         {loading ? (
           <div className="mt-12 flex justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-orange-500" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent-soft)]" />
           </div>
         ) : recipes.length === 0 ? (
           <div className="recipe-card mt-8 p-12 text-center">

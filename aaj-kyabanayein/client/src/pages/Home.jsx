@@ -102,8 +102,8 @@ export default function Home() {
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Real Recipes</p>
             </div>
             <div className="home-float-card home-float-card--rating">
-              <Stars n={5} />
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">4.8 avg rating</p>
+              <p className="font-display text-lg text-[var(--accent-soft)]">Daily</p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Healthy meal plan</p>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function Home() {
         <div className="relative mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pb-16 sm:grid-cols-4 sm:gap-4">
           {[
             { n: "770+", l: "Real Recipes" },
-            { n: "11", l: "Cuisines" },
+            { n: "8+", l: "Cuisines" },
             { n: "7 Din", l: "Meal Plan" },
             { n: "Free", l: "Abhi ke liye" },
           ].map((s) => (

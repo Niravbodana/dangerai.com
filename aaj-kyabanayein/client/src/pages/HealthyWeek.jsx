@@ -64,7 +64,7 @@ export default function HealthyWeek() {
                     {day.totalCalories} cal
                   </span>
                 </div>
-                <p className="mb-4 rounded-xl bg-white/40 px-4 py-2 text-sm text-[var(--text-primary)]">
+                <p className="mb-4 rounded-xl border border-white/8 bg-white/5 px-4 py-2.5 text-sm text-[var(--text-primary)]">
                   {day.healthTip}
                 </p>
                 <div className="space-y-4">

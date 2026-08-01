@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchDailyHealthyPlan } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import RecipeImage from "./RecipeImage";
 import { IconArrowRight, IconClock } from "./Icons";
-
-const MEAL_LABELS = {
-  breakfast: { en: "Breakfast", hi: "नाश्ता" },
-  lunch: { en: "Lunch", hi: "दोपहर" },
-  snack: { en: "Snack", hi: "स्नैक" },
-  dinner: { en: "Dinner", hi: "रात" },
-};
 
 export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDietChange }) {
   const { lang, t } = useLanguage();
@@ -38,14 +32,14 @@ export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDi
   if (!plan) return null;
 
   return (
-    <div className={compact ? "" : "glass-strong rounded-2xl p-6"}>
+    <div className={compact ? "" : "glass-strong rounded-2xl p-6 sm:p-8"}>
       {!compact && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-green)]">
               {lang === "hi" ? "आज का प्लान" : "Today's Plan"}
             </p>
-            <h2 className="font-display text-2xl text-[var(--text-primary)]">
+            <h2 className="font-display text-2xl text-[var(--text-primary)] sm:text-3xl">
               {lang === "hi" ? "स्वस्थ शरीर के लिए" : "Healthy Body Meal Plan"}
             </h2>
           </div>
@@ -55,7 +49,7 @@ export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDi
                 key={d}
                 type="button"
                 onClick={() => setDiet(d)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-full px-4 py-2 text-xs font-medium transition ${
                   diet === d
                     ? "bg-[var(--accent-green)] text-white"
                     : "border border-white/12 text-[var(--text-secondary)] hover:border-white/25"
@@ -68,15 +62,15 @@ export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDi
         </div>
       )}
 
-      <p className="mb-4 rounded-xl bg-[var(--accent-green)]/10 px-4 py-2.5 text-sm text-[var(--text-primary)]">
-        💡 {plan.healthTip}
+      <p className="mb-5 rounded-xl border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/10 px-4 py-3 text-sm text-[var(--text-primary)]">
+        {plan.healthTip}
       </p>
 
-      <div className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+      <div className={`grid gap-4 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
         {plan.meals.map((meal) => {
           const label = lang === "hi"
-            ? (meal.labelHi || MEAL_LABELS[meal.mealType]?.hi)
-            : (meal.label || MEAL_LABELS[meal.mealType]?.en);
+            ? (meal.labelHi || meal.label)
+            : meal.label;
           const name = lang === "hi"
             ? (meal.recipe.nameHi || meal.recipe.name)
             : meal.recipe.name;
@@ -85,35 +79,40 @@ export default function DailyHealthyPlan({ compact = false, diet: dietProp, onDi
             <Link
               key={meal.mealType}
               to={`/recipe/${meal.recipe.id}`}
-              className="group rounded-xl border border-white/8 bg-white/5 p-4 transition hover:border-[var(--accent-green)]/30 hover:bg-white/8"
+              className="group flex gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-3 transition hover:border-[var(--accent-green)]/30 hover:bg-white/[0.06]"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{meal.icon}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-green)]">
+              <RecipeImage
+                recipeId={meal.recipe.id}
+                alt={name}
+                className="h-16 w-16 shrink-0 rounded-lg object-cover bg-[#242018]"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-green)]">
                   {label}
-                </span>
-              </div>
-              <h3 className="mt-2 font-semibold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-soft)]">
-                {name}
-              </h3>
-              <div className="mt-2 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                <IconClock className="h-3.5 w-3.5" />
-                {meal.recipe.cookTime} min · {meal.recipe.calories} cal
+                </p>
+                <h3 className="mt-0.5 font-semibold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-soft)]">
+                  {name}
+                </h3>
+                <div className="mt-1.5 flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                  <IconClock className="h-3 w-3" />
+                  {meal.recipe.cookTime} min
+                </div>
               </div>
             </Link>
           );
         })}
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-5 flex items-center justify-between border-t border-white/8 pt-4">
         <span className="text-sm text-[var(--text-secondary)]">
-          {lang === "hi" ? "कुल" : "Total"}: <strong className="text-[var(--accent-green)]">{plan.totalCalories} cal</strong>
+          {lang === "hi" ? "कुल" : "Total"}:{" "}
+          <strong className="text-[var(--accent-green)]">{plan.totalCalories} cal</strong>
         </span>
         <Link
           to="/healthy-week"
           className="inline-flex items-center gap-1 text-sm font-medium text-[var(--accent-soft)] hover:underline"
         >
-          {lang === "hi" ? "पूरा हफ्ता देखें" : "Full week plan"}
+          {lang === "hi" ? "पूरा हफ्ता" : "Full week plan"}
           <IconArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>

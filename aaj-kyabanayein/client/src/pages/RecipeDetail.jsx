@@ -303,7 +303,7 @@ export default function RecipeDetail() {
               <h2 className="font-display text-xl text-[var(--text-primary)]">{t("similarRecipes")}</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {similar.map((r) => (
-                  <RecipeCard key={r.id} recipe={r} trending lazyImage={false} />
+                  <RecipeCard key={r.id} recipe={r} trending />
                 ))}
               </div>
             </div>

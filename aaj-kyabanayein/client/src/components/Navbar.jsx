@@ -7,6 +7,7 @@ import BrandLogo from "./BrandLogo";
 const NAV = [
   { to: "/recipes", key: "recipes" },
   { to: "/healthy-week", key: "featHealthy" },
+  { to: "/favorites", key: "favorites" },
   { to: "/pantry", key: "pantry" },
   { to: "/planner", key: "mealPlan" },
 ];

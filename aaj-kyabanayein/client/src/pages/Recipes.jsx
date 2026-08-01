@@ -39,6 +39,7 @@ export default function Recipes() {
     fetchCategories().then((data) => {
       setCuisines(data.cuisines || []);
       setCategories(data.categories || []);
+      setTotal(data.totalRecipes || 0);
     });
   }, []);
 
@@ -56,17 +57,12 @@ export default function Recipes() {
       fetchTrendingRecipes(24)
         .then((data) => {
           let list = data.recipes || [];
-          if (diet === "veg") {
-            list = list.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
-          } else if (diet === "non-veg") {
-            list = list.filter((r) => r.diet?.includes("non-veg"));
-          }
+          if (diet === "veg") list = list.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
+          else if (diet === "non-veg") list = list.filter((r) => r.diet?.includes("non-veg"));
           if (cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
           if (debouncedSearch) {
             const q = debouncedSearch.toLowerCase();
-            list = list.filter(
-              (r) => r.name.toLowerCase().includes(q) || r.nameHi?.toLowerCase().includes(q)
-            );
+            list = list.filter((r) => r.name.toLowerCase().includes(q) || r.nameHi?.toLowerCase().includes(q));
           }
           setRecipes(list);
           setTotal(list.length);
@@ -92,11 +88,7 @@ export default function Recipes() {
   }, [diet, cuisine, category, page, debouncedSearch, sortTrending]);
 
   const setSort = (trending) => {
-    if (trending) {
-      setSearchParams({ sort: "trending" });
-    } else {
-      setSearchParams({});
-    }
+    setSearchParams(trending ? { sort: "trending" } : {});
     setPage(1);
   };
 
@@ -104,26 +96,26 @@ export default function Recipes() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="text-center">
-          <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">
-            {sortTrending ? t("hotMakings") : "Recipes"}
+          <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)] sm:text-4xl">
+            {sortTrending ? t("hotMakings") : t("recipes")}
           </h1>
-          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
-            {total.toLocaleString()} real recipes · tap to see ingredients & photo
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            {total.toLocaleString()} hand-picked recipes with real ingredients
           </p>
         </div>
 
-        <div className="mt-6">
+        <div className="mx-auto mt-6 max-w-2xl">
           <RecipeSearch autoFocus />
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => setSort(false)}
             className={`rounded-full px-4 py-2 text-xs font-medium transition ${
-              !sortTrending ? "bg-white/12 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              !sortTrending ? "bg-[var(--accent)]/20 text-[var(--accent-soft)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             {t("allRecipes")}
@@ -132,7 +124,7 @@ export default function Recipes() {
             type="button"
             onClick={() => setSort(true)}
             className={`rounded-full px-4 py-2 text-xs font-medium transition ${
-              sortTrending ? "bg-white/12 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              sortTrending ? "bg-[var(--accent)]/20 text-[var(--accent-soft)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             {t("hotMakings")}
@@ -152,7 +144,7 @@ export default function Recipes() {
         </div>
 
         {filtersOpen && (
-          <div className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="mx-auto mt-4 max-w-3xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex flex-wrap justify-center gap-2">
               {[
                 { id: "all", label: "All" },
@@ -172,7 +164,6 @@ export default function Recipes() {
                 </button>
               ))}
             </div>
-
             <div className="filter-row">
               <span className="filter-row__label">Meal</span>
               <div className="filter-row__chips">
@@ -188,7 +179,6 @@ export default function Recipes() {
                 ))}
               </div>
             </div>
-
             <div className="filter-row">
               <span className="filter-row__label">Cuisine</span>
               <div className="filter-row__chips">
@@ -208,25 +198,24 @@ export default function Recipes() {
         )}
 
         {loading ? (
-          <div className="mt-8 space-y-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/10" />
+              <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/10" />
             ))}
           </div>
         ) : recipes.length === 0 ? (
           <div className="recipe-card mt-12 p-12 text-center">
-            <p className="text-[var(--text-secondary)]">No recipes found. Try a different search.</p>
+            <p className="text-[var(--text-secondary)]">No recipes found. Try a different search or filter.</p>
           </div>
         ) : (
           <>
-            <div className="mt-6 space-y-3">
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {recipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
                   trending={sortTrending}
                   rank={recipe.trendingRank}
-                  lazyImage
                 />
               ))}
             </div>
