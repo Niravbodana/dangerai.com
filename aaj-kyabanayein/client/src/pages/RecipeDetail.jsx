@@ -54,14 +54,16 @@ export default function RecipeDetail() {
   const [isFav, setIsFav] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [enriching, setEnriching] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
   const [similar, setSimilar] = useState([]);
 
   const load = () => {
     setLoading(true);
+    setEnriching(true);
     Promise.all([
-      fetchRecipe(id),
+      fetchRecipe(id, { enrich: true }),
       fetchRecipeRating(id),
       fetchReviews(id),
       fetchTrendingRecipes(20),
@@ -76,7 +78,10 @@ export default function RecipeDetail() {
         const cuisine = recipeData.recipe?.cuisine;
         setSimilar(trending.filter((r) => r.id !== id && r.cuisine === cuisine).slice(0, 4));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setEnriching(false);
+      });
   };
 
   useEffect(load, [id]);
@@ -103,8 +108,13 @@ export default function RecipeDetail() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
         <LoadingSpinner />
+        {enriching && (
+          <p className="text-sm text-[var(--text-secondary)]">
+            {lang === "hi" ? "Google/Wiki se recipe details la rahe hain..." : "Fetching recipe details from web..."}
+          </p>
+        )}
       </div>
     );
   }

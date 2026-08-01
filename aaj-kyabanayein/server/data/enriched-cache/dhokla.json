@@ -1,0 +1,62 @@
+{
+  "ingredients": [
+    {
+      "name": "Besan",
+      "nameHi": "बेसन",
+      "quantity": "1.5 cups"
+    },
+    {
+      "name": "Onion",
+      "nameHi": "प्याज",
+      "quantity": "2 medium"
+    },
+    {
+      "name": "Tomato",
+      "nameHi": "टमाटर",
+      "quantity": "2"
+    },
+    {
+      "name": "Ginger-garlic paste",
+      "nameHi": "अदrak-लहसुन",
+      "quantity": "1 tbsp"
+    },
+    {
+      "name": "Coriander powder",
+      "nameHi": "धनिया पाउडर",
+      "quantity": "1 tsp"
+    },
+    {
+      "name": "Red chilli powder",
+      "nameHi": "लाल मिर्च",
+      "quantity": "1/2 tsp"
+    },
+    {
+      "name": "Salt",
+      "nameHi": "नमक",
+      "quantity": "to taste"
+    },
+    {
+      "name": "Turmeric",
+      "nameHi": "हल्दी",
+      "quantity": "1/2 tsp"
+    }
+  ],
+  "steps": [
+    "Wash and prep Besan. Cut if needed.",
+    "Heat oil in a pan. Add cumin and let it splutter.",
+    "Add onions, ginger-garlic and sauté until fragrant.",
+    "Add Besan, spices and a splash of water. Cover and cook.",
+    "Finish as curry. Garnish and serve hot."
+  ],
+  "stepsHi": [
+    "बेसन धोकर तैयार करें।",
+    "तेल गर्म करें, जीरा और प्याज भूनें।",
+    "मसाले और टमाटर डालकर पकाएं।",
+    "बेसन डालकर ढककर पकाएं।",
+    "गरमागरम Curry परोसें।"
+  ],
+  "enriched": true,
+  "enrichedAt": "2026-08-01T12:00:41.592Z",
+  "enrichmentSources": [],
+  "googleEnabled": false
+}

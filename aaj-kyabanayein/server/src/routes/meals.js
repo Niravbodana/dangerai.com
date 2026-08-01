@@ -20,13 +20,13 @@ import {
   suggestFromPantry,
 } from "../services/pantryService.js";
 import { enrichRecipeWithFlow } from "../services/cookingFlowService.js";
+import { getEnrichedRecipe, getEnrichmentStatus } from "../services/recipeEnrichmentService.js";
 import { findUserById } from "../services/userStore.js";
 import { getTrendingRecipes } from "../services/trendingService.js";
 import { attachRating } from "../services/ratingsStore.js";
 import {
   ensureRecipeImage,
   readCachedImage,
-  hasCachedImage,
   warmRecipeImage,
 } from "../services/recipeImageService.js";
 import path from "path";
@@ -109,13 +109,33 @@ router.get("/recipes/suggest", (req, res) => {
   res.json({ success: true, suggestions: matches });
 });
 
-router.get("/recipes/:id", (req, res) => {
+router.get("/recipes/enrichment-status", (_req, res) => {
+  res.json({ success: true, ...getEnrichmentStatus() });
+});
+
+router.post("/recipes/:id/enrich", async (req, res) => {
   const recipe = RECIPES.find((r) => r.id === req.params.id);
   if (!recipe) {
     return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   }
-  const full = enrichRecipeWithFlow(recipe);
-  res.json({ success: true, recipe: full });
+  try {
+    const enriched = await getEnrichedRecipe(recipe, { force: true });
+    const full = enrichRecipeWithFlow(enriched);
+    res.json({ success: true, recipe: full });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/recipes/:id", async (req, res) => {
+  const recipe = RECIPES.find((r) => r.id === req.params.id);
+  if (!recipe) {
+    return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+  }
+  const shouldEnrich = req.query.enrich !== "0";
+  const enriched = shouldEnrich ? await getEnrichedRecipe(recipe) : recipe;
+  const full = enrichRecipeWithFlow(enriched);
+  res.json({ success: true, recipe: full, enriched: Boolean(enriched.enriched) });
 });
 
 router.get("/recipes", (req, res) => {

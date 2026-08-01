@@ -1,0 +1,45 @@
+{
+  "ingredients": [
+    {
+      "name": "Potato",
+      "nameHi": "आलू",
+      "quantity": "3 medium"
+    },
+    {
+      "name": "Cauliflower",
+      "nameHi": "गोभी",
+      "quantity": "1 small"
+    },
+    {
+      "name": "Turmeric",
+      "nameHi": "हल्दी",
+      "quantity": "1/2 tsp"
+    },
+    {
+      "name": "Coriander powder",
+      "nameHi": "धनिया पाउडर",
+      "quantity": "1 tsp"
+    },
+    {
+      "name": "Oil",
+      "nameHi": "तेल",
+      "quantity": "2 tbsp"
+    }
+  ],
+  "steps": [
+    "Cut potatoes and cauliflower into pieces.",
+    "Heat oil with cumin and spices.",
+    "Add vegetables, cover and cook on low heat.",
+    "Garnish with coriander and serve."
+  ],
+  "stepsHi": [
+    "आलू और गोभी काट लें।",
+    "तेल में जीरा और मसाले डालें।",
+    "सब्जी डालकर ढककर धीमी आंच पर पकाएं।",
+    "धनिया पत्ती से सजाकर परोसें।"
+  ],
+  "enriched": true,
+  "enrichedAt": "2026-08-01T12:00:41.244Z",
+  "enrichmentSources": [],
+  "googleEnabled": false
+}

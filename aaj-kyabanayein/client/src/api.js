@@ -92,9 +92,16 @@ export async function fetchHealthyPlan(diet = 'veg') {
 
 export const createHealthyPlan = fetchHealthyPlan;
 
-export async function fetchRecipe(id) {
-  const res = await fetch(`${API_BASE}/recipes/${id}`);
+export async function fetchRecipe(id, { enrich = true } = {}) {
+  const q = enrich ? "?enrich=1" : "?enrich=0";
+  const res = await fetch(`${API_BASE}/recipes/${id}${q}`);
   if (!res.ok) throw new Error('Recipe not found');
+  return res.json();
+}
+
+export async function enrichRecipe(id) {
+  const res = await fetch(`${API_BASE}/recipes/${id}/enrich`, { method: 'POST' });
+  if (!res.ok) throw new Error('Enrichment failed');
   return res.json();
 }
 
