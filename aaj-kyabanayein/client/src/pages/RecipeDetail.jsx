@@ -11,6 +11,8 @@ import ReviewForm from "../components/ReviewForm";
 import { IconArrowLeft, IconClock, IconHeart, IconShare, IconStar } from "../components/Icons";
 import { track } from "../lib/analytics";
 import { canSaveOfflinePack, saveOfflinePack } from "../lib/offlinePacks";
+import { getRecipeNutrition } from "../lib/nutrition";
+import NutritionSummary from "../components/NutritionSummary";
 
 function StarRating({ value, onRate, interactive = false }) {
   return (
@@ -280,6 +282,10 @@ export default function RecipeDetail() {
                   ))}
                 </div>
               )}
+
+              <div className="mt-5">
+                <NutritionSummary nutrition={getRecipeNutrition(recipe)} title="Nutrition (per serving)" compact />
+              </div>
             </div>
           </div>
 

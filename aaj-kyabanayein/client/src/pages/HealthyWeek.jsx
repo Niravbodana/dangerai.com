@@ -4,6 +4,8 @@ import { useLanguage } from "../context/LanguageContext";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
+import NutritionSummary from "../components/NutritionSummary";
+import { getNutritionGoals } from "../lib/nutritionGoals";
 
 export default function HealthyWeek() {
   const { t } = useLanguage();
@@ -15,6 +17,8 @@ export default function HealthyWeek() {
     setLoading(true);
     fetchHealthyPlan(diet).then(setData).finally(() => setLoading(false));
   }, [diet]);
+
+  const goals = getNutritionGoals();
 
   return (
     <div className="min-h-screen">
@@ -53,6 +57,13 @@ export default function HealthyWeek() {
           </div>
         ) : (
           <div className="mt-6 space-y-8">
+            {data?.weeklyNutrition && (
+              <NutritionSummary
+                nutrition={data.weeklyNutrition}
+                title="Weekly nutrition totals vs goals"
+                goals={goals}
+              />
+            )}
             {data?.plans?.map((day) => (
               <div key={day.date} className="glass-strong rounded-2xl p-6">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -61,9 +72,14 @@ export default function HealthyWeek() {
                     <p className="text-sm text-[var(--text-secondary)]">{day.date}</p>
                   </div>
                   <span className="rounded-full bg-[var(--accent-green)]/10 px-3 py-1 text-sm text-[var(--accent-green)]">
-                    {day.totalCalories} cal
+                    {day.nutrition?.calories ?? day.totalCalories} cal
                   </span>
                 </div>
+                {day.nutrition && (
+                  <div className="mb-4">
+                    <NutritionSummary nutrition={day.nutrition} title="Daily nutrition" compact goals={goals} />
+                  </div>
+                )}
                 <p className="mb-4 rounded-xl border border-white/8 bg-white/5 px-4 py-2.5 text-sm text-[var(--text-primary)]">
                   {day.healthTip}
                 </p>

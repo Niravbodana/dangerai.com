@@ -5,7 +5,10 @@ import { useAuth } from "../context/AuthContext";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
 import PreferencesPanel from "../components/PreferencesPanel";
+import NutritionSummary from "../components/NutritionSummary";
 import { useLanguage } from "../context/LanguageContext";
+import { nutritionFromPlans } from "../lib/nutrition";
+import { getNutritionGoals } from "../lib/nutritionGoals";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -69,6 +72,9 @@ export default function Planner() {
     }
   };
 
+  const goals = getNutritionGoals();
+  const planNutrition = data?.plans ? nutritionFromPlans(data.plans) : null;
+
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -97,19 +103,38 @@ export default function Planner() {
           <div className="space-y-6 lg:col-span-2">
             {error && <div className="glass rounded-xl p-4 text-sm text-red-600">{error}</div>}
 
-            {data?.plans?.map((day) => (
+            {planNutrition && (
+              <NutritionSummary
+                nutrition={planNutrition.dailyAverage}
+                title="Weekly average (daily) vs goals"
+                goals={goals}
+              />
+            )}
+
+            {data?.plans?.map((day) => {
+              const dayNutrition = planNutrition?.days.find((d) => d.date === day.date)?.nutrition;
+              return (
               <div key={day.date}>
-                <h2 className="mb-4 font-display text-xl text-[var(--text-primary)]">
+                <h2 className="mb-2 font-display text-xl text-[var(--text-primary)]">
                   {day.dayLabel}
                   <span className="ml-2 text-sm font-normal text-[var(--text-secondary)]">{day.date}</span>
                 </h2>
+                {dayNutrition && (
+                  <div className="mb-4">
+                    <NutritionSummary nutrition={dayNutrition} title="Daily totals" compact goals={goals} />
+                  </div>
+                )}
                 <div className="space-y-4">
                   {day.meals.map((meal) => (
                     <MealCard key={`${day.date}-${meal.mealType}`} mealType={meal.mealType} recipe={meal.recipe} />
                   ))}
                 </div>
               </div>
-            ))}
+            );})}
+
+            {planNutrition && (
+              <NutritionSummary nutrition={planNutrition.weekly} title="Weekly totals" />
+            )}
 
             {data?.groceryList && <GroceryList items={data.groceryList} />}
           </div>
