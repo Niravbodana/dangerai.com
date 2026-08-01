@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
+import OfflineBanner from './components/OfflineBanner';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import RecipeDetail from './pages/RecipeDetail';
@@ -45,6 +46,7 @@ function AuthRouteHandler() {
 function AppContent() {
   return (
     <div className="app-shell">
+      <OfflineBanner />
       <AuthRouteHandler />
       <Navbar />
       <main className="pb-20 md:pb-8">

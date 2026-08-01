@@ -8,6 +8,7 @@ import { getStreak } from "../lib/streak";
 import { enableMealReminders, getNotifyPref, scheduleDemoReminder } from "../lib/notifications";
 import RecipeCard from "../components/RecipeCard";
 import LoadingSpinner from "../components/LoadingSpinner";
+import EmptyState from "../components/EmptyState";
 
 const MEAL_LABELS = {
   breakfast: { en: "Breakfast", hi: "नाश्ता" },
@@ -19,6 +20,7 @@ const MEAL_LABELS = {
 export default function Today() {
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [locked, setLocked] = useState(null);
   const [notifyOn, setNotifyOn] = useState(() => getNotifyPref().enabled);
   const streak = getStreak();
@@ -31,6 +33,7 @@ export default function Today() {
       return;
     }
     setLoading(true);
+    setError(false);
     const profile = getTasteProfile();
     fetchDailyBrief(profile)
       .then((data) => {
@@ -38,7 +41,10 @@ export default function Today() {
         markDailyBriefUsed();
         track("daily_brief_open", { diet: profile.diet });
       })
-      .catch(() => setBrief(null))
+      .catch(() => {
+        setBrief(null);
+        setError(true);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -65,6 +71,21 @@ export default function Today() {
           Or see healthy week plan →
         </Link>
       </div>
+    );
+  }
+
+  if (error || !brief) {
+    return (
+      <EmptyState
+        icon="☀️"
+        title="Could not load today's brief"
+        message="Check your connection and try again."
+        action={
+          <button type="button" onClick={load} className="premium-btn px-6 py-2.5 text-sm">
+            Retry
+          </button>
+        }
+      />
     );
   }
 

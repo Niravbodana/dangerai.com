@@ -4,17 +4,29 @@ import { useLanguage } from "../context/LanguageContext";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
+import EmptyState from "../components/EmptyState";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function HealthyWeek() {
   const { t } = useLanguage();
   const [diet, setDiet] = useState("veg");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
-    fetchHealthyPlan(diet).then(setData).finally(() => setLoading(false));
-  }, [diet]);
+    setError(false);
+    fetchHealthyPlan(diet)
+      .then(setData)
+      .catch(() => {
+        setData(null);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, [diet]);
 
   return (
     <div className="min-h-screen">
@@ -49,8 +61,19 @@ export default function HealthyWeek() {
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-[var(--accent-green)]" />
+            <LoadingSpinner />
           </div>
+        ) : error ? (
+          <EmptyState
+            icon="🥗"
+            title="Could not load healthy week plan"
+            message="Check your connection and try again."
+            action={
+              <button type="button" onClick={load} className="premium-btn px-6 py-2.5 text-sm">
+                Retry
+              </button>
+            }
+          />
         ) : (
           <div className="mt-6 space-y-8">
             {data?.plans?.map((day) => (
