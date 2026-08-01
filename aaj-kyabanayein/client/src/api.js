@@ -1,4 +1,8 @@
+import { fetchWithRetry, formatApiError, isOffline, parseResponse } from './lib/errors';
+
 const API_BASE = '/api';
+
+export { formatApiError, getEmptyState, isOffline } from './lib/errors';
 
 export function getToken() {
   return localStorage.getItem('akb-token');
@@ -13,9 +17,43 @@ function authHeaders() {
 }
 
 async function handleResponse(res) {
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
+  const data = await parseResponse(res);
+  if (!res.ok) {
+    throw new Error(formatApiError({
+      status: res.status,
+      message: data.message || data.error,
+      offline: isOffline(),
+    }));
+  }
   return data;
+}
+
+async function apiRequest(url, options = {}, { retry = true, fallback } = {}) {
+  try {
+    const res = await fetchWithRetry(
+      () => fetch(url, options),
+      { retries: retry ? 2 : 0 },
+    );
+    if (!res.ok) {
+      const data = await parseResponse(res);
+      const message = formatApiError({
+        status: res.status,
+        message: data.message || data.error,
+        offline: isOffline(),
+      });
+      if (fallback !== undefined && (isOffline() || res.status >= 500)) {
+        return typeof fallback === 'function' ? fallback() : fallback;
+      }
+      throw new Error(message);
+    }
+    return res.json();
+  } catch (err) {
+    if (fallback !== undefined && (isOffline() || err?.name === 'TypeError')) {
+      return typeof fallback === 'function' ? fallback() : fallback;
+    }
+    if (err instanceof Error && err.message) throw err;
+    throw new Error(formatApiError({ offline: isOffline() }));
+  }
 }
 
 export async function register(name, email, password) {
@@ -63,52 +101,39 @@ export async function savePreferences(preferences) {
 export const updatePreferences = savePreferences;
 
 export async function fetchPricing() {
-  const res = await fetch(`${API_BASE}/pricing`);
-  if (!res.ok) throw new Error('Pricing fetch failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/pricing`);
 }
 
 export async function fetchMealPlan(preferences) {
-  const res = await fetch(`${API_BASE}/plan`, {
+  return apiRequest(`${API_BASE}/plan`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(preferences),
   });
-  if (!res.ok) throw new Error('Meal plan fetch failed');
-  return res.json();
 }
 
 export const createPlan = fetchMealPlan;
 
 export async function fetchHealthyPlan(diet = 'veg') {
-  const res = await fetch(`${API_BASE}/plan/healthy`, {
+  return apiRequest(`${API_BASE}/plan/healthy`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ diet }),
   });
-  if (!res.ok) throw new Error('Healthy plan fetch failed');
-  return res.json();
 }
 
 export async function fetchDailyHealthyPlan(diet = 'veg') {
-  const res = await fetch(`${API_BASE}/plan/healthy/daily?diet=${encodeURIComponent(diet)}`);
-  if (!res.ok) throw new Error('Daily healthy plan fetch failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/plan/healthy/daily?diet=${encodeURIComponent(diet)}`);
 }
 
 export const createHealthyPlan = fetchHealthyPlan;
 
 export async function fetchRecipe(id) {
-  const res = await fetch(`${API_BASE}/recipes/${id}`);
-  if (!res.ok) throw new Error('Recipe not found');
-  return res.json();
+  return apiRequest(`${API_BASE}/recipes/${id}`);
 }
 
-/** On recipe select — fetch matching photo + enriched ingredients via Google/Gemini */
 export async function fetchRecipeLoad(id) {
-  const res = await fetch(`${API_BASE}/recipes/${id}/load`);
-  if (!res.ok) throw new Error('Recipe load failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/recipes/${id}/load`);
 }
 
 export async function enrichRecipe(id) {
@@ -154,21 +179,21 @@ export async function fetchCustomMeals(guestId) {
 
 export async function fetchRecipes(params = {}) {
   const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_BASE}/recipes?${query}`);
-  if (!res.ok) throw new Error('Recipes fetch failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/recipes?${query}`, {}, {
+    fallback: { success: true, recipes: [], total: 0, totalPages: 0 },
+  });
 }
 
 export async function fetchRecipeSuggestions(q, limit = 8) {
-  const res = await fetch(`${API_BASE}/recipes/suggest?q=${encodeURIComponent(q)}&limit=${limit}`);
-  if (!res.ok) return { suggestions: [] };
-  return res.json();
+  return apiRequest(
+    `${API_BASE}/recipes/suggest?q=${encodeURIComponent(q)}&limit=${limit}`,
+    {},
+    { fallback: { suggestions: [] } },
+  );
 }
 
 export async function fetchRecipeCategories() {
-  const res = await fetch(`${API_BASE}/recipes/categories`);
-  if (!res.ok) throw new Error('Categories fetch failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/recipes/categories`);
 }
 
 export const fetchCategories = fetchRecipeCategories;
@@ -199,15 +224,15 @@ export async function submitReview(id, score, comment, guestId) {
 }
 
 export async function fetchReviews(id) {
-  const res = await fetch(`${API_BASE}/recipes/${id}/reviews`);
-  if (!res.ok) return { reviews: [] };
-  return res.json();
+  return apiRequest(`${API_BASE}/recipes/${id}/reviews`, {}, { fallback: { reviews: [] } });
 }
 
 export async function fetchFavorites(guestId) {
-  const res = await fetch(`${API_BASE}/favorites?guestId=${guestId}`);
-  if (!res.ok) return { favorites: [], ids: [] };
-  return res.json();
+  return apiRequest(
+    `${API_BASE}/favorites?guestId=${guestId}`,
+    {},
+    { fallback: { favorites: [], ids: [] } },
+  );
 }
 
 export async function addFavorite(recipeId, guestId) {
@@ -227,47 +252,37 @@ export async function removeFavorite(recipeId, guestId) {
 }
 
 export async function fetchTrendingRecipes(limit = 12) {
-  const res = await fetch(`${API_BASE}/recipes/trending?limit=${limit}`);
-  if (!res.ok) throw new Error('Trending fetch failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/recipes/trending?limit=${limit}`, {}, {
+    fallback: { recipes: [], total: 0 },
+  });
 }
 
 export async function fetchPantryItems() {
-  const res = await fetch(`${API_BASE}/pantry/items`);
-  if (!res.ok) throw new Error('Pantry items fetch failed');
-  return res.json();
+  return apiRequest(`${API_BASE}/pantry/items`);
 }
 
 export async function suggestFromPantry(body) {
-  const res = await fetch(`${API_BASE}/pantry/suggest`, {
+  return apiRequest(`${API_BASE}/pantry/suggest`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error('Pantry suggest failed');
-  return res.json();
 }
 
 export const pantrySuggest = suggestFromPantry;
 
 export async function fetchDailyBrief(profile) {
-  const res = await fetch(`${API_BASE}/plan/daily-brief`, {
+  return apiRequest(`${API_BASE}/plan/daily-brief`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(profile || {}),
   });
-  if (!res.ok) throw new Error('Daily brief failed');
-  return res.json();
 }
 
 export async function fetchCollections() {
-  const res = await fetch(`${API_BASE}/collections`);
-  if (!res.ok) return { collections: [] };
-  return res.json();
+  return apiRequest(`${API_BASE}/collections`, {}, { fallback: { collections: [] } });
 }
 
 export async function fetchCollection(id) {
-  const res = await fetch(`${API_BASE}/collections/${id}`);
-  if (!res.ok) throw new Error('Collection not found');
-  return res.json();
+  return apiRequest(`${API_BASE}/collections/${id}`);
 }
