@@ -59,11 +59,7 @@ export default function CookingMode() {
     setTimerRunning(false);
     setTimerLeft(0);
     if (stepIndex < flow.length - 1) {
-      const nextIndex = stepIndex + 1;
-      setStepIndex(nextIndex);
-      if (flow[nextIndex]?.type === "done") {
-        navigate(`/recipe/${id}/review?from=cook`);
-      }
+      setStepIndex(stepIndex + 1);
     }
   };
 

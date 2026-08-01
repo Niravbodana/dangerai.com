@@ -52,18 +52,7 @@ export function buildCookingFlow(recipe) {
   const flow = [];
   let id = 1;
 
-  flow.push({
-    id: id++,
-    type: "intro",
-    action: "gather",
-    title: "Check Ingredients",
-    titleHi: "सामग्री चेक करें",
-    description: `${recipe.nameHi} banane ke liye yeh ${recipe.ingredients?.length || 0} cheezein chahiye`,
-    descriptionHi: `${recipe.nameHi} बनाने के लिए ये सामग्री तैयार रखें`,
-    ingredients: recipe.ingredients || [],
-    duration: 0,
-    icon: "📋",
-  });
+  // Intro/gather step is handled by CookingMode pre-start screen — skip duplicate here
 
   for (const ing of recipe.ingredients || []) {
     if (needsWash(ing.name)) {
@@ -127,13 +116,14 @@ export function buildCookingFlow(recipe) {
   steps.forEach((stepText, index) => {
     const stepType = inferStepType(stepText);
     const duration = inferDuration(stepText, recipe.cookTime || 30);
+    const enStep = recipe.steps?.[index];
     flow.push({
       id: id++,
       type: stepType,
       action: stepType === "serve" ? "serve" : "cook",
-      title: `Step ${index + 1}`,
+      title: enStep || `Step ${index + 1}`,
       titleHi: stepText,
-      description: stepText,
+      description: enStep || stepText,
       descriptionHi: stepText,
       duration: stepType === "serve" ? 0 : duration,
       icon:
@@ -163,9 +153,9 @@ export function buildCookingFlow(recipe) {
     type: "done",
     action: "complete",
     title: "You did it!",
-    titleHi: "You did it!",
+    titleHi: "हो गया! बधाई हो! 🎉",
     description: "If you enjoyed cooking with me, please leave a review ☺️",
-    descriptionHi: "If you enjoyed cooking with me, please leave a review ☺️",
+    descriptionHi: "अगर आपको मेरे साथ cooking करना अच्छा लगा तो please review दीजिए ☺️",
     duration: 0,
     icon: "☺️",
   });

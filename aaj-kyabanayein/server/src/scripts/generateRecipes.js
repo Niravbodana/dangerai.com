@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getRecipeImage } from "../data/recipeImages.js";
+import { buildIngredients, buildStepsEn, buildStepsHi } from "../data/recipeTemplates.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "../data/generated");
@@ -57,11 +58,16 @@ function generateIndianVeg(count, prefix) {
   for (let i = 0; i < count; i++) {
     const veg = pick(VEGETABLES, i);
     const vi = VEGETABLES.indexOf(veg);
+    const style = pick(STYLES, i >> 1);
+    const styleHi = pick(STYLES_HI, i >> 1);
     const meal = pick(MEALS, i >> 3);
+    const mainIng = { name: veg, nameHi: VEG_HI[vi], quantity: "2 cups" };
+    const ingredients = buildIngredients(mainIng, style, false);
+    const name = `${veg} ${style}`;
     recipes.push(makeRecipe({
       id: slug(prefix, i),
-      name: `${pick(VARIANTS, i)} ${pick(REGIONS, i)} ${veg} ${pick(STYLES, i >> 1)}`,
-      nameHi: `${pick(VARIANTS, i)} ${VEG_HI[vi]} ${pick(STYLES_HI, i >> 1)}`,
+      name,
+      nameHi: `${VEG_HI[vi]} ${styleHi}`,
       mealType: meal,
       diet: i % 5 === 0 ? ["veg", "vegan"] : ["veg"],
       cuisine: "indian",
@@ -70,11 +76,9 @@ function generateIndianVeg(count, prefix) {
       cookTime: 15 + (i % 45),
       calories: 200 + (i % 220),
       spice: pick(["mild", "medium", "spicy"], i),
-      ingredients: [
-        { name: veg, nameHi: VEG_HI[vi], quantity: "2 cups" },
-        { name: "Onion", nameHi: "प्याज", quantity: "2" },
-      ],
-      stepsHi: [`${VEG_HI[vi]} तैयार करें।`, "मसाला बनाएं।", "पकाएं।", "गरमागरम परोसें।"],
+      ingredients,
+      steps: buildStepsEn(veg, style, false),
+      stepsHi: buildStepsHi(VEG_HI[vi], styleHi),
       tags: [meal, "veg", "indian"],
     }));
   }
@@ -86,11 +90,16 @@ function generateIndianNonVeg(count, prefix) {
   for (let i = 0; i < count; i++) {
     const protein = pick(NONVEG, i);
     const pi = NONVEG.indexOf(protein);
+    const style = pick(STYLES, i);
+    const styleHi = pick(STYLES_HI, i);
     const meal = pick(MEALS, i >> 2);
+    const mainIng = { name: protein, nameHi: NONVEG_HI[pi], quantity: "500g" };
+    const ingredients = buildIngredients(mainIng, style, true);
+    const name = `${protein} ${style}`;
     recipes.push(makeRecipe({
       id: slug(prefix, i),
-      name: `${pick(VARIANTS, i)} ${pick(REGIONS, i)} ${protein} ${pick(STYLES, i)}`,
-      nameHi: `${NONVEG_HI[pi]} ${pick(STYLES_HI, i)}`,
+      name,
+      nameHi: `${NONVEG_HI[pi]} ${styleHi}`,
       mealType: meal,
       diet: ["non-veg"],
       cuisine: "indian",
@@ -99,11 +108,9 @@ function generateIndianNonVeg(count, prefix) {
       cookTime: 25 + (i % 50),
       calories: 320 + (i % 280),
       spice: pick(["mild", "medium", "spicy"], i),
-      ingredients: [
-        { name: protein, nameHi: NONVEG_HI[pi], quantity: "500g" },
-        { name: "Onion", nameHi: "प्याज", quantity: "3" },
-      ],
-      stepsHi: [`${NONVEG_HI[pi]} मैरिनेट करें।`, "मसाला तैयार करें।", "धीमी आंच पर पकाएं।", "परोसें।"],
+      ingredients,
+      steps: buildStepsEn(protein, style, true),
+      stepsHi: buildStepsHi(NONVEG_HI[pi], styleHi),
       tags: [meal, "non-veg", "indian"],
     }));
   }
@@ -117,10 +124,15 @@ function generateRegional(count, prefix, cuisine, nameArr, nameHiArr, vegRatio =
     const isNV = i % vegRatio === 0;
     const dish = pick(nameArr, i);
     const dishHi = pick(nameHiArr, i);
+    const style = pick(STYLES, i >> 2);
+    const styleHi = pick(STYLES_HI, i >> 2);
+    const mainIng = { name: dish, nameHi: dishHi, quantity: isNV ? "500g" : "2 cups" };
+    const ingredients = buildIngredients(mainIng, style, isNV);
+    const name = `${dish} ${style}`;
     recipes.push(makeRecipe({
       id: slug(prefix, i),
-      name: `${pick(VARIANTS, i)} ${dish} ${pick(STYLES, i >> 2)}`,
-      nameHi: `${dishHi} ${pick(STYLES_HI, i >> 2)}`,
+      name,
+      nameHi: `${dishHi} ${styleHi}`,
       mealType: meal,
       diet: isNV ? ["non-veg"] : ["veg", "vegan"],
       cuisine,
@@ -129,8 +141,9 @@ function generateRegional(count, prefix, cuisine, nameArr, nameHiArr, vegRatio =
       cookTime: 20 + (i % 35),
       calories: 280 + (i % 200),
       spice: pick(["mild", "medium", "spicy"], i),
-      ingredients: [{ name: dish, nameHi: dishHi, quantity: "1 serving" }],
-      stepsHi: ["सामग्री तैयार करें।", "पकाएं।", "परोसें।"],
+      ingredients,
+      steps: buildStepsEn(dish, style, isNV),
+      stepsHi: buildStepsHi(dishHi, styleHi),
       tags: [meal, cuisine],
     }));
   }
@@ -143,10 +156,19 @@ function generateHealthy(count, prefix) {
     const meal = pick(MEALS, i);
     const dish = pick(HEALTHY, i);
     const dishHi = pick(HEALTHY_HI, i);
+    const mainIng = { name: dish, nameHi: dishHi, quantity: "1 bowl" };
+    const ingredients = [
+      mainIng,
+      { name: "Olive oil", nameHi: "जैतून का तेल", quantity: "1 tbsp" },
+      { name: "Lemon juice", nameHi: "नींबू", quantity: "1 tbsp" },
+      { name: "Mixed seeds", nameHi: "मिक्स बीज", quantity: "2 tbsp" },
+      { name: "Salt", nameHi: "नमक", quantity: "to taste" },
+      { name: "Black pepper", nameHi: "काली मिर्च", quantity: "1/4 tsp" },
+    ];
     recipes.push(makeRecipe({
       id: slug(prefix, i),
-      name: `${pick(VARIANTS, i)} ${dish}`,
-      nameHi: `${dishHi}`,
+      name: dish,
+      nameHi: dishHi,
       mealType: meal,
       diet: ["veg", "vegan"],
       cuisine: "healthy",
@@ -155,8 +177,21 @@ function generateHealthy(count, prefix) {
       cookTime: 10 + (i % 25),
       calories: 150 + (i % 150),
       spice: "mild",
-      ingredients: [{ name: dish, nameHi: dishHi, quantity: "1 bowl" }],
-      stepsHi: ["ताज़ी सामग्री लें।", "हल्के मसाले डालें।", "स्वस्थ तरीके से परोसें।"],
+      ingredients,
+      steps: [
+        "Gather fresh ingredients.",
+        "Wash and prep vegetables or fruits.",
+        "Combine in a bowl with light seasoning.",
+        "Drizzle olive oil and lemon.",
+        "Serve fresh immediately.",
+      ],
+      stepsHi: [
+        "ताज़ी सामग्री तैयार करें।",
+        "सब्जी या फल धोकर काटें।",
+        "कटोरे में हल्के मसाले मिलाएं।",
+        "जैतून का तेल और नींबू डालें।",
+        "तुरंत ताज़ा परोसें।",
+      ],
       tags: ["healthy", meal],
     }));
   }

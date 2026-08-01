@@ -42,7 +42,7 @@ function StarRow({ average, count }) {
 }
 
 export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [fav, setFav] = useState(isFavorite(recipe.id));
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
@@ -100,7 +100,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
 
       <div className="p-4">
         <h3 className="font-semibold text-[var(--text-primary)] line-clamp-1 tracking-tight">
-          {recipe.name}
+          {lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name}
         </h3>
         <p className="mt-0.5 text-xs capitalize text-[var(--text-secondary)]">{recipe.cuisine}</p>
 

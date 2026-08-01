@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -70,16 +71,37 @@ function cleanSearchTerms(name = "") {
   return name.trim();
 }
 
+function extractCoreDishName(name = "") {
+  const curated = getCuratedWikiTitle({ name });
+  if (curated) return curated;
+
+  const clean = cleanSearchTerms(name);
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length <= 3) return clean;
+  return words.slice(-3).join(" ");
+}
+
 function scoreTitle(title, name) {
   const t = title.toLowerCase();
-  const words = name.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !NOISE_WORDS.has(w));
+  const core = extractCoreDishName(name).toLowerCase();
+  const words = core.split(/\s+/).filter((w) => w.length > 2 && !NOISE_WORDS.has(w));
   if (!words.length) return 0;
+
   const hits = words.filter((w) => t.includes(w)).length;
-  const ratio = hits / words.length;
-  let score = ratio;
-  if (t.includes(name.toLowerCase())) score += 0.5;
-  if (/(food|dish|cuisine|recipe|curry|biryani|dosa|paratha|khichdi|thali)/.test(t)) score += 0.15;
-  if (words.length >= 2 && hits < words.length) score -= 0.2;
+  let score = hits / words.length;
+
+  if (t.includes(core)) score += 0.5;
+  if (/(food|dish|cuisine|recipe|curry|biryani|paratha|khichdi|thali)/.test(t)) score += 0.1;
+
+  // Penalize unrelated popular dishes when query doesn't match
+  const unrelated = ["dosa", "pizza", "burger", "sushi", "taco"];
+  for (const dish of unrelated) {
+    if (t.includes(dish) && !core.includes(dish) && !name.toLowerCase().includes(dish)) {
+      score -= 0.4;
+    }
+  }
+
+  if (words.length >= 2 && hits < words.length) score -= 0.15;
   return score;
 }
 
@@ -112,56 +134,75 @@ async function searchWikipedia(query, originalName) {
     }))
     .sort((a, b) => b.score - a.score);
 
-  return pages[0]?.score >= 0.4 ? pages[0] : null;
+  return pages[0]?.score >= 0.45 ? pages[0] : null;
+}
+
+async function searchWikimediaCommons(query, originalName) {
+  await throttleWiki();
+  const url =
+    "https://commons.wikimedia.org/w/api.php?action=query&generator=search" +
+    `&gsrsearch=${encodeURIComponent(query + " food dish")}&gsrlimit=6` +
+    "&prop=imageinfo&iiprop=url&iiurlwidth=900&format=json";
+
+  try {
+    const data = await fetchJson(url);
+    const pages = Object.values(data.query?.pages || {})
+      .filter((p) => p.imageinfo?.[0]?.thumburl || p.imageinfo?.[0]?.url)
+      .map((p) => {
+        const info = p.imageinfo[0];
+        const title = p.title?.replace("File:", "").replace(/\.[^.]+$/, "") || "";
+        return {
+          title,
+          imageUrl: info.thumburl || info.url,
+          score: scoreTitle(title, originalName) + 0.05,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return pages[0]?.score >= 0.4 ? pages[0] : null;
+  } catch {
+    return null;
+  }
 }
 
 async function searchMealDb(name) {
   const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(name)}`;
-  const data = await fetchJson(url);
-  const meal = data.meals?.[0];
-  if (!meal?.strMealThumb) return null;
-  return {
-    title: meal.strMeal,
-    imageUrl: meal.strMealThumb,
-    score: scoreTitle(meal.strMeal, name),
-  };
+  try {
+    const data = await fetchJson(url);
+    const meal = data.meals?.[0];
+    if (!meal?.strMealThumb) return null;
+    return {
+      title: meal.strMeal,
+      imageUrl: meal.strMealThumb,
+      score: scoreTitle(meal.strMeal, name),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function buildSearchQueries(name) {
   const clean = cleanSearchTerms(name);
-  const lower = name.toLowerCase();
+  const core = extractCoreDishName(name);
   const queries = new Set([
     name,
     clean,
+    core,
+    `${core} food`,
+    `${core} dish`,
     `${clean} food`,
-    `${clean} dish`,
     `${clean} indian food`,
-    `${name} food`,
   ]);
 
+  const lower = name.toLowerCase();
   if (lower.includes("dal") && lower.includes("chawal")) {
     queries.add("dal chawal");
     queries.add("dal bhat");
-    queries.add("dal rice indian");
   }
-  if (lower.includes("khichdi")) {
-    queries.add("khichdi");
-    queries.add("khichdi indian food");
-  }
-  if (lower.includes("paratha")) {
-    queries.add("paratha");
-    queries.add("aloo paratha");
-    queries.add("paratha indian food");
-  }
-  if (lower.includes("roti")) {
-    queries.add("roti");
-    queries.add("chapati");
-    queries.add("indian flatbread");
-  }
-  if (lower.includes("paneer")) {
-    queries.add("paneer curry");
-    queries.add("paneer masala");
-  }
+  if (lower.includes("khichdi")) queries.add("khichdi");
+  if (lower.includes("paratha")) queries.add("paratha");
+  if (lower.includes("roti")) queries.add("roti chapati");
+  if (lower.includes("paneer")) queries.add("paneer curry");
   if (lower.includes("chicken")) queries.add("chicken curry indian");
 
   return [...queries].filter(Boolean);
@@ -171,52 +212,76 @@ async function findImageUrl(recipe) {
   const name = recipe.name || recipe.id || "indian food";
   let best = null;
 
-  const titleGuesses = [
-    name,
-    name.replace(/\s+/g, " "),
-    `${name} (food)`,
-    cleanSearchTerms(name),
-  ];
-  if (name.toLowerCase().includes("dal") && name.toLowerCase().includes("chawal")) {
-    titleGuesses.unshift("Dal bhat", "Khichdi", "Dal");
-  }
-  if (name.toLowerCase().includes("khichdi")) titleGuesses.unshift("Khichdi");
-  if (name.toLowerCase().includes("paratha")) titleGuesses.unshift("Paratha", "Aloo paratha");
-  if (name.toLowerCase().includes("roti")) titleGuesses.unshift("Roti", "Chapati");
-
-  for (const title of [...new Set(titleGuesses)]) {
-    const direct = await searchWikipediaTitle(title);
-    if (direct && (!best || direct.score > best.score)) {
-      best = { ...direct, source: "wikipedia-title" };
+  // 1. Curated Wikipedia title (highest priority)
+  const curatedTitle = getCuratedWikiTitle(recipe);
+  if (curatedTitle) {
+    const direct = await searchWikipediaTitle(curatedTitle);
+    if (direct) {
+      best = { ...direct, source: "curated-wikipedia", score: 1.2 };
     }
   }
 
-  for (const query of buildSearchQueries(name)) {
-    const wiki = await searchWikipedia(query, name);
-    if (wiki && (!best || wiki.score > best.score)) best = { ...wiki, source: "wikipedia" };
-    if (best?.score >= 0.9) break;
+  // 2. Direct Wikipedia title guesses from core dish name
+  const titleGuesses = [
+    extractCoreDishName(name),
+    cleanSearchTerms(name),
+    `${extractCoreDishName(name)} (food)`,
+  ];
+
+  for (const title of [...new Set(titleGuesses)]) {
+    if (!title) continue;
+    const direct = await searchWikipediaTitle(title);
+    if (direct) {
+      const scored = { ...direct, score: scoreTitle(direct.title, name) + 0.3 };
+      if (!best || scored.score > best.score) {
+        best = { ...scored, source: "wikipedia-title" };
+      }
+    }
   }
 
+  // 3. Wikipedia search
+  for (const query of buildSearchQueries(name)) {
+    const wiki = await searchWikipedia(query, name);
+    if (wiki && (!best || wiki.score > best.score)) {
+      best = { ...wiki, source: "wikipedia" };
+    }
+    if (best?.score >= 0.95) break;
+  }
+
+  // 4. Wikimedia Commons
+  if (!best || best.score < 0.7) {
+    const commons = await searchWikimediaCommons(extractCoreDishName(name) || cleanSearchTerms(name), name);
+    if (commons && (!best || commons.score > best.score)) {
+      best = { ...commons, source: "wikimedia-commons" };
+    }
+  }
+
+  // 5. TheMealDB fallback
   if (!best || best.score < 0.6) {
-    const mealDb = await searchMealDb(cleanSearchTerms(name) || name);
+    const mealDb = await searchMealDb(extractCoreDishName(name) || cleanSearchTerms(name) || name);
     if (mealDb && (!best || mealDb.score > best.score)) {
       best = { ...mealDb, source: "themealdb" };
     }
   }
 
-  const lower = name.toLowerCase();
-  if (lower.includes("dal") && lower.includes("chawal") && best?.title === "Dal") {
-    const khichdi = await searchWikipediaTitle("Khichdi");
-    if (khichdi) best = { ...khichdi, source: "wikipedia-related" };
-  }
-  if (lower.includes("rajma") && lower.includes("chawal") && !best?.imageUrl) {
-    const rajma = await searchWikipediaTitle("Rajma");
-    if (rajma) best = { ...rajma, source: "wikipedia-related" };
-  }
-
+  // 6. Cuisine-level fallback (never default to dosa)
   if (!best) {
-    const fallback = await searchWikipedia(`${cleanSearchTerms(name) || "indian"} cuisine food`, name);
-    if (fallback) best = { ...fallback, source: "wikipedia-fallback" };
+    const cuisine = recipe.cuisine || "indian";
+    const cuisineFallbacks = {
+      indian: "Indian cuisine",
+      "south-indian": "South Indian cuisine",
+      "north-indian": "North Indian cuisine",
+      chinese: "Chinese cuisine",
+      italian: "Italian cuisine",
+      korean: "Korean cuisine",
+      thai: "Thai cuisine",
+      mexican: "Mexican cuisine",
+      continental: "European cuisine",
+      healthy: "Vegetarian cuisine",
+    };
+    const fallbackTitle = cuisineFallbacks[cuisine] || "Indian cuisine";
+    const fallback = await searchWikipediaTitle(fallbackTitle);
+    if (fallback) best = { ...fallback, source: "cuisine-fallback", score: 0.3 };
   }
 
   return best;
@@ -253,6 +318,7 @@ export async function ensureRecipeImage(recipe) {
         source: match.source,
         title: match.title,
         originalUrl: match.imageUrl,
+        score: match.score,
         fetchedAt: new Date().toISOString(),
       }, null, 2)
     );

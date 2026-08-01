@@ -47,7 +47,7 @@ function MetaChip({ children, accent, className = "" }) {
 export default function RecipeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [recipe, setRecipe] = useState(null);
   const [rating, setRating] = useState({ average: 0, count: 0 });
   const [reviews, setReviews] = useState([]);
@@ -120,7 +120,10 @@ export default function RecipeDetail() {
 
   const displayRating = userRating || rating.average;
   const isVeg = recipe.diet?.includes("veg") && !recipe.diet?.includes("non-veg");
-  const steps = recipe.steps?.length ? recipe.steps : recipe.stepsHi;
+  const displayName = lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name;
+  const steps = lang === "hi"
+    ? (recipe.stepsHi?.length ? recipe.stepsHi : recipe.steps)
+    : (recipe.steps?.length ? recipe.steps : recipe.stepsHi);
 
   return (
     <div className="recipe-detail-page min-h-screen pb-28">
@@ -129,7 +132,7 @@ export default function RecipeDetail() {
         <div className="relative h-72 overflow-hidden sm:h-80">
           <RecipeImage
             src={recipe.image}
-            alt={recipe.name}
+            alt={displayName}
             recipeId={recipe.id}
             className="h-full w-full object-cover"
           />
@@ -164,8 +167,10 @@ export default function RecipeDetail() {
         <div className="relative -mt-8 px-4">
           <div className="recipe-card overflow-hidden">
             <div className="p-6 sm:p-8">
-              <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">{recipe.name}</h1>
-              <p className="mt-1 capitalize text-sm text-[var(--text-secondary)]">{recipe.cuisine} cuisine</p>
+              <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">{displayName}</h1>
+              <p className="mt-1 capitalize text-sm text-[var(--text-secondary)]">
+                {lang === "hi" ? `${recipe.cuisine} व्यंजन` : `${recipe.cuisine} cuisine`}
+              </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <MetaChip accent={isVeg}>
@@ -209,14 +214,16 @@ export default function RecipeDetail() {
           <div className="recipe-card mt-4 p-6 sm:p-8">
             <h2 className="detail-section-title">{t("ingredients")}</h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              {recipe.ingredients.length} items needed
+              {recipe.ingredients.length} {lang === "hi" ? "चीज़ें चाहिए" : "items needed"}
             </p>
             <ul className="mt-5 grid gap-2 sm:grid-cols-2">
               {recipe.ingredients.map((ing) => (
                 <li key={ing.name} className="ingredient-row">
                   <span className="ingredient-dot" />
                   <div className="min-w-0 flex-1">
-                    <span className="font-medium text-[var(--text-primary)]">{ing.name}</span>
+                    <span className="font-medium text-[var(--text-primary)]">
+                      {lang === "hi" ? (ing.nameHi || ing.name) : ing.name}
+                    </span>
                     <span className="text-[var(--text-secondary)]"> — {ing.quantity}</span>
                   </div>
                 </li>
@@ -229,7 +236,7 @@ export default function RecipeDetail() {
             <div className="recipe-card mt-4 p-6 sm:p-8">
               <h2 className="detail-section-title">{t("steps")}</h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                {steps.length} steps to follow
+                {steps.length} {lang === "hi" ? "कदम" : "steps to follow"}
               </p>
               <ol className="mt-5 space-y-4">
                 {steps.map((step, i) => (
