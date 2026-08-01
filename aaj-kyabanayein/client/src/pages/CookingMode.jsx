@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchRecipe } from "../api";
+import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeImage from "../components/RecipeImage";
 import { COOK_LANGS, getCookUI, getIngredientLabel, getRecipeName } from "../i18n/cookingLang";
@@ -20,12 +20,20 @@ export default function CookingMode() {
   }, [cookLang]);
 
   useEffect(() => {
-    fetchRecipe(id).then((data) => setRecipe(data.recipe));
+    fetchRecipeLoad(id).then((data) => setRecipe(data.recipe));
     document.body.classList.add("cooking-active");
     return () => document.body.classList.remove("cooking-active");
   }, [id]);
 
-  const steps = recipe?.cookingFlow || [];
+  const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
+    ? recipe.stepsHi
+    : recipe?.steps || [];
+  const steps = recipe?.cookingFlow?.length ? recipe.cookingFlow : instructionSteps.map((text, i) => ({
+    id: i + 1,
+    type: i === instructionSteps.length - 1 ? "done" : "cook",
+    title: text,
+    titleHi: recipe?.stepsHi?.[i] || text,
+  }));
   const current = steps[stepIndex];
   const isDone = current?.type === "done";
   const ui = getCookUI(cookLang);
@@ -50,7 +58,7 @@ export default function CookingMode() {
     return (
       <div className="cooking-shell min-h-screen pb-28">
         <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
-          <RecipeImage src={recipe.image} recipeId={recipe.id} alt={recipe.name} className="mx-auto mb-5 h-48 w-full max-w-sm rounded-2xl object-cover shadow-lg sm:h-56" />
+          <RecipeImage src={recipe.image} recipeId={recipe.id} alt={recipe.name} eager className="mx-auto mb-5 h-48 w-full max-w-sm rounded-2xl object-cover shadow-lg sm:h-56" />
           <h1 className="text-center font-display text-2xl text-[var(--text-primary)] sm:text-3xl">{getRecipeName(recipe, cookLang)}</h1>
           <p className="mt-2 text-center text-sm text-[var(--text-secondary)]">{steps.length} {ui.steps}</p>
 

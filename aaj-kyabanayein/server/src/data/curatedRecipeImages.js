@@ -30,6 +30,25 @@ export const CURATED_BY_ID = {
   "masala-dosa": "Masala dosa",
   "chole-bhature": "Chole bhature",
   "biryani-veg": "Biryani",
+  "butter-chicken": "Butter chicken",
+  "dal-makhani": "Dal makhani",
+  "chana-masala": "Chana masala",
+  "samosa": "Samosa",
+  "vada-pav": "Vada pav",
+  "pav-bhaji": "Pav bhaji",
+  "dosa-plain": "Dosa",
+  "uttapam": "Uttapam",
+  "rasam": "Rasam",
+  "fish-curry-bengali": "Fish curry",
+  "mutton-rogan-josh": "Rogan josh",
+  "misal-pav": "Misal",
+  "moong-dal-chilla": "Chilla",
+  "baingan-bharta": "Baingan bharta",
+  "tandoori-chicken": "Tandoori chicken",
+  "veg-manchurian": "Manchurian",
+  "hakka-noodles": "Chow mein",
+  "oats-upma": "Oatmeal",
+  "fruit-salad": "Fruit salad",
   "fish-fry": "Fish fry",
   "dahi-vada": "Dahi vada",
   "baingan-bharta": "Baingan bharta",
@@ -136,7 +155,9 @@ export function getCuratedWikiTitle(recipe) {
 
   const name = (recipe.name || "").toLowerCase();
   for (const [keyword, title] of CURATED_KEYWORDS) {
-    if (name.includes(keyword)) return title;
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`\\b${escaped}\\b`, "i");
+    if (re.test(name)) return title;
   }
   return null;
 }

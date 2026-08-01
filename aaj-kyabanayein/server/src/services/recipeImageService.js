@@ -2,14 +2,17 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
+import { isGoogleSearchConfigured, searchGoogleImage } from "./googleSearchService.js";
+import { fetchRecipeFromGemini, isGeminiConfigured } from "./geminiRecipeService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com)";
-const WIKI_DELAY_MS = 1200;
-const MAX_FETCH_RETRIES = 4;
+const WIKI_DELAY_MS = 800;
+const MAX_FETCH_RETRIES = 3;
+const IMAGE_FETCH_TIMEOUT_MS = 12000;
 
 const NOISE_WORDS = new Set([
   "home", "dhaba", "restaurant", "traditional", "quick", "special", "classic",
@@ -19,7 +22,10 @@ const NOISE_WORDS = new Set([
   "north", "south", "indian", "veg", "non", "style", "bowl", "plate",
 ]);
 
+const WRONG_DISHES = ["dosa", "pizza", "burger", "sushi", "taco", "sandwich", "pasta"];
+
 const inFlight = new Map();
+const geminiHints = new Map();
 let lastWikiCall = 0;
 let fetchQueue = Promise.resolve();
 
@@ -64,8 +70,7 @@ async function fetchJson(url, attempt = 0) {
   await throttleWiki();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (res.status === 429 && attempt < MAX_FETCH_RETRIES) {
-    const backoff = 2000 * (attempt + 1);
-    await sleep(backoff);
+    await sleep(2000 * (attempt + 1));
     return fetchJson(url, attempt + 1);
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -88,11 +93,14 @@ function cleanSearchTerms(name = "") {
 function extractCoreDishName(name = "") {
   const curated = getCuratedWikiTitle({ name });
   if (curated) return curated;
-
   const clean = cleanSearchTerms(name);
   const words = clean.split(/\s+/).filter(Boolean);
   if (words.length <= 3) return clean;
   return words.slice(-3).join(" ");
+}
+
+function recipeWantsDish(name = "", dish) {
+  return new RegExp(`\\b${dish}\\b`, "i").test(name);
 }
 
 function scoreTitle(title, name) {
@@ -105,21 +113,44 @@ function scoreTitle(title, name) {
   let score = hits / words.length;
 
   if (t.includes(core)) score += 0.5;
-  if (/(food|dish|cuisine|recipe|curry|biryani|paratha|khichdi|thali)/.test(t)) score += 0.1;
 
-  // Penalize unrelated popular dishes when query doesn't match
-  const unrelated = ["dosa", "pizza", "burger", "sushi", "taco"];
-  for (const dish of unrelated) {
-    if (t.includes(dish) && !core.includes(dish) && !name.toLowerCase().includes(dish)) {
-      score -= 0.4;
+  for (const dish of WRONG_DISHES) {
+    if (t.includes(dish) && !recipeWantsDish(name, dish)) {
+      score -= 0.85;
     }
   }
 
-  if (words.length >= 2 && hits < words.length) score -= 0.15;
+  if (words.length >= 2 && hits < Math.ceil(words.length / 2)) score -= 0.35;
   return score;
 }
 
-async function searchWikipediaTitle(title) {
+function pickBest(candidates, name) {
+  return candidates
+    .filter((c) => c?.imageUrl && scoreTitle(c.title || "", name) >= 0.35)
+    .sort((a, b) => (b.score ?? scoreTitle(b.title, name)) - (a.score ?? scoreTitle(a.title, name)))[0] || null;
+}
+
+async function getGeminiImageHints(recipe) {
+  const key = recipe.id || recipe.name;
+  if (geminiHints.has(key)) return geminiHints.get(key);
+
+  if (!isGeminiConfigured()) return null;
+
+  try {
+    const data = await fetchRecipeFromGemini(recipe.name, recipe.cuisine || "indian");
+    if (!data) return null;
+    const hints = {
+      wikiImageTitle: data.wikiImageTitle,
+      imageSearchQuery: data.imageSearchQuery || recipe.name,
+    };
+    geminiHints.set(key, hints);
+    return hints;
+  } catch {
+    return null;
+  }
+}
+
+async function searchWikipediaTitle(title, originalName) {
   const url =
     "https://en.wikipedia.org/w/api.php?action=query&titles=" +
     `${encodeURIComponent(title.replace(/ /g, "_"))}&prop=pageimages` +
@@ -127,7 +158,9 @@ async function searchWikipediaTitle(title) {
   const data = await fetchJson(url);
   const page = Object.values(data.query?.pages || {})[0];
   if (!page || page.missing || !page.thumbnail?.source) return null;
-  return { title: page.title, imageUrl: page.thumbnail.source, score: 1 };
+  const score = scoreTitle(page.title, originalName);
+  if (score < 0.35) return null;
+  return { title: page.title, imageUrl: page.thumbnail.source, score };
 }
 
 async function searchWikipedia(query, originalName) {
@@ -143,16 +176,15 @@ async function searchWikipedia(query, originalName) {
       title: p.title,
       imageUrl: p.thumbnail.source,
       score: scoreTitle(p.title, originalName),
-    }))
-    .sort((a, b) => b.score - a.score);
+    }));
 
-  return pages[0]?.score >= 0.45 ? pages[0] : null;
+  return pickBest(pages, originalName);
 }
 
 async function searchWikimediaCommons(query, originalName) {
   const url =
     "https://commons.wikimedia.org/w/api.php?action=query&generator=search" +
-    `&gsrsearch=${encodeURIComponent(query + " food dish")}&gsrlimit=6` +
+    `&gsrsearch=${encodeURIComponent(query + " food dish")}&gsrlimit=8` +
     "&prop=imageinfo&iiprop=url&iiurlwidth=900&format=json";
 
   try {
@@ -167,10 +199,9 @@ async function searchWikimediaCommons(query, originalName) {
           imageUrl: info.thumburl || info.url,
           score: scoreTitle(title, originalName) + 0.05,
         };
-      })
-      .sort((a, b) => b.score - a.score);
+      });
 
-    return pages[0]?.score >= 0.4 ? pages[0] : null;
+    return pickBest(pages, originalName);
   } catch {
     return null;
   }
@@ -182,120 +213,87 @@ async function searchMealDb(name) {
     const data = await fetchJson(url);
     const meal = data.meals?.[0];
     if (!meal?.strMealThumb) return null;
-    return {
-      title: meal.strMeal,
-      imageUrl: meal.strMealThumb,
-      score: scoreTitle(meal.strMeal, name),
-    };
+    const score = scoreTitle(meal.strMeal, name);
+    if (score < 0.4) return null;
+    return { title: meal.strMeal, imageUrl: meal.strMealThumb, score };
   } catch {
     return null;
   }
 }
 
-function buildSearchQueries(name) {
+function buildSearchQueries(name, hints) {
   const clean = cleanSearchTerms(name);
   const core = extractCoreDishName(name);
   const queries = new Set([
+    hints?.imageSearchQuery,
+    hints?.wikiImageTitle,
     name,
     clean,
     core,
     `${core} food`,
     `${core} dish`,
-    `${clean} food`,
-    `${clean} indian food`,
+    `${clean} recipe`,
   ]);
-
-  const lower = name.toLowerCase();
-  if (lower.includes("dal") && lower.includes("chawal")) {
-    queries.add("dal chawal");
-    queries.add("dal bhat");
-  }
-  if (lower.includes("khichdi")) queries.add("khichdi");
-  if (lower.includes("paratha")) queries.add("paratha");
-  if (lower.includes("roti")) queries.add("roti chapati");
-  if (lower.includes("paneer")) queries.add("paneer curry");
-  if (lower.includes("chicken")) queries.add("chicken curry indian");
-
   return [...queries].filter(Boolean);
 }
 
 async function findImageUrl(recipe) {
-  const name = recipe.name || recipe.id || "indian food";
-  let best = null;
+  const name = recipe.name || recipe.id || "food";
+  const hints = await getGeminiImageHints(recipe);
+  const candidates = [];
 
-  // 1. Curated Wikipedia title (highest priority)
   const curatedTitle = getCuratedWikiTitle(recipe);
   if (curatedTitle) {
-    const direct = await searchWikipediaTitle(curatedTitle);
-    if (direct) {
-      best = { ...direct, source: "curated-wikipedia", score: 1.2 };
+    const direct = await searchWikipediaTitle(curatedTitle, name);
+    if (direct) candidates.push({ ...direct, source: "curated-wikipedia" });
+  }
+
+  if (hints?.wikiImageTitle) {
+    const geminiWiki = await searchWikipediaTitle(hints.wikiImageTitle, name);
+    if (geminiWiki) candidates.push({ ...geminiWiki, source: "gemini-wikipedia" });
+  }
+
+  if (isGoogleSearchConfigured()) {
+    const google = await searchGoogleImage(hints?.imageSearchQuery || extractCoreDishName(name) || name);
+    if (google?.imageUrl) {
+      candidates.push({
+        title: google.title || name,
+        imageUrl: google.imageUrl,
+        score: 0.9,
+        source: "google-images",
+      });
     }
   }
 
-  // 2. Direct Wikipedia title guesses from core dish name
-  const titleGuesses = [
-    extractCoreDishName(name),
-    cleanSearchTerms(name),
-    `${extractCoreDishName(name)} (food)`,
-  ];
-
-  for (const title of [...new Set(titleGuesses)]) {
-    if (!title) continue;
-    const direct = await searchWikipediaTitle(title);
-    if (direct) {
-      const scored = { ...direct, score: scoreTitle(direct.title, name) + 0.3 };
-      if (!best || scored.score > best.score) {
-        best = { ...scored, source: "wikipedia-title" };
-      }
-    }
-  }
-
-  // 3. Wikipedia search
-  for (const query of buildSearchQueries(name)) {
+  for (const query of buildSearchQueries(name, hints)) {
     const wiki = await searchWikipedia(query, name);
-    if (wiki && (!best || wiki.score > best.score)) {
-      best = { ...wiki, source: "wikipedia" };
-    }
-    if (best?.score >= 0.95) break;
+    if (wiki) candidates.push({ ...wiki, source: "wikipedia" });
+    if (candidates.some((c) => c.score >= 0.9)) break;
   }
 
-  // 4. Wikimedia Commons
-  if (!best || best.score < 0.7) {
-    const commons = await searchWikimediaCommons(extractCoreDishName(name) || cleanSearchTerms(name), name);
-    if (commons && (!best || commons.score > best.score)) {
-      best = { ...commons, source: "wikimedia-commons" };
-    }
-  }
+  const commons = await searchWikimediaCommons(hints?.imageSearchQuery || extractCoreDishName(name) || cleanSearchTerms(name), name);
+  if (commons) candidates.push({ ...commons, source: "wikimedia-commons" });
 
-  // 5. TheMealDB fallback
-  if (!best || best.score < 0.6) {
-    const mealDb = await searchMealDb(extractCoreDishName(name) || cleanSearchTerms(name) || name);
-    if (mealDb && (!best || mealDb.score > best.score)) {
-      best = { ...mealDb, source: "themealdb" };
-    }
-  }
+  const mealDb = await searchMealDb(extractCoreDishName(name) || cleanSearchTerms(name) || name);
+  if (mealDb) candidates.push({ ...mealDb, source: "themealdb" });
 
-  // 6. Cuisine-level fallback (never default to dosa)
-  if (!best) {
-    const cuisine = recipe.cuisine || "indian";
-    const cuisineFallbacks = {
-      indian: "Indian cuisine",
-      "south-indian": "South Indian cuisine",
-      "north-indian": "North Indian cuisine",
-      chinese: "Chinese cuisine",
-      italian: "Italian cuisine",
-      korean: "Korean cuisine",
-      thai: "Thai cuisine",
-      mexican: "Mexican cuisine",
-      continental: "European cuisine",
-      healthy: "Vegetarian cuisine",
-    };
-    const fallbackTitle = cuisineFallbacks[cuisine] || "Indian cuisine";
-    const fallback = await searchWikipediaTitle(fallbackTitle);
-    if (fallback) best = { ...fallback, source: "cuisine-fallback", score: 0.3 };
-  }
+  const best = pickBest(candidates, name);
+  if (best) return best;
 
-  return best;
+  const cuisine = recipe.cuisine || "indian";
+  const cuisineFallbacks = {
+    indian: "Indian cuisine",
+    "south-indian": "South Indian cuisine",
+    "north-indian": "North Indian cuisine",
+    chinese: "Chinese cuisine",
+    italian: "Italian cuisine",
+    thai: "Thai cuisine",
+    mexican: "Mexican cuisine",
+    continental: "European cuisine",
+    healthy: "Salad",
+  };
+  const fallback = await searchWikipediaTitle(cuisineFallbacks[cuisine] || "Indian cuisine", name);
+  return fallback ? { ...fallback, source: "cuisine-fallback", score: 0.2 } : null;
 }
 
 async function downloadImage(url, dest) {
@@ -304,6 +302,13 @@ async function downloadImage(url, dest) {
   const buf = Buffer.from(await res.arrayBuffer());
   fs.writeFileSync(dest, buf);
   return buf;
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
 }
 
 export async function ensureRecipeImage(recipe) {
@@ -317,7 +322,7 @@ export async function ensureRecipeImage(recipe) {
   if (inFlight.has(id)) return inFlight.get(id);
 
   const promise = enqueueFetch(async () => {
-    const match = await findImageUrl(recipe);
+    const match = await withTimeout(findImageUrl(recipe), IMAGE_FETCH_TIMEOUT_MS);
     if (!match?.imageUrl) throw new Error(`No image found for ${recipe.name}`);
 
     await downloadImage(match.imageUrl, cached);
@@ -349,8 +354,17 @@ export function readCachedImage(recipeId) {
   return fs.existsSync(file) ? file : null;
 }
 
-/** Queue a background image fetch (rate-limited, non-blocking). */
 export function warmRecipeImage(recipe) {
   if (!recipe?.id || hasCachedImage(recipe.id)) return;
   ensureRecipeImage(recipe).catch(() => {});
+}
+
+/** Download external image URL into recipe cache (from Google enrichment). */
+export async function cacheImageFromUrl(recipeId, imageUrl, source = "external") {
+  if (!recipeId || !imageUrl || hasCachedImage(recipeId)) return cachePath(recipeId);
+  ensureDirs();
+  const dest = cachePath(recipeId);
+  await downloadImage(imageUrl, dest);
+  fs.writeFileSync(metaPath(recipeId), JSON.stringify({ recipeId, source, originalUrl: imageUrl, fetchedAt: new Date().toISOString() }));
+  return dest;
 }

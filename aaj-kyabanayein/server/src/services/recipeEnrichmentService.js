@@ -6,7 +6,7 @@ import { buildIngredients, buildStepsEn, buildStepsHi } from "../data/recipeTemp
 import { searchGoogleImage, searchGoogleRecipeData, isGoogleSearchConfigured } from "./googleSearchService.js";
 import { fetchRecipeFromGemini, isGeminiConfigured } from "./geminiRecipeService.js";
 import { searchTheMealDb } from "./theMealDbService.js";
-import { ensureRecipeImage, hasCachedImage } from "./recipeImageService.js";
+import { ensureRecipeImage, hasCachedImage, cacheImageFromUrl } from "./recipeImageService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/enriched-cache");
@@ -45,9 +45,9 @@ function cleanRecipeName(name = "") {
 
 function needsEnrichment(recipe) {
   const ingCount = recipe.ingredients?.length || 0;
-  const hasSteps = (recipe.steps?.length || 0) >= 3 || (recipe.stepsHi?.length || 0) >= 3;
-  const isGenerated = /^[a-z]{2}-\d+/.test(recipe.id);
-  return isGenerated || ingCount < 5 || !hasSteps;
+  const hasSteps = (recipe.steps?.length || 0) >= 4 || (recipe.stepsHi?.length || 0) >= 4;
+  const genericSteps = /prepare all ingredients|cook following traditional/i.test((recipe.steps || []).join(" "));
+  return ingCount < 5 || !hasSteps || genericSteps;
 }
 
 function mergeIngredients(existing, incoming) {
@@ -159,16 +159,8 @@ function applyWebResults(recipe, webResults) {
 async function downloadAndCacheImage(recipe, imageUrl) {
   if (!imageUrl || hasCachedImage(recipe.id)) return;
   try {
-    const res = await fetch(imageUrl, {
-      headers: { "User-Agent": "RasoiraMealPlanner/1.0" },
-    });
-    if (!res.ok) return;
-    const buf = Buffer.from(await res.arrayBuffer());
-    const cacheDir = path.join(__dirname, "../../data/image-cache");
-    fs.mkdirSync(cacheDir, { recursive: true });
-    fs.writeFileSync(path.join(cacheDir, `${recipe.id}.jpg`), buf);
+    await cacheImageFromUrl(recipe.id, imageUrl, "google-enrichment");
   } catch {
-    // fallback to Wikipedia pipeline
     await ensureRecipeImage(recipe).catch(() => {});
   }
 }

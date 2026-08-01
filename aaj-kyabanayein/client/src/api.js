@@ -104,6 +104,13 @@ export async function fetchRecipe(id) {
   return res.json();
 }
 
+/** On recipe select — fetch matching photo + enriched ingredients via Google/Gemini */
+export async function fetchRecipeLoad(id) {
+  const res = await fetch(`${API_BASE}/recipes/${id}/load`);
+  if (!res.ok) throw new Error('Recipe load failed');
+  return res.json();
+}
+
 export async function enrichRecipe(id) {
   const res = await fetch(`${API_BASE}/recipes/${id}/enrich`, { method: 'POST' });
   if (!res.ok) throw new Error('Enrichment failed');

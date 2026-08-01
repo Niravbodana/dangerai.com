@@ -29,7 +29,9 @@ import { attachRating } from "../services/ratingsStore.js";
 import {
   ensureRecipeImage,
   readCachedImage,
+  warmRecipeImage,
 } from "../services/recipeImageService.js";
+import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
 import path from "path";
 
 const router = Router();
@@ -38,6 +40,7 @@ const DEFAULT_IMAGE_ID = "_default";
 
 router.get("/recipes/image/:id", async (req, res) => {
   const { id } = req.params;
+  const wait = req.query.wait !== "0";
   res.setHeader("Cache-Control", "public, max-age=604800, immutable");
 
   const cached = readCachedImage(id);
@@ -47,31 +50,35 @@ router.get("/recipes/image/:id", async (req, res) => {
   }
 
   const recipe = id === DEFAULT_IMAGE_ID
-    ? { id: DEFAULT_IMAGE_ID, name: "Indian thali food" }
+    ? { id: DEFAULT_IMAGE_ID, name: "Indian thali platter" }
     : getRecipeById(id);
 
   if (!recipe && id !== DEFAULT_IMAGE_ID) {
-    const fallback = readCachedImage(DEFAULT_IMAGE_ID);
-    if (fallback) return res.sendFile(path.resolve(fallback));
     return res.status(404).json({ success: false, message: "Recipe not found" });
   }
 
-  const fallback = readCachedImage(DEFAULT_IMAGE_ID);
-  if (fallback) {
-    res.type("image/jpeg");
-    res.sendFile(path.resolve(fallback));
-    if (recipe && id !== DEFAULT_IMAGE_ID) {
-      ensureRecipeImage(recipe).catch(() => {});
-    }
-    return;
+  if (!wait) {
+    warmRecipeImage(recipe);
+    return res.status(202).json({ success: false, message: "Image loading", pending: true });
   }
 
   try {
-    const file = await ensureRecipeImage(recipe || { id: DEFAULT_IMAGE_ID, name: "Indian thali food" });
+    const file = await ensureRecipeImage(recipe);
     res.type("image/jpeg");
     return res.sendFile(path.resolve(file));
   } catch {
-    return res.status(502).json({ success: false, message: "Image unavailable" });
+    return res.status(404).json({ success: false, message: "Image unavailable" });
+  }
+});
+
+/** Load recipe on select — fetches matching photo + enriched ingredients via Google/Gemini */
+router.get("/recipes/:id/load", async (req, res) => {
+  try {
+    const result = await loadRecipeOnSelect(req.params.id);
+    if (!result) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

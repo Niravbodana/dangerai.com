@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { fetchRecipe, fetchRecipeRating, fetchReviews, fetchTrendingRecipes, submitReview, addSavedMeal } from "../api";
+import { fetchRecipe, fetchRecipeLoad, fetchRecipeRating, fetchReviews, fetchTrendingRecipes, submitReview, addSavedMeal } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import { getGuestId, isFavorite, shareOnWhatsApp, toggleFavorite } from "../lib/guest";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -58,26 +58,39 @@ export default function RecipeDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
   const [similar, setSimilar] = useState([]);
+  const [imageVersion, setImageVersion] = useState(0);
+  const [loadingMedia, setLoadingMedia] = useState(true);
 
   const load = () => {
     setLoading(true);
+    setLoadingMedia(true);
     Promise.all([
-      fetchRecipe(id),
+      fetchRecipeLoad(id),
       fetchRecipeRating(id),
       fetchReviews(id),
       fetchTrendingRecipes(12),
     ])
-      .then(([recipeData, ratingData, reviewsData, trendingData]) => {
-        setRecipe(recipeData.recipe);
+      .then(([loadData, ratingData, reviewsData, trendingData]) => {
+        setRecipe(loadData.recipe);
+        setImageVersion(Date.now());
         setRating(ratingData);
         setReviews(reviewsData.reviews || []);
         setIsFav(isFavorite(id));
         const trending = trendingData.recipes || [];
         setIsTrending(trending.some((tr) => tr.id === id));
-        const cuisine = recipeData.recipe?.cuisine;
+        const cuisine = loadData.recipe?.cuisine;
         setSimilar(trending.filter((tr) => tr.id !== id && tr.cuisine === cuisine).slice(0, 4));
       })
-      .finally(() => setLoading(false));
+      .catch(() => {
+        return fetchRecipe(id).then((recipeData) => {
+          setRecipe(recipeData.recipe);
+          setImageVersion(Date.now());
+        });
+      })
+      .finally(() => {
+        setLoading(false);
+        setLoadingMedia(false);
+      });
   };
 
   useEffect(load, [id]);
@@ -145,8 +158,14 @@ export default function RecipeDetail() {
             alt={displayName}
             recipeId={recipe.id}
             eager
+            version={imageVersion}
             className="h-full w-full object-cover"
           />
+          {loadingMedia && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <p className="text-sm text-white/80">Fetching matching photo…</p>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#14110e] via-[#14110e]/40 to-transparent" />
 
           <button

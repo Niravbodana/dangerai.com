@@ -35,25 +35,36 @@ export function isGoogleSearchConfigured() {
   return Boolean(getConfig());
 }
 
-/** Search Google Images for a dish photo */
+/** Search Google Images for a dish photo — query must match exact dish name */
 export async function searchGoogleImage(recipeName) {
+  const clean = recipeName
+    .replace(/\b(home|dhaba|restaurant|traditional|quick|special|classic)\b/gi, "")
+    .trim();
+
   const data = await googleSearch({
-    q: `${recipeName} food dish recipe`,
+    q: `"${clean}" food dish photo`,
     searchType: "image",
-    num: 5,
+    num: 8,
     safe: "active",
     imgSize: "medium",
     imgType: "photo",
   });
 
-  const item = data?.items?.find((i) => i.link && !/logo|icon|avatar/i.test(i.link));
-  if (!item?.link) return null;
+  const items = data?.items || [];
+  const nameWords = clean.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
 
-  return {
-    source: "google-images",
-    imageUrl: item.link,
-    title: item.title,
-  };
+  for (const item of items) {
+    if (!item.link || /logo|icon|avatar|clipart|vector/i.test(item.link)) continue;
+    const title = (item.title || "").toLowerCase();
+    const hits = nameWords.filter((w) => title.includes(w) || item.link.toLowerCase().includes(w)).length;
+    if (nameWords.length === 0 || hits >= Math.ceil(nameWords.length / 2)) {
+      return { source: "google-images", imageUrl: item.link, title: item.title };
+    }
+  }
+
+  const fallback = items.find((i) => i.link && !/logo|icon|avatar/i.test(i.link));
+  if (!fallback?.link) return null;
+  return { source: "google-images", imageUrl: fallback.link, title: fallback.title };
 }
 
 /** Parse ingredient-like lines from Google web search snippets */
