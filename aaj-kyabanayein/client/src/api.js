@@ -3,6 +3,7 @@ import { apiFetch, parseJsonResponse, ApiError } from './lib/apiFetch.js';
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 export { ApiError } from './lib/apiFetch.js';
+export { formatApiError, getEmptyState, isOffline } from './lib/errors';
 
 export function getToken() {
   return localStorage.getItem('akb-token');
