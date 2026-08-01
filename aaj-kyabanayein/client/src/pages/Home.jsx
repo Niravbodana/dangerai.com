@@ -8,6 +8,7 @@ import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import MoodTonight from "../components/MoodTonight";
 import QuickMeals from "../components/QuickMeals";
 import { getStreak } from "../lib/streak";
+import { getHomeRecommendations } from "../lib/growth";
 import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry, IconStar } from "../components/Icons";
 
 const GALLERY = [
@@ -40,6 +41,7 @@ function Stars({ n }) {
 export default function Home() {
   const { openLogin, openSignup } = useAuthModal();
   const streak = getStreak();
+  const { recentRecipeIds, taste } = getHomeRecommendations();
 
   return (
     <div className="home-page min-h-screen">
@@ -111,6 +113,25 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {recentRecipeIds.length > 0 && (
+        <section className="border-t border-white/[0.06] py-8">
+          <div className="mx-auto max-w-6xl px-4">
+            <h2 className="font-display text-xl text-[var(--text-primary)]">For you</h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Based on your recent cooking{taste.diet ? ` · ${taste.diet}` : ""}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {recentRecipeIds.map((id) => (
+                <Link key={id} to={`/recipe/${id}`} className="premium-btn-outline px-4 py-2 text-sm capitalize">
+                  {id.replace(/-/g, " ")}
+                </Link>
+              ))}
+              <Link to="/today" className="premium-btn px-4 py-2 text-sm">Aaj Kya Banaye</Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       <MoodTonight />
       <QuickMeals />

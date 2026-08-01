@@ -5,6 +5,8 @@ import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { track } from './lib/analytics'
+import { captureReferralFromUrl } from './lib/growth'
+import { initGrowthNotifications } from './lib/notifications'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -17,6 +19,8 @@ createRoot(document.getElementById('root')).render(
 )
 
 track('app_open')
+captureReferralFromUrl()
+initGrowthNotifications()
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
