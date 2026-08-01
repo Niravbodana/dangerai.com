@@ -11,6 +11,7 @@
     "build:client": "npm run build --prefix aaj-kyabanayein/client",
     "build-recipe-books": "npm run build-recipe-books --prefix aaj-kyabanayein/server",
     "prefetch-images": "npm run prefetch-images --prefix aaj-kyabanayein/server",
+    "verify": "npm run verify --prefix aaj-kyabanayein",
     "generate-recipes": "npm run generate-recipes --prefix aaj-kyabanayein/server"
   }
 }

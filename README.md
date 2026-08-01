@@ -2,7 +2,16 @@
 
 Indian home-cooking app: **900+ recipes**, photos, Aaj Kya Banaye, pantry search, cooking mode + voice.
 
-**Public repo:** https://github.com/Niravbodana/dangerai.com
+## 🔗 Share / download (poori files)
+
+| Kya chahiye | Link |
+|-------------|------|
+| **GitHub repo** | https://github.com/Niravbodana/dangerai.com |
+| **ZIP — sab files ek click** | https://github.com/Niravbodana/dangerai.com/archive/refs/heads/main.zip |
+| **App folder** | https://github.com/Niravbodana/dangerai.com/tree/main/aaj-kyabanayein |
+| **Share guide (Hindi)** | [SHARE.md](./SHARE.md) |
+
+ZIP extract ke baad folder: `dangerai.com-main/aaj-kyabanayein`
 
 ## Quick start (Mac)
 
