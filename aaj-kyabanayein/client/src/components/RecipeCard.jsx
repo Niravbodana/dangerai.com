@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { useAuthModal } from '../context/AuthModalContext';
 import { isFavorite, toggleFavorite } from '../lib/guest';
+import { shouldShowFavoriteSignup } from '../lib/accountWall';
 import RecipeImage from './RecipeImage';
 import { VegSymbol, NonVegSymbol } from './DietSymbols';
 import { IconClock, IconFlame, IconHeart, IconStar } from './Icons';
@@ -13,17 +16,23 @@ function isVeg(diet) {
 
 export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank }) {
   const { t, lang } = useLanguage();
+  const { user } = useAuth();
+  const { openSignup } = useAuthModal();
   const [fav, setFav] = useState(isFavorite(recipe.id));
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
   const displayName = lang === 'hi' ? (recipe.nameHi || recipe.name) : recipe.name;
-  const imageUrl = recipe.thumbUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
+  const imageUrl = recipe.cdnImageUrl || recipe.thumbUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
   const useRemote = /^https?:\/\//i.test(imageUrl);
 
   const handleFav = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const nowFav = await toggleFavorite(recipe.id);
+    const nowFav = await toggleFavorite(recipe.id, {
+      onSignupPrompt: (count) => {
+        if (shouldShowFavoriteSignup(!!user, count)) openSignup("favorite");
+      },
+    });
     setFav(nowFav);
     onFavoriteChange?.();
   };

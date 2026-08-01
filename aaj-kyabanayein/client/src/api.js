@@ -21,30 +21,40 @@ async function handleResponse(res) {
   return parseJsonResponse(res);
 }
 
-export async function register(name, email, password) {
+export async function register(name, email, password, guestPayload = {}) {
   const res = await apiFetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, ...guestPayload }),
   });
   return handleResponse(res);
 }
 
-export async function login(email, password) {
+export async function login(email, password, guestPayload = {}) {
   const res = await apiFetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, ...guestPayload }),
   });
   return handleResponse(res);
 }
 
-export async function loginWithGoogle(credential) {
+export async function loginWithGoogle(credential, guestPayload = {}) {
   const res = await apiFetch(`${API_BASE}/auth/google`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ credential }),
+    body: JSON.stringify({ credential, ...guestPayload }),
   });
+  return handleResponse(res);
+}
+
+export async function mergeGuestData(guestPayload = {}) {
+  const res = await apiFetch(`${API_BASE}/auth/merge-guest`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(guestPayload),
+  });
+  if (!res.ok) return null;
   return handleResponse(res);
 }
 

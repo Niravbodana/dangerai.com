@@ -132,12 +132,7 @@ function scoreRecipe(recipe, userPantry, options = {}) {
   };
 }
 
-/** Exported for recommendation pipeline */
-export function scoreRecipePantryMatch(recipe, ingredients = []) {
-  return scoreRecipe(recipe, expandPantry(ingredients));
-}
-
-/** Exported for AI personalization pipeline */
+/** Exported for recommendation / personalization pipeline */
 export function scoreRecipePantryMatch(recipe, ingredients = []) {
   return scoreRecipe(recipe, expandPantry(ingredients));
 }

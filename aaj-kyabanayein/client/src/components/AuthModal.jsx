@@ -2,8 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
+import { dismissAccountWall } from "../lib/accountWall";
 import BrandLogo from "./BrandLogo";
 import GoogleSignInButton, { AuthDivider } from "./GoogleSignInButton";
+
+const SIGNUP_COPY = {
+  cook: {
+    title: "Save your cooking streak",
+    subtitle: "You've cooked a few meals — create a free account to save favorites, streaks, and meal plans.",
+  },
+  favorite: {
+    title: "Keep your saved recipes",
+    subtitle: "Sign up free so your favorites sync across devices and never get lost.",
+  },
+  default: {
+    title: "Join Rasoira",
+    subtitle: "Account free for now — save recipes & meal plans.",
+  },
+};
 
 function useGoogleAuth(onSuccess) {
   const { loginWithGoogle } = useAuth();
@@ -84,9 +100,10 @@ function LoginForm({ onSuccess }) {
   );
 }
 
-function SignupForm({ onSuccess }) {
+function SignupForm({ onSuccess, signupReason }) {
   const { register } = useAuth();
-  const { openLogin } = useAuthModal();
+  const { openLogin, close } = useAuthModal();
+  const copy = SIGNUP_COPY[signupReason] || SIGNUP_COPY.default;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -111,8 +128,8 @@ function SignupForm({ onSuccess }) {
 
   return (
     <>
-      <h2 id="auth-modal-title" className="font-display text-2xl text-[var(--text-primary)]">Join Rasoira</h2>
-      <p className="mt-1 text-sm text-[var(--text-secondary)]">Account free for now — save recipes & meal plans.</p>
+      <h2 id="auth-modal-title" className="font-display text-2xl text-[var(--text-primary)]">{copy.title}</h2>
+      <p className="mt-1 text-sm text-[var(--text-secondary)]">{copy.subtitle}</p>
       {(error || googleError) && (
         <div role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
           {error || googleError}
@@ -141,12 +158,22 @@ function SignupForm({ onSuccess }) {
           Log in
         </button>
       </p>
+      <button
+        type="button"
+        onClick={() => {
+          dismissAccountWall();
+          close();
+        }}
+        className="mt-3 w-full text-center text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+      >
+        Maybe later
+      </button>
     </>
   );
 }
 
 export default function AuthModal() {
-  const { mode, close } = useAuthModal();
+  const { mode, signupReason, close } = useAuthModal();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -186,7 +213,7 @@ export default function AuthModal() {
           ✕
         </button>
         <BrandLogo light className="mb-6 h-9 w-auto" />
-        {mode === "login" ? <LoginForm onSuccess={onSuccess} /> : <SignupForm onSuccess={onSuccess} />}
+        {mode === "login" ? <LoginForm onSuccess={onSuccess} /> : <SignupForm onSuccess={onSuccess} signupReason={signupReason} />}
       </div>
     </div>
   );

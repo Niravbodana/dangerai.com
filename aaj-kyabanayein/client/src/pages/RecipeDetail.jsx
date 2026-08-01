@@ -3,6 +3,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchRecipe, fetchRecipeLoad, fetchRecipeRating, fetchReviews, fetchTrendingRecipes, submitReview, addSavedMeal, rateRecipe } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import { getGuestId, isFavorite, shareOnWhatsApp, toggleFavorite } from "../lib/guest";
+import { useAuth } from "../context/AuthContext";
+import { useAuthModal } from "../context/AuthModalContext";
+import { shouldShowFavoriteSignup } from "../lib/accountWall";
 import LoadingSpinner from "../components/LoadingSpinner";
 import RecipeCard from "../components/RecipeCard";
 import RecipeImage from "../components/RecipeImage";
@@ -55,6 +58,8 @@ export default function RecipeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
+  const { user } = useAuth();
+  const { openSignup } = useAuthModal();
   const [recipe, setRecipe] = useState(null);
   const [rating, setRating] = useState({ average: 0, count: 0 });
   const [reviews, setReviews] = useState([]);
@@ -167,8 +172,11 @@ export default function RecipeDetail() {
   };
 
   const handleFav = async () => {
-    // Optimistic — don't wait on network for UI
-    const nowFav = await toggleFavorite(id);
+    const nowFav = await toggleFavorite(id, {
+      onSignupPrompt: (count) => {
+        if (shouldShowFavoriteSignup(!!user, count)) openSignup("favorite");
+      },
+    });
     setIsFav(nowFav);
     fetchRecipeRating(id, getGuestId()).then(setRating).catch(() => {});
   };

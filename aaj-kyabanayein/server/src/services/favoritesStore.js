@@ -45,3 +45,15 @@ export function removeFavorite(userId, recipeId) {
 export function isFavorite(userId, recipeId) {
   return getFavorites(userId).includes(recipeId);
 }
+
+export function mergeFavorites(userId, recipeIds = []) {
+  if (!userId || !recipeIds.length) return getFavorites(userId);
+  const data = read();
+  const existing = new Set(data[userId] || []);
+  for (const id of recipeIds) {
+    if (id) existing.add(id);
+  }
+  data[userId] = [...existing];
+  write(data);
+  return data[userId];
+}

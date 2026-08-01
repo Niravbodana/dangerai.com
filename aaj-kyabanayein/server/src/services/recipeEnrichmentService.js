@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 import { buildIngredients, buildStepsEn, buildStepsHi } from "../data/recipeTemplates.js";
+import { isGenericSteps, isEnrichmentWorthCaching, needsEnrichment as needsQualityEnrichment } from "../lib/recipeQuality.js";
 import { searchGoogleImage, searchGoogleRecipeData, isGoogleSearchConfigured } from "./googleSearchService.js";
 import { fetchRecipeFromAI, getAIProviderStatus, isAIConfigured } from "./aiRecipeService.js";
 import { searchTheMealDb } from "./theMealDbService.js";
@@ -44,10 +45,7 @@ function cleanRecipeName(name = "") {
 }
 
 function needsEnrichment(recipe) {
-  const ingCount = recipe.ingredients?.length || 0;
-  const hasSteps = (recipe.steps?.length || 0) >= 5 || (recipe.stepsHi?.length || 0) >= 5;
-  const genericSteps = /prepare all ingredients|cook following traditional/i.test((recipe.steps || []).join(" "));
-  return ingCount < 8 || !hasSteps || genericSteps;
+  return needsQualityEnrichment(recipe);
 }
 
 function mergeIngredients(existing, incoming) {
@@ -188,7 +186,7 @@ async function runEnrichment(recipe) {
 
   const enriched = {
     ingredients: applied.ingredients,
-    steps: applied.steps,
+    steps: isGenericSteps(applied.steps) ? recipe.steps : applied.steps,
     stepsHi: applied.stepsHi,
     enriched: true,
     enrichedAt: new Date().toISOString(),
@@ -196,7 +194,9 @@ async function runEnrichment(recipe) {
     googleEnabled: isAIConfigured() || isGoogleSearchConfigured(),
   };
 
-  writeCache(recipe.id, enriched);
+  if (isEnrichmentWorthCaching(enriched)) {
+    writeCache(recipe.id, enriched);
+  }
   return { ...recipe, ...enriched };
 }
 

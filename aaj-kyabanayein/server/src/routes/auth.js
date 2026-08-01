@@ -12,8 +12,16 @@ import {
   updateUserPreferences,
 } from "../services/userStore.js";
 import { verifyGoogleIdToken } from "../services/googleAuth.js";
+import { mergeFavorites, getFavorites } from "../services/favoritesStore.js";
 
 const router = Router();
+
+function applyGuestMerge(userId, { guestId, favoriteIds = [] } = {}) {
+  if (!userId) return [];
+  if (guestId) mergeFavorites(userId, getFavorites(guestId));
+  if (favoriteIds.length) mergeFavorites(userId, favoriteIds);
+  return getFavorites(userId);
+}
 
 router.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
@@ -42,12 +50,14 @@ router.post("/register", async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = createUser({ name: name.trim(), email: email.trim(), passwordHash });
   const token = signToken(user.id);
+  const mergedFavorites = applyGuestMerge(user.id, req.body);
 
   res.status(201).json({
     success: true,
     message: "Account ban gaya!",
     token,
     user: toPublicUser(user),
+    mergedFavorites,
   });
 });
 
@@ -85,12 +95,14 @@ router.post("/login", async (req, res) => {
   }
 
   const token = signToken(user.id);
+  const mergedFavorites = applyGuestMerge(user.id, req.body);
 
   res.json({
     success: true,
     message: "Login successful!",
     token,
     user: toPublicUser(user),
+    mergedFavorites,
   });
 });
 
@@ -130,11 +142,13 @@ router.post("/google", async (req, res) => {
     }
 
     const token = signToken(user.id);
+    const mergedFavorites = applyGuestMerge(user.id, req.body);
     res.json({
       success: true,
       message: "Google se login ho gaya!",
       token,
       user: toPublicUser(user),
+      mergedFavorites,
     });
   } catch (err) {
     console.error("Google auth error:", err.message);
@@ -143,6 +157,16 @@ router.post("/google", async (req, res) => {
       message: err.message || "Google login fail ho gaya",
     });
   }
+});
+
+router.post("/merge-guest", authMiddleware, (req, res) => {
+  const { guestId, favoriteIds = [] } = req.body || {};
+  const mergedFavorites = applyGuestMerge(req.userId, { guestId, favoriteIds });
+  res.json({
+    success: true,
+    message: "Guest data merge ho gaya",
+    favorites: mergedFavorites,
+  });
 });
 
 router.get("/me", authMiddleware, (req, res) => {

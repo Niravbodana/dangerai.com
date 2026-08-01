@@ -1,7 +1,21 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { fetchMe, getToken, login as apiLogin, loginWithGoogle as apiGoogleLogin, register as apiRegister } from "../api";
+import { getGuestId, getLocalFavorites, setLocalFavorites } from "../lib/guest";
 
 const AuthContext = createContext(null);
+
+function guestMergePayload() {
+  return {
+    guestId: getGuestId(),
+    favoriteIds: getLocalFavorites(),
+  };
+}
+
+function applyMergedFavorites(mergedFavorites) {
+  if (Array.isArray(mergedFavorites) && mergedFavorites.length) {
+    setLocalFavorites(mergedFavorites);
+  }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -31,22 +45,25 @@ export function AuthProvider({ children }) {
   }, [loadUser]);
 
   const login = async (email, password) => {
-    const data = await apiLogin(email, password);
+    const data = await apiLogin(email, password, guestMergePayload());
     localStorage.setItem("akb-token", data.token);
+    applyMergedFavorites(data.mergedFavorites);
     setUser(data.user);
     return data;
   };
 
   const register = async (name, email, password) => {
-    const data = await apiRegister(name, email, password);
+    const data = await apiRegister(name, email, password, guestMergePayload());
     localStorage.setItem("akb-token", data.token);
+    applyMergedFavorites(data.mergedFavorites);
     setUser(data.user);
     return data;
   };
 
   const loginWithGoogle = async (credential) => {
-    const data = await apiGoogleLogin(credential);
+    const data = await apiGoogleLogin(credential, guestMergePayload());
     localStorage.setItem("akb-token", data.token);
+    applyMergedFavorites(data.mergedFavorites);
     setUser(data.user);
     return data;
   };

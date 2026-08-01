@@ -26,7 +26,7 @@ export function isLocalFavorite(recipeId) {
   return getLocalFavorites().includes(recipeId);
 }
 
-export async function toggleFavorite(recipeId) {
+export async function toggleFavorite(recipeId, { onSignupPrompt } = {}) {
   const guestId = getGuestId();
   const favs = getLocalFavorites();
   const exists = favs.includes(recipeId);
@@ -44,6 +44,7 @@ export async function toggleFavorite(recipeId) {
   await addFavorite(recipeId, guestId).catch(() => {});
   await rateRecipe(recipeId, 5, guestId).catch(() => {});
   trackFavorite(recipeId, true);
+  onSignupPrompt?.(updated.length);
   return true;
 }
 

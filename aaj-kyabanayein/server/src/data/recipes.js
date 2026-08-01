@@ -2,8 +2,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { recipeMatchesSearch, scoreRecipeSearch } from "../lib/searchUtils.js";
-import { ENGLISH_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
+import { ENGLISH_STEPS, HINDI_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
 import { logger } from "../lib/logger.js";
+import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
+import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED_DIR = path.join(__dirname, "curated");
@@ -13,18 +15,6 @@ const INDEX_FILE = path.join(CURATED_DIR, "index.json");
 let recipeIndex = [];
 let recipeById = new Map();
 const customRecipes = new Map();
-
-const GENERIC_STEP_RE = /prepare all ingredients|cook following traditional|season to taste and serve/i;
-
-function isGenericSteps(steps) {
-  if (!steps?.length) return true;
-  if (steps.length <= 3 && GENERIC_STEP_RE.test(steps.join(" "))) return true;
-  return false;
-}
-
-function hasDevanagari(text) {
-  return /[\u0900-\u097F]/.test(text || "");
-}
 
 function inferCuisine(recipe) {
   const name = (recipe.name || "").toLowerCase();
@@ -100,7 +90,7 @@ export function enrichRecipe(recipe) {
   const ingredients = expandThinIngredients(recipe);
 
   let steps = !isGenericSteps(recipe.steps) ? recipe.steps : ENGLISH_STEPS[recipe.id];
-  let stepsHi = recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" ")) ? recipe.stepsHi : undefined;
+  let stepsHi = recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" ")) ? recipe.stepsHi : HINDI_STEPS[recipe.id];
 
   if (!steps?.length && ingredients[0]) {
     const isNonVeg = recipe.diet?.includes("non-veg");
@@ -112,8 +102,12 @@ export function enrichRecipe(recipe) {
     stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
   }
 
-  if (!stepsHi?.length && steps?.length) {
-    stepsHi = steps;
+  if (!stepsHi?.length && steps?.length && ingredients[0]) {
+    const styleMatch = (recipe.name || "").match(
+      /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
+    );
+    const style = styleMatch ? styleMatch[1] : "Curry";
+    stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
   }
 
   return {
@@ -348,6 +342,7 @@ export function isNonVegRecipe(r) {
 export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const thumb = meta.thumbUrl || full?.thumbUrl;
+  const imageUrl = resolveRecipeImageUrl({ id: meta.id, thumbUrl: thumb });
   return {
     id: meta.id,
     name: meta.name,
@@ -360,7 +355,7 @@ export function toListItem(meta) {
     spice: meta.spice,
     tags: meta.tags,
     thumbUrl: thumb || null,
-    // Prefer instant remote thumb for lists; API still works as fallback
-    imageUrl: thumb || `/api/recipes/image/${meta.id}`,
+    imageUrl,
+    cdnImageUrl: imageUrl,
   };
 }

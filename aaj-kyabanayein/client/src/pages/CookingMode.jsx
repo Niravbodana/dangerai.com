@@ -231,7 +231,7 @@ export default function CookingMode() {
     track("cook_finish", { id });
     const streak = getStreak();
     if (shouldShowAccountWall(!!user, streak.totalCooks)) {
-      openSignup();
+      openSignup("cook");
     }
     navigate(`/recipe/${id}/review?from=cook`);
   };
