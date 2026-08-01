@@ -16,13 +16,14 @@ import { breadcrumbSchema, recipeSchema } from "../lib/seo";
 
 function StarRating({ value, onRate, interactive = false }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1" role={interactive ? "group" : undefined} aria-label={interactive ? "Rate this recipe" : undefined}>
       {[1, 2, 3, 4, 5].map((s) => (
         <button
           key={s}
           type="button"
           disabled={!interactive}
           onClick={() => interactive && onRate?.(s)}
+          aria-label={interactive ? `Rate ${s} out of 5 stars` : `${s} stars`}
           className={`transition ${interactive ? "cursor-pointer hover:scale-110" : "cursor-default"} ${
             s <= Math.round(value) ? "text-[var(--accent-soft)]" : "text-white/25"
           }`}
@@ -238,6 +239,7 @@ export default function RecipeDetail() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#14110e] via-[#14110e]/40 to-transparent" />
 
           <button
+            type="button"
             onClick={() => navigate(-1)}
             className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
             aria-label={t("back")}
@@ -246,6 +248,7 @@ export default function RecipeDetail() {
           </button>
 
           <button
+            type="button"
             onClick={handleFav}
             className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${
               isFav

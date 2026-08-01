@@ -52,16 +52,18 @@ function LoginForm({ onSuccess }) {
 
   return (
     <>
-      <h2 className="font-display text-2xl text-[var(--text-primary)]">Welcome back</h2>
+      <h2 id="auth-modal-title" className="font-display text-2xl text-[var(--text-primary)]">Welcome back</h2>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">Log in to save favorites and meal plans.</p>
       {(error || googleError) && (
-        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+        <div role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
           {error || googleError}
         </div>
       )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password" />
+        <label htmlFor="login-email" className="sr-only">Email</label>
+        <input id="login-email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
+        <label htmlFor="login-password" className="sr-only">Password</label>
+        <input id="login-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password" />
         <button type="submit" disabled={loading || googleLoading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
           {loading ? "Logging in..." : "Log In"}
         </button>
@@ -109,17 +111,20 @@ function SignupForm({ onSuccess }) {
 
   return (
     <>
-      <h2 className="font-display text-2xl text-[var(--text-primary)]">Join Rasoira</h2>
+      <h2 id="auth-modal-title" className="font-display text-2xl text-[var(--text-primary)]">Join Rasoira</h2>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">Account free for now — save recipes & meal plans.</p>
       {(error || googleError) && (
-        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+        <div role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
           {error || googleError}
         </div>
       )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="glass-input" placeholder="Your name" />
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password (6+ chars)" />
+        <label htmlFor="signup-name" className="sr-only">Your name</label>
+        <input id="signup-name" name="name" type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required className="glass-input" placeholder="Your name" />
+        <label htmlFor="signup-email" className="sr-only">Email</label>
+        <input id="signup-email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="glass-input" placeholder="Email" />
+        <label htmlFor="signup-password" className="sr-only">Password</label>
+        <input id="signup-password" name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="glass-input" placeholder="Password (6+ chars)" />
         <button type="submit" disabled={loading || googleLoading} className="premium-btn tap-smooth w-full py-3.5 text-sm disabled:opacity-50">
           {loading ? "Creating..." : "Join — Free for Now"}
         </button>
@@ -166,7 +171,12 @@ export default function AuthModal() {
   return (
     <div className="auth-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={close} aria-label="Close" />
-      <div className="auth-modal-panel relative z-10 w-full max-w-md animate-modal-in rounded-3xl border border-white/15 bg-[#1c1814]/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+      <div
+        className="auth-modal-panel relative z-10 w-full max-w-md animate-modal-in rounded-3xl border border-white/15 bg-[#1c1814]/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+      >
         <button
           type="button"
           onClick={close}

@@ -15,7 +15,7 @@ export default function MobileNav() {
   const { lang } = useLanguage();
 
   return (
-    <nav className="mobile-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#14110e]/95 backdrop-blur-xl md:hidden">
+    <nav className="mobile-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#14110e]/95 backdrop-blur-xl md:hidden" aria-label="Mobile navigation">
       <div className="flex justify-around px-1 py-1.5">
         {links.map(({ to, Icon, label, labelHi }) => {
           const active = to === "/"
@@ -25,6 +25,7 @@ export default function MobileNav() {
             <Link
               key={to}
               to={to}
+              aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-semibold transition ${
                 active
                   ? "bg-amber-500/15 text-[var(--accent-soft)]"

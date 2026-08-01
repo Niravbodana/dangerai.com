@@ -21,11 +21,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0c0a08]/75 backdrop-blur-2xl backdrop-saturate-150">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5">
-        <Link to="/" className="tap-smooth flex shrink-0 items-center">
-          <BrandLogo light />
+        <Link to="/" className="tap-smooth flex shrink-0 items-center" aria-label="Rasoira home">
+          <BrandLogo light decorative />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
           {NAV.map((link) => (
             <NavLink
               key={link.to}
@@ -41,6 +41,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggle}
+            aria-label={lang === "hi" ? "Switch to English" : "हिंदी में बदलें"}
             className="tap-smooth rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-amber-500/30 hover:text-[var(--text-primary)]"
           >
             {lang === "hi" ? "EN" : "हिं"}

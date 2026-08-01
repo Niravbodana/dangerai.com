@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchRecipeSuggestions } from "../api";
 import { useLanguage } from "../context/LanguageContext";
@@ -27,6 +27,8 @@ export default function RecipeSearch({ className = "", large = false }) {
   const [recent, setRecent] = useState(getRecentSearches);
   const debounced = useDebounce(query);
   const wrapRef = useRef(null);
+  const listId = useId();
+  const inputId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -69,9 +71,18 @@ export default function RecipeSearch({ className = "", large = false }) {
   return (
     <div ref={wrapRef} className={`relative ${className}`}>
       <div className="relative">
-        <IconSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" />
+        <IconSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" aria-hidden />
+        <label htmlFor={inputId} className="sr-only">
+          Search recipes
+        </label>
         <input
+          id={inputId}
           type="search"
+          role="combobox"
+          aria-expanded={showPanel}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          autoComplete="off"
           value={query}
           onChange={(e) => {
             const v = e.target.value;
@@ -86,6 +97,7 @@ export default function RecipeSearch({ className = "", large = false }) {
         <button
           type="button"
           onClick={() => goSearch()}
+          aria-label="Search recipes"
           className="premium-btn absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 text-xs sm:text-sm"
         >
           Search
@@ -93,7 +105,7 @@ export default function RecipeSearch({ className = "", large = false }) {
       </div>
 
       {showPanel && (
-        <div className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#1c1814]/98 shadow-2xl backdrop-blur-xl">
+        <div id={listId} role="listbox" className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#1c1814]/98 shadow-2xl backdrop-blur-xl">
           {!query.trim() && recent.length > 0 && (
             <>
               <p className="border-b border-white/8 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">

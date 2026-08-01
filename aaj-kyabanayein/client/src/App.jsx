@@ -56,10 +56,13 @@ function RouteFallback() {
 function AppContent() {
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <GlobalSeo />
       <AuthRouteHandler />
       <Navbar />
-      <main className="pb-20 md:pb-8">
+      <main id="main-content" className="pb-20 md:pb-8" tabIndex={-1}>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />

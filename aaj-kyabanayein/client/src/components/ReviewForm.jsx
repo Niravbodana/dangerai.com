@@ -21,7 +21,7 @@ export default function ReviewForm({ initialScore = 0, onSubmit, loading = false
 
   if (submitted) {
     return (
-      <p className="rounded-xl bg-[var(--accent-green)]/10 px-4 py-3 text-sm text-[var(--accent-green)]">
+      <p role="status" className="rounded-xl bg-[var(--accent-green)]/10 px-4 py-3 text-sm text-[var(--accent-green)]">
         Thank you! Your review has been saved.
       </p>
     );
@@ -29,13 +29,14 @@ export default function ReviewForm({ initialScore = 0, onSubmit, loading = false
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <p className="mb-3 text-sm font-medium text-[var(--text-secondary)]">Your rating</p>
+      <fieldset>
+        <legend className="mb-3 text-sm font-medium text-[var(--text-secondary)]">Your rating</legend>
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((s) => (
             <button
               key={s}
               type="button"
+              aria-label={`Rate ${s} out of 5 stars`}
               onMouseEnter={() => setHover(s)}
               onMouseLeave={() => setHover(0)}
               onClick={() => setScore(s)}
@@ -48,13 +49,15 @@ export default function ReviewForm({ initialScore = 0, onSubmit, loading = false
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+        <label htmlFor="review-comment" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
           Your review (optional)
         </label>
         <textarea
+          id="review-comment"
+          name="comment"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={3}
