@@ -1,0 +1,25 @@
+{
+  "name": "Rasoira",
+  "short_name": "Rasoira",
+  "description": "India's home-cooking OS — 791+ real recipes, Aaj Kya Banaye, voice cook",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0a08",
+  "theme_color": "#14110e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["food", "lifestyle"],
+  "lang": "en-IN"
+}

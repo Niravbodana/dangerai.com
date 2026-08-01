@@ -249,3 +249,25 @@ export async function suggestFromPantry(body) {
 }
 
 export const pantrySuggest = suggestFromPantry;
+
+export async function fetchDailyBrief(profile) {
+  const res = await fetch(`${API_BASE}/plan/daily-brief`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(profile || {}),
+  });
+  if (!res.ok) throw new Error('Daily brief failed');
+  return res.json();
+}
+
+export async function fetchCollections() {
+  const res = await fetch(`${API_BASE}/collections`);
+  if (!res.ok) return { collections: [] };
+  return res.json();
+}
+
+export async function fetchCollection(id) {
+  const res = await fetch(`${API_BASE}/collections/${id}`);
+  if (!res.ok) throw new Error('Collection not found');
+  return res.json();
+}

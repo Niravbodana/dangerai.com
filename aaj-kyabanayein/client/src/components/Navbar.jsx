@@ -5,9 +5,9 @@ import { useLanguage } from "../context/LanguageContext";
 import BrandLogo from "./BrandLogo";
 
 const NAV = [
+  { to: "/today", key: "today" },
   { to: "/recipes", key: "recipes" },
-  { to: "/healthy-week", key: "featHealthy" },
-  { to: "/favorites", key: "favorites" },
+  { to: "/collections", key: "collections" },
   { to: "/pantry", key: "pantry" },
   { to: "/planner", key: "mealPlan" },
 ];

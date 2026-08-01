@@ -280,20 +280,8 @@ async function findImageUrl(recipe) {
   const best = pickBest(candidates, name);
   if (best) return best;
 
-  const cuisine = recipe.cuisine || "indian";
-  const cuisineFallbacks = {
-    indian: "Indian cuisine",
-    "south-indian": "South Indian cuisine",
-    "north-indian": "North Indian cuisine",
-    chinese: "Chinese cuisine",
-    italian: "Italian cuisine",
-    thai: "Thai cuisine",
-    mexican: "Mexican cuisine",
-    continental: "European cuisine",
-    healthy: "Salad",
-  };
-  const fallback = await searchWikipediaTitle(cuisineFallbacks[cuisine] || "Indian cuisine", name);
-  return fallback ? { ...fallback, source: "cuisine-fallback", score: 0.2 } : null;
+  // No generic cuisine fallback — avoids wrong photos (e.g. random dosa for every dish)
+  return null;
 }
 
 async function downloadImage(url, dest) {

@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
-import { IconBook, IconCalendar, IconChef, IconHeart, IconHome, IconPantry } from "./Icons";
+import { IconBook, IconCalendar, IconChef, IconHeart, IconHome } from "./Icons";
 
 const links = [
   { to: "/", Icon: IconHome, key: "home" },
+  { to: "/today", Icon: IconChef, key: "today" },
   { to: "/recipes", Icon: IconBook, key: "recipes" },
-  { to: "/healthy-week", Icon: IconChef, key: "featHealthy" },
   { to: "/favorites", Icon: IconHeart, key: "favorites" },
   { to: "/planner", Icon: IconCalendar, key: "planner" },
 ];
@@ -18,7 +18,9 @@ export default function MobileNav() {
     <nav className="mobile-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#14110e]/90 backdrop-blur-xl md:hidden">
       <div className="flex justify-around px-1 py-2">
         {links.map(({ to, Icon, key }) => {
-          const active = location.pathname === to;
+          const active = to === "/"
+            ? location.pathname === "/"
+            : location.pathname === to || location.pathname.startsWith(`${to}/`);
           return (
             <Link
               key={to}

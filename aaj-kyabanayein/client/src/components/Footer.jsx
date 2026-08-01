@@ -11,24 +11,28 @@ export default function Footer() {
           <div className="max-w-sm">
             <BrandLogo light className="h-8 w-auto" />
             <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-              Ghar ka khana, naye andaaz mein. 770+ real recipes — step-by-step cooking, pantry suggestions, abhi ke liye free.
+              India&apos;s home-cooking OS. 791+ real recipes — Aaj Kya Banaye, voice cook, smart pantry.
             </p>
-            <p className="mt-3 text-xs text-[var(--accent-soft)]">Made with ❤️ for Indian home cooks</p>
+            <p className="mt-3 text-xs text-[var(--accent-soft)]">Made with care for Indian home cooks</p>
           </div>
           <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-[var(--text-secondary)]">
+            <Link to="/today" className="transition hover:text-[var(--accent-soft)]">Today</Link>
             <Link to="/recipes" className="transition hover:text-[var(--accent-soft)]">Recipes</Link>
-            <Link to="/planner" className="transition hover:text-[var(--accent-soft)]">Meal Plan</Link>
+            <Link to="/collections" className="transition hover:text-[var(--accent-soft)]">Collections</Link>
             <Link to="/pantry" className="transition hover:text-[var(--accent-soft)]">Pantry</Link>
-            <Link to="/favorites" className="transition hover:text-[var(--accent-soft)]">Favorites</Link>
+            <Link to="/planner" className="transition hover:text-[var(--accent-soft)]">Meal Plan</Link>
+            <Link to="/taste" className="transition hover:text-[var(--accent-soft)]">Taste</Link>
+            <Link to="/family" className="transition hover:text-[var(--accent-soft)]">Family</Link>
+            <Link to="/streak" className="transition hover:text-[var(--accent-soft)]">Streak</Link>
             <Link to="/pricing" className="transition hover:text-[var(--accent-soft)]">Pricing</Link>
           </div>
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] pt-8 sm:flex-row">
           <p className="text-xs text-[var(--text-secondary)]">
-            {year} Rasoira — Free for Now
+            {year} Rasoira — Free core · Plus optional
           </p>
           <p className="text-xs text-[var(--text-secondary)]">
-            Aapki rasoi, aapka pride 🍛
+            Aapki rasoi, aapka pride
           </p>
         </div>
       </div>

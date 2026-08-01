@@ -32,6 +32,8 @@ import {
   warmRecipeImage,
 } from "../services/recipeImageService.js";
 import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
+import { COLLECTIONS, getCollectionById } from "../data/collections.js";
+import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
 import path from "path";
 
 const router = Router();
@@ -172,6 +174,34 @@ router.get("/plan/healthy/daily", optionalAuth, (req, res) => {
     plan,
     message: "Aaj ka healthy meal plan — sehat ke liye best!",
   });
+});
+
+/** Aaj Kya Banaye — personalised daily brief */
+router.post("/plan/daily-brief", optionalAuth, (req, res) => {
+  const profile = req.body || {};
+  const brief = generateDailyBrief(profile);
+  res.json({ success: true, brief });
+});
+
+router.get("/collections", (_req, res) => {
+  res.json({
+    success: true,
+    collections: COLLECTIONS.map((c) => ({
+      id: c.id,
+      name: c.name,
+      nameHi: c.nameHi,
+      description: c.description,
+      descriptionHi: c.descriptionHi,
+      emoji: c.emoji,
+    })),
+  });
+});
+
+router.get("/collections/:id", (req, res) => {
+  const collection = getCollectionById(req.params.id);
+  if (!collection) return res.status(404).json({ success: false, message: "Collection not found" });
+  const recipes = matchCollectionRecipes(collection, 24).map(attachRating);
+  res.json({ success: true, collection, recipes });
 });
 
 router.post("/plan/healthy", optionalAuth, (req, res) => {

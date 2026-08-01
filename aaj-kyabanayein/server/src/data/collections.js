@@ -1,0 +1,90 @@
+/**
+ * Curated recipe collections — festival, budget, regional, healthy.
+ */
+export const COLLECTIONS = [
+  {
+    id: "sunday-lunch",
+    name: "Sunday Lunch",
+    nameHi: "रविवार का लंच",
+    description: "Family thali energy — biryani, dal, sabzi, dessert vibes.",
+    descriptionHi: "पारिवारिक थाली — बिरयानी, दाल, सब्ज़ी, मीठा।",
+    emoji: "🍛",
+    tags: ["biryani", "party", "festive", "special", "punjabi"],
+    cuisines: ["north-indian", "hyderabadi", "mughlai"],
+    mealTypes: ["lunch", "dinner"],
+  },
+  {
+    id: "budget-50",
+    name: "Under ₹50",
+    nameHi: "₹५० से कम",
+    description: "Smart, filling meals on a tight budget.",
+    descriptionHi: "कम बजट में भरपेट घर का खाना।",
+    emoji: "🪙",
+    tags: ["budget", "everyday", "comfort"],
+    budgets: ["low"],
+    mealTypes: ["breakfast", "lunch", "dinner", "snack"],
+  },
+  {
+    id: "diwali-sweets",
+    name: "Festival Sweets",
+    nameHi: "त्योहार मिठाई",
+    description: "Gulab jamun, jalebi, kheer, ladoo energy.",
+    descriptionHi: "गुलाब जामुन, जलेबी, खीर — त्योहार स्पेशल।",
+    emoji: "🪔",
+    tags: ["sweet", "festival", "dessert"],
+    mealTypes: ["snack"],
+  },
+  {
+    id: "south-comfort",
+    name: "South Indian Comfort",
+    nameHi: "साउथ इंडियन आराम",
+    description: "Idli, dosa, rasam, pongal, appam.",
+    descriptionHi: "इडली, डोसा, रसम, पोंगल, अप्पम।",
+    emoji: "🥞",
+    cuisines: ["south-indian", "kerala"],
+    tags: ["south-indian", "fermented", "light"],
+  },
+  {
+    id: "protein-power",
+    name: "Protein Power",
+    nameHi: "प्रोटीन पावर",
+    description: "Dal, paneer, egg, chicken — muscle-friendly home food.",
+    descriptionHi: "दाल, पनीर, अंडा, चिकन — भरपूर प्रोटीन।",
+    emoji: "💪",
+    tags: ["protein", "healthy", "diabetic-friendly"],
+  },
+  {
+    id: "street-chaat",
+    name: "Street Chaat Night",
+    nameHi: "स्ट्रीट चाट नाइट",
+    description: "Pani puri, bhel, vada pav, misal — rainy day mood.",
+    descriptionHi: "पानी पूरी, भेल, वड़ा पाव, मिसळ।",
+    emoji: "🌧️",
+    tags: ["chaat", "street-food", "mumbai"],
+    mealTypes: ["snack"],
+  },
+  {
+    id: "diabetic-friendly",
+    name: "Diabetic Friendly",
+    nameHi: "डायबिटीज़ फ्रेंडली",
+    description: "Lower sugar load, more fiber, smart cooking.",
+    descriptionHi: "कम चीनी, ज़्यादा फाइबर — समझदारी से।",
+    emoji: "🩺",
+    tags: ["healthy", "diabetic-friendly", "fiber-rich"],
+    cuisines: ["healthy"],
+  },
+  {
+    id: "15-min",
+    name: "15-Minute Meals",
+    nameHi: "१५ मिनट में",
+    description: "When time is short but ghar ka khana still wins.",
+    descriptionHi: "समय कम हो तो भी घर का खाना।",
+    emoji: "⚡",
+    maxCookTime: 20,
+    mealTypes: ["breakfast", "snack", "lunch"],
+  },
+];
+
+export function getCollectionById(id) {
+  return COLLECTIONS.find((c) => c.id === id) || null;
+}

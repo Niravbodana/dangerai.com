@@ -9,6 +9,8 @@ import RecipeImage from "../components/RecipeImage";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import ReviewForm from "../components/ReviewForm";
 import { IconArrowLeft, IconClock, IconHeart, IconShare, IconStar } from "../components/Icons";
+import { track } from "../lib/analytics";
+import { canSaveOfflinePack, saveOfflinePack } from "../lib/offlinePacks";
 
 function StarRating({ value, onRate, interactive = false }) {
   return (
@@ -60,6 +62,7 @@ export default function RecipeDetail() {
   const [similar, setSimilar] = useState([]);
   const [imageVersion, setImageVersion] = useState(0);
   const [loadingMedia, setLoadingMedia] = useState(true);
+  const [offlineSaved, setOfflineSaved] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -75,6 +78,7 @@ export default function RecipeDetail() {
         setImageVersion(Date.now());
         setRating(ratingData);
         setUserRating(ratingData.userScore || 0);
+        track("recipe_open", { id });
         setReviews(reviewsData.reviews || []);
         setIsFav(isFavorite(id));
         const trending = trendingData.recipes || [];
@@ -132,6 +136,17 @@ export default function RecipeDetail() {
       setPlanAdded(true);
     } catch {
       /* ignore */
+    }
+  };
+
+  const handleOfflineSave = () => {
+    if (!canSaveOfflinePack()) {
+      navigate("/pricing");
+      return;
+    }
+    if (saveOfflinePack(recipe)) {
+      setOfflineSaved(true);
+      track("offline_pack_save", { id });
     }
   };
 
@@ -362,6 +377,14 @@ export default function RecipeDetail() {
             className="premium-btn-outline tap-smooth shrink-0 px-4 py-4 text-sm"
           >
             {planAdded ? t("addedToPlan") : t("addToPlan")}
+          </button>
+          <button
+            type="button"
+            onClick={handleOfflineSave}
+            className="premium-btn-outline tap-smooth shrink-0 px-3 py-4 text-xs"
+            title="Offline pack (Plus)"
+          >
+            {offlineSaved ? "Saved" : "Offline"}
           </button>
           <button
             type="button"

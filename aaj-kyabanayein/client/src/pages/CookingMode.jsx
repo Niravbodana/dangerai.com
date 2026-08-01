@@ -1,18 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import { useSpeech } from "../hooks/useSpeech";
 import RecipeImage from "../components/RecipeImage";
 import { COOK_LANGS, getCookUI, getIngredientLabel, getRecipeName } from "../i18n/cookingLang";
+import { track } from "../lib/analytics";
+import { recordCookFinish, recordVoiceUse } from "../lib/streak";
+import { shouldShowAccountWall } from "../lib/accountWall";
+import { getStreak } from "../lib/streak";
+import { useAuth } from "../context/AuthContext";
+import { useAuthModal } from "../context/AuthModalContext";
 
-function VoiceButton({ text, lang, label }) {
+function VoiceButton({ text, lang, label, onSpeak }) {
   const { speak, stop, speaking, supported } = useSpeech(lang);
   if (!supported) return null;
   return (
     <button
       type="button"
-      onClick={() => (speaking ? stop() : speak(text))}
+      onClick={() => {
+        if (speaking) stop();
+        else {
+          speak(text);
+          onSpeak?.();
+        }
+      }}
       className={`tap-smooth flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition ${
         speaking
           ? "bg-[var(--accent)] text-[#14110e]"
@@ -25,16 +37,74 @@ function VoiceButton({ text, lang, label }) {
   );
 }
 
+function StepTimer({ minutes }) {
+  const total = Math.max(1, Math.round(minutes || 0)) * 60;
+  const [left, setLeft] = useState(total);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    setLeft(total);
+    setRunning(false);
+  }, [total]);
+
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => {
+      setLeft((s) => {
+        if (s <= 1) {
+          setRunning(false);
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [running]);
+
+  if (!minutes) return null;
+  const mm = String(Math.floor(left / 60)).padStart(2, "0");
+  const ss = String(left % 60).padStart(2, "0");
+
+  return (
+    <div className="mt-4 flex items-center justify-center gap-3">
+      <span className="font-display text-2xl tabular-nums text-[var(--accent-soft)]">{mm}:{ss}</span>
+      <button
+        type="button"
+        onClick={() => setRunning((r) => !r)}
+        className="rounded-full border border-white/15 px-3 py-1 text-xs text-[var(--text-secondary)]"
+      >
+        {running ? "Pause" : left === 0 ? "Reset" : "Timer"}
+      </button>
+      {left === 0 && (
+        <button type="button" onClick={() => setLeft(total)} className="text-xs text-[var(--accent-soft)]">
+          Restart
+        </button>
+      )}
+    </div>
+  );
+}
+
+function estimateStepMinutes(text = "") {
+  const m = String(text).match(/(\d+)\s*(min|minute|minutes|मिनट)/i);
+  return m ? Number(m[1]) : 0;
+}
+
 export default function CookingMode() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { lang } = useLanguage();
+  const { user } = useAuth();
+  const { openSignup } = useAuthModal();
   const [recipe, setRecipe] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [started, setStarted] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
+  const [handsFree, setHandsFree] = useState(false);
   const [cookLang, setCookLang] = useState(() => localStorage.getItem("akb-cook-lang") || lang || "en");
   const { speak, stop, speaking, supported } = useSpeech(cookLang === "hinglish" ? "hi" : cookLang);
+  const wakeLockRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem("akb-cook-lang", cookLang);
@@ -46,8 +116,54 @@ export default function CookingMode() {
     return () => {
       document.body.classList.remove("cooking-active");
       stop();
+      wakeLockRef.current?.release?.().catch(() => {});
+      recognitionRef.current?.stop?.();
     };
   }, [id, stop]);
+
+  useEffect(() => {
+    if (!started) return;
+    track("cook_start", { id });
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then((lock) => {
+        wakeLockRef.current = lock;
+      }).catch(() => {});
+    }
+  }, [started, id]);
+
+  // Hands-free: listen for "next" / "अगला"
+  useEffect(() => {
+    if (!handsFree || !started) {
+      recognitionRef.current?.stop?.();
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = cookLang === "en" ? "en-IN" : "hi-IN";
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.onresult = (event) => {
+      const last = event.results[event.results.length - 1]?.[0]?.transcript?.toLowerCase() || "";
+      if (/next| आगे|अगला|aage|agla|done|खत्म/.test(last)) {
+        setStepIndex((i) => Math.min(i + 1, 999));
+        track("voice_next");
+      }
+      if (/back|पीछे|peeche|previous/.test(last)) {
+        setStepIndex((i) => Math.max(0, i - 1));
+      }
+    };
+    rec.onerror = () => {};
+    try {
+      rec.start();
+      recognitionRef.current = rec;
+    } catch {
+      /* ignore */
+    }
+    return () => {
+      try { rec.stop(); } catch { /* ignore */ }
+    };
+  }, [handsFree, started, cookLang]);
 
   const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
     ? recipe.stepsHi
@@ -58,8 +174,8 @@ export default function CookingMode() {
     title: text,
     titleHi: recipe?.stepsHi?.[i] || text,
   }));
-  const current = steps[stepIndex];
-  const isDone = current?.type === "done";
+  const current = steps[Math.min(stepIndex, steps.length - 1)];
+  const isDone = current?.type === "done" || stepIndex >= steps.length - 1;
   const ui = getCookUI(cookLang);
 
   const stepText = current
@@ -71,6 +187,17 @@ export default function CookingMode() {
     : "";
 
   const voiceLang = cookLang === "en" ? "en" : "hi";
+  const stepMinutes = estimateStepMinutes(stepText);
+
+  const finishCook = () => {
+    recordCookFinish(id);
+    track("cook_finish", { id });
+    const streak = getStreak();
+    if (shouldShowAccountWall(!!user, streak.totalCooks)) {
+      openSignup();
+    }
+    navigate(`/recipe/${id}/review?from=cook`);
+  };
 
   if (!recipe) {
     return (
@@ -97,22 +224,24 @@ export default function CookingMode() {
           <p className="mt-2 text-center text-sm text-[var(--text-secondary)]">{steps.length} {ui.steps}</p>
 
           <div className="glass-strong mt-6 rounded-2xl p-5 sm:p-6">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap gap-2">
-                {COOK_LANGS.map((l) => (
-                  <button
-                    key={l.id}
-                    type="button"
-                    onClick={() => setCookLang(l.id)}
-                    className={`tap-smooth rounded-full px-3 py-1.5 text-xs font-medium ${
-                      cookLang === l.id ? "bg-[var(--accent)] text-[#14110e]" : "border border-white/10 bg-white/5 text-[var(--text-secondary)]"
-                    }`}
-                  >
-                    {l.label}
-                  </button>
-                ))}
-              </div>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {COOK_LANGS.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => setCookLang(l.id)}
+                  className={`tap-smooth rounded-full px-3 py-1.5 text-xs font-medium ${
+                    cookLang === l.id ? "bg-[var(--accent)] text-[#14110e]" : "border border-white/10 bg-white/5 text-[var(--text-secondary)]"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
             </div>
+            <label className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+              <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} className="accent-[var(--accent)]" />
+              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo;
+            </label>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               {ui.ingredients}
             </h2>
@@ -153,28 +282,29 @@ export default function CookingMode() {
           <button type="button" onClick={() => navigate(`/recipe/${id}`)} className="text-sm text-[var(--text-secondary)]">
             {ui.close}
           </button>
-          <span className="text-sm font-medium">{stepIndex + 1} / {steps.length}</span>
+          <span className="text-sm font-medium">{Math.min(stepIndex + 1, steps.length)} / {steps.length}</span>
+          {handsFree && <span className="text-[10px] text-[var(--accent-soft)]">🎤 Listening</span>}
         </div>
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
-          <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }} />
+          <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((Math.min(stepIndex + 1, steps.length)) / steps.length) * 100}%` }} />
         </div>
       </div>
 
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 pb-32">
         <div className="glass-strong rounded-2xl p-6 text-center sm:p-10">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-xl font-bold text-[#14110e]">
-            {isDone ? "☺️" : stepIndex}
+            {isDone ? "☺️" : stepIndex + 1}
           </div>
           <p className="mt-6 text-lg leading-relaxed text-[var(--text-primary)] sm:text-xl">{stepText}</p>
+          <StepTimer minutes={stepMinutes} />
           {supported && stepText && (
             <div className="mt-5 flex justify-center gap-2">
-              <VoiceButton text={stepText} lang={voiceLang} label="Listen to step" />
-              {cookLang === "hinglish" && current?.titleHi && (
-                <VoiceButton text={current.titleHi} lang="hi" label="Hindi" />
-              )}
-              {cookLang === "hinglish" && current?.title && (
-                <VoiceButton text={current.title} lang="en" label="English" />
-              )}
+              <VoiceButton
+                text={stepText}
+                lang={voiceLang}
+                label="Listen to step"
+                onSpeak={() => recordVoiceUse()}
+              />
             </div>
           )}
         </div>
@@ -193,7 +323,7 @@ export default function CookingMode() {
           {supported && stepText && !speaking && (
             <button
               type="button"
-              onClick={() => speak(stepText)}
+              onClick={() => { speak(stepText); recordVoiceUse(); }}
               className="premium-btn-outline flex h-12 w-12 shrink-0 items-center justify-center text-lg"
               aria-label="Read step aloud"
             >
@@ -201,11 +331,7 @@ export default function CookingMode() {
             </button>
           )}
           {isDone ? (
-            <button
-              type="button"
-              onClick={() => navigate(`/recipe/${id}/review?from=cook`)}
-              className="premium-btn flex-1 py-3 text-sm"
-            >
+            <button type="button" onClick={finishCook} className="premium-btn flex-1 py-3 text-sm">
               {ui.review}
             </button>
           ) : (

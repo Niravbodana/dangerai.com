@@ -20,6 +20,11 @@ import Pricing from './pages/Pricing';
 import RecipeReview from './pages/RecipeReview';
 import AddMeal from './pages/AddMeal';
 import MyMeals from './pages/MyMeals';
+import Today from './pages/Today';
+import Collections from './pages/Collections';
+import TasteProfilePage from './pages/TasteProfile';
+import Family from './pages/Family';
+import StreakPage from './pages/Streak';
 import NotFound from './pages/NotFound';
 
 function AuthRouteHandler() {
@@ -45,6 +50,12 @@ function AppContent() {
       <main className="pb-20 md:pb-8">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/today" element={<Today />} />
+          <Route path="/collections" element={<Collections />} />
+          <Route path="/collections/:id" element={<Collections />} />
+          <Route path="/taste" element={<TasteProfilePage />} />
+          <Route path="/family" element={<Family />} />
+          <Route path="/streak" element={<StreakPage />} />
           <Route path="/recipes" element={<Recipes />} />
           <Route path="/recipe/:id" element={<RecipeDetail />} />
           <Route path="/cook/:id" element={<CookingMode />} />
@@ -81,11 +92,8 @@ export default function App() {
     </LanguageProvider>
   );
 
-  if (!googleClientId) return tree;
-
-  return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      {tree}
-    </GoogleOAuthProvider>
-  );
+  if (googleClientId) {
+    return <GoogleOAuthProvider clientId={googleClientId}>{tree}</GoogleOAuthProvider>;
+  }
+  return tree;
 }

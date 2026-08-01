@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchPantryItems, suggestFromPantry } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
+import {
+  buildGroceryWhatsAppText,
+  clearPantry,
+  getExpired,
+  getExpiringSoon,
+  loadPantry,
+  openInstamartSearch,
+  openWhatsAppShare,
+  pantryKeysForSuggest,
+  removePantryItem,
+  upsertPantryItem,
+} from "../lib/pantryStore";
+import { track } from "../lib/analytics";
 
 function Chip({ active, onClick, children }) {
   return (
@@ -21,36 +35,51 @@ function Chip({ active, onClick, children }) {
 
 export default function Pantry() {
   const { t } = useLanguage();
-  const [pantryItems, setPantryItems] = useState([]);
-  const [selected, setSelected] = useState([]);
+  const [catalog, setCatalog] = useState([]);
+  const [items, setItems] = useState(loadPantry);
   const [diet, setDiet] = useState("veg");
   const [mealType, setMealType] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [qtyDraft, setQtyDraft] = useState({});
+  const [expiryDraft, setExpiryDraft] = useState({});
 
   useEffect(() => {
-    fetchPantryItems().then((data) => setPantryItems(data.items));
+    fetchPantryItems().then((data) => setCatalog(data.items || []));
   }, []);
 
-  const toggleItem = (key) => {
-    setSelected((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+  const refresh = () => setItems(loadPantry());
+
+  const addOrUpdate = (item) => {
+    const quantity = qtyDraft[item.key] || "1";
+    const expiry = expiryDraft[item.key] || "";
+    upsertPantryItem({
+      key: item.key,
+      label: item.label,
+      labelHi: item.labelHi,
+      quantity,
+      expiry,
+    });
+    refresh();
   };
 
+  const isSelected = (key) => items.some((i) => i.key === key);
+
   const handleSuggest = async () => {
-    if (selected.length === 0) return;
+    const keys = pantryKeysForSuggest();
+    if (keys.length === 0) return;
     setLoading(true);
     setSearched(true);
     try {
       const data = await suggestFromPantry({
-        ingredients: selected,
+        ingredients: keys,
         diet,
         mealType: mealType || undefined,
         limit: 24,
       });
-      setSuggestions(data.suggestions);
+      setSuggestions(data.suggestions || []);
+      track("pantry_suggest", { count: keys.length, results: data.suggestions?.length || 0 });
     } catch {
       setSuggestions([]);
     } finally {
@@ -58,11 +87,31 @@ export default function Pantry() {
     }
   };
 
+  const expiring = getExpiringSoon(3);
+  const expired = getExpired();
+
+  const shareGrocery = () => {
+    const text = buildGroceryWhatsAppText(
+      items.map((i) => ({ nameHi: i.labelHi, name: i.label, quantity: `${i.quantity}${i.unit ? ` ${i.unit}` : ""}` }))
+    );
+    openWhatsAppShare(text);
+    track("grocery_whatsapp");
+  };
+
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="font-display text-3xl text-[var(--text-primary)]">{t("tryPantry")}</h1>
-        <p className="mb-6 text-[var(--text-secondary)]">{t("featPantryDesc")}</p>
+        <p className="mb-2 text-[var(--text-secondary)]">
+          Quantity + expiry ke saath smart pantry — jo pada hai usi se recipes.
+        </p>
+
+        {(expiring.length > 0 || expired.length > 0) && (
+          <div className="mb-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-3 text-sm text-[var(--accent-soft)]">
+            {expired.length > 0 && <p>⚠️ {expired.length} item(s) expired — use or remove.</p>}
+            {expiring.length > 0 && <p>⏰ {expiring.length} item(s) expiring in 3 days.</p>}
+          </div>
+        )}
 
         <div className="glass-strong mb-6 rounded-2xl p-6">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Diet</h3>
@@ -81,42 +130,105 @@ export default function Pantry() {
           </div>
 
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-            {selected.length} selected
+            Your pantry ({items.length})
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {pantryItems.map((item) => (
-              <Chip
-                key={item.key}
-                active={selected.includes(item.key)}
-                onClick={() => toggleItem(item.key)}
-              >
-                {item.labelHi} ({item.label})
-              </Chip>
+          {items.length > 0 && (
+            <ul className="mb-5 space-y-2">
+              {items.map((i) => (
+                <li key={i.key} className="ingredient-note items-center">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium text-[var(--text-primary)]">{i.labelHi} ({i.label})</span>
+                    <span className="ingredient-note__qty">
+                      Qty: {i.quantity}{i.expiry ? ` · Expiry: ${i.expiry}` : ""}
+                    </span>
+                  </div>
+                  <button type="button" onClick={() => { removePantryItem(i.key); refresh(); }} className="text-xs text-red-300">
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Add items</h3>
+          <div className="space-y-3">
+            {catalog.map((item) => (
+              <div key={item.key} className="flex flex-wrap items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] p-3">
+                <span className="min-w-[7rem] text-sm text-[var(--text-primary)]">
+                  {item.labelHi} <span className="text-[var(--text-secondary)]">({item.label})</span>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Qty"
+                  value={qtyDraft[item.key] || ""}
+                  onChange={(e) => setQtyDraft((p) => ({ ...p, [item.key]: e.target.value }))}
+                  className="glass-input w-20 py-1.5 text-xs"
+                />
+                <input
+                  type="date"
+                  value={expiryDraft[item.key] || ""}
+                  onChange={(e) => setExpiryDraft((p) => ({ ...p, [item.key]: e.target.value }))}
+                  className="glass-input py-1.5 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => addOrUpdate(item)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                    isSelected(item.key) ? "bg-[var(--accent)] text-[#14110e]" : "border border-white/15 text-[var(--text-secondary)]"
+                  }`}
+                >
+                  {isSelected(item.key) ? "Update" : "Add"}
+                </button>
+              </div>
             ))}
           </div>
 
-          <button
-            onClick={handleSuggest}
-            disabled={loading || selected.length === 0}
-            className="premium-btn mt-6 w-full py-3 text-sm disabled:opacity-50"
-          >
-            {loading ? "..." : t("tryPantry")}
-          </button>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <button
+              onClick={handleSuggest}
+              disabled={loading || items.length === 0}
+              className="premium-btn px-6 py-3 text-sm disabled:opacity-40"
+            >
+              {loading ? "Finding..." : "Find recipes"}
+            </button>
+            <button type="button" onClick={shareGrocery} disabled={items.length === 0} className="premium-btn-outline px-4 py-3 text-sm disabled:opacity-40">
+              WhatsApp list
+            </button>
+            <button
+              type="button"
+              onClick={() => { openInstamartSearch(items[0]?.label || "vegetables"); track("instamart_open"); }}
+              disabled={items.length === 0}
+              className="premium-btn-outline px-4 py-3 text-sm disabled:opacity-40"
+            >
+              Open Instamart
+            </button>
+            <button type="button" onClick={() => { clearPantry(); refresh(); }} className="px-3 py-3 text-xs text-[var(--text-secondary)]">
+              Clear all
+            </button>
+          </div>
         </div>
 
         {searched && (
           <div>
-            <h2 className="mb-4 font-display text-xl text-[var(--text-primary)]">
-              {suggestions.length} {t("recipesCount")}
+            <h2 className="font-display text-xl text-[var(--text-primary)]">
+              {suggestions.length} matching recipes
             </h2>
-            {suggestions.length === 0 ? (
-              <p className="text-[var(--text-secondary)]">{t("search")}</p>
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {suggestions.map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
-                ))}
-              </div>
+            <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {suggestions.map((recipe) => (
+                <div key={recipe.id}>
+                  <RecipeCard recipe={recipe} />
+                  {recipe.matchPercent != null && (
+                    <p className="mt-1 text-center text-xs text-[var(--accent-soft)]">
+                      {recipe.matchPercent}% pantry match
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {suggestions.length === 0 && (
+              <p className="mt-6 text-center text-[var(--text-secondary)]">
+                No matches — <Link to="/today" className="text-[var(--accent-soft)]">try Aaj Kya Banaye</Link>
+              </p>
             )}
           </div>
         )}
