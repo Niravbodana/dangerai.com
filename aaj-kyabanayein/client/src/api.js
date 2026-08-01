@@ -80,11 +80,11 @@ export async function fetchMealPlan(preferences) {
 
 export const createPlan = fetchMealPlan;
 
-export async function fetchHealthyPlan(diet = 'veg') {
+export async function fetchHealthyPlan(diet = 'veg', options = {}) {
   const res = await fetch(`${API_BASE}/plan/healthy`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ diet }),
+    body: JSON.stringify({ diet, ...options }),
   });
   if (!res.ok) throw new Error('Healthy plan fetch failed');
   return res.json();

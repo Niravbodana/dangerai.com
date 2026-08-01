@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchHealthyPlan } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import { loadPantry } from "../lib/pantryStore";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
@@ -13,7 +14,7 @@ export default function HealthyWeek() {
 
   useEffect(() => {
     setLoading(true);
-    fetchHealthyPlan(diet).then(setData).finally(() => setLoading(false));
+    fetchHealthyPlan(diet, { pantry: loadPantry().map((i) => i.key) }).then(setData).finally(() => setLoading(false));
   }, [diet]);
 
   return (

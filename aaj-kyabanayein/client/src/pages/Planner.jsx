@@ -6,6 +6,8 @@ import GroceryList from "../components/GroceryList";
 import MealCard from "../components/MealCard";
 import PreferencesPanel from "../components/PreferencesPanel";
 import { useLanguage } from "../context/LanguageContext";
+import { loadPantry } from "../lib/pantryStore";
+import { saveGroceryFromPlan } from "../lib/groceryStore";
 
 const DEFAULT_PREFS = {
   diet: "veg",
@@ -37,8 +39,13 @@ export default function Planner() {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchMealPlan(preferences);
+      const result = await fetchMealPlan({
+        ...preferences,
+        pantry: loadPantry().map((i) => i.key),
+        familySize: preferences.familySize,
+      });
       setData(result);
+      if (result.groceryList) saveGroceryFromPlan(result.groceryList, { diet: preferences.diet });
       localStorage.setItem("akb-prefs", JSON.stringify(preferences));
     } catch {
       setError("Plan generate nahi ho paya. Server check karein.");
