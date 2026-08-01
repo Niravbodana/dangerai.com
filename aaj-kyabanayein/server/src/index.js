@@ -8,6 +8,9 @@ import authRouter from "./routes/auth.js";
 import mealsRouter from "./routes/meals.js";
 import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js";
 import socialRouter from "./routes/social.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { securityHeaders } from "./middleware/security.js";
+import { logger } from "./lib/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,8 +34,11 @@ loadCustomMealsOnStartup();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || "0.0.0.0";
+const isProd = process.env.NODE_ENV === "production";
 
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((o) => o.trim()) } : undefined));
+app.use(securityHeaders);
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
@@ -64,6 +70,20 @@ app.get("/", (_req, res) => {
   });
 });
 
+if (isProd) {
+  const clientDist = path.join(__dirname, "../../client/dist");
+  if (fs.existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) return next();
+      res.sendFile(path.join(clientDist, "index.html"));
+    });
+  }
+}
+
+app.use("/api", notFoundHandler);
+app.use(errorHandler);
+
 function localIpv4() {
   const nets = os.networkInterfaces();
   for (const name of Object.keys(nets)) {
@@ -76,6 +96,9 @@ function localIpv4() {
 
 app.listen(PORT, HOST, () => {
   const lan = localIpv4();
-  console.log(`Server running on http://localhost:${PORT}`);
-  if (lan) console.log(`Phone (same Wi‑Fi): http://${lan}:${PORT}/api/health`);
+  logger.info(`Server running on http://localhost:${PORT}`);
+  if (lan) logger.info(`Phone (same Wi‑Fi): http://${lan}:${PORT}/api/health`);
+  if (isProd && !process.env.JWT_SECRET) {
+    logger.warn("JWT_SECRET is not set — set it before production deploy");
+  }
 });

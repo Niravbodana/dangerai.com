@@ -4,6 +4,9 @@ import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
 import { useSpeech } from "../hooks/useSpeech";
 import RecipeImage from "../components/RecipeImage";
+import EmptyState from "../components/EmptyState";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { getOfflinePack } from "../lib/offlinePacks";
 import { COOK_LANGS, getCookUI, getIngredientLabel, getRecipeName } from "../i18n/cookingLang";
 import { track } from "../lib/analytics";
 import { recordCookFinish, recordVoiceUse } from "../lib/streak";
@@ -97,6 +100,8 @@ export default function CookingMode() {
   const { user } = useAuth();
   const { openSignup } = useAuthModal();
   const [recipe, setRecipe] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [started, setStarted] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
@@ -111,9 +116,28 @@ export default function CookingMode() {
   }, [cookLang]);
 
   useEffect(() => {
-    fetchRecipeLoad(id).then((data) => setRecipe(data.recipe));
+    let cancelled = false;
+    setRecipe(null);
+    setLoadError(false);
+    setOfflineMode(false);
+
+    fetchRecipeLoad(id)
+      .then((data) => {
+        if (!cancelled) setRecipe(data.recipe);
+      })
+      .catch(() => {
+        const offline = getOfflinePack(id);
+        if (offline && !cancelled) {
+          setRecipe(offline);
+          setOfflineMode(true);
+        } else if (!cancelled) {
+          setLoadError(true);
+        }
+      });
+
     document.body.classList.add("cooking-active");
     return () => {
+      cancelled = true;
       document.body.classList.remove("cooking-active");
       stop();
       wakeLockRef.current?.release?.().catch(() => {});
@@ -199,10 +223,25 @@ export default function CookingMode() {
     navigate(`/recipe/${id}/review?from=cook`);
   };
 
+  if (loadError) {
+    return (
+      <EmptyState
+        icon="🍳"
+        title="Recipe unavailable"
+        message="Could not load this recipe. Check your connection or save it offline with Rasoira Plus."
+        action={
+          <button type="button" onClick={() => navigate(`/recipe/${id}`)} className="premium-btn px-6 py-2.5 text-sm">
+            Back to recipe
+          </button>
+        }
+      />
+    );
+  }
+
   if (!recipe) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--accent)]" />
+        <LoadingSpinner />
       </div>
     );
   }
@@ -221,6 +260,9 @@ export default function CookingMode() {
           <h1 className="text-center font-display text-2xl text-[var(--text-primary)] sm:text-3xl">
             {getRecipeName(recipe, cookLang)}
           </h1>
+          {offlineMode && (
+            <p className="mt-2 text-center text-xs text-amber-400">Offline pack — saved recipe</p>
+          )}
           <p className="mt-2 text-center text-sm text-[var(--text-secondary)]">{steps.length} {ui.steps}</p>
 
           <div className="glass-strong mt-6 rounded-2xl p-5 sm:p-6">

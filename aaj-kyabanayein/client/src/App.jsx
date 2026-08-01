@@ -10,6 +10,7 @@ import Footer from './components/Footer';
 import GlobalSeo from './components/GlobalSeo';
 import AuthModal from './components/AuthModal';
 import LoadingSpinner from './components/LoadingSpinner';
+import OfflineBanner from './components/OfflineBanner';
 import Home from './pages/Home';
 
 const Recipes = lazy(() => import('./pages/Recipes'));
@@ -60,6 +61,7 @@ function AppContent() {
         Skip to main content
       </a>
       <GlobalSeo />
+      <OfflineBanner />
       <AuthRouteHandler />
       <Navbar />
       <main id="main-content" className="pb-20 md:pb-8" tabIndex={-1}>

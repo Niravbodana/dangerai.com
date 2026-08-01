@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ENGLISH_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
+import { logger } from "../lib/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED_DIR = path.join(__dirname, "curated");
@@ -147,7 +148,7 @@ function toIndexEntry(recipe) {
 
 function loadCuratedData() {
   if (!fs.existsSync(INDEX_FILE) || !fs.existsSync(RECIPES_FILE)) {
-    console.warn("Curated recipes not found — run: npm run build-recipe-books");
+    logger.warn("Curated recipes not found — run: npm run build-recipe-books");
     return;
   }
 
@@ -176,12 +177,16 @@ let getRecipeByIdImpl = (id) => {
   return recipeById.get(id) || null;
 };
 
-console.time("recipes-load");
-loadCuratedData();
-console.timeEnd("recipes-load");
+if (process.env.NODE_ENV !== "production") {
+  console.time("recipes-load");
+  loadCuratedData();
+  console.timeEnd("recipes-load");
+} else {
+  loadCuratedData();
+}
 
 export const RECIPE_COUNT = recipeIndex.length;
-console.log(`Ready: ${RECIPE_COUNT} curated real recipes`);
+logger.info(`Ready: ${RECIPE_COUNT} curated real recipes`);
 
 export const RECIPE_INDEX = recipeIndex;
 export const RECIPES = [...recipeById.values(), ...customRecipes.values()];

@@ -1,5 +1,5 @@
 /* Rasoira PWA — cache shell + cook assets for offline */
-const CACHE = "rasoira-v1";
+const CACHE = "rasoira-v2";
 const PRECACHE = ["/", "/index.html", "/manifest.webmanifest", "/favicon.svg", "/logo.svg"];
 
 self.addEventListener("install", (event) => {
