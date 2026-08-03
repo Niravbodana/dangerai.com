@@ -9,8 +9,6 @@ const MENU_ITEMS = [
   { id: "snack", icon: "🍿", labelEn: "Snacks", labelHi: "स्नैक" },
   { id: "healthy", icon: "💚", labelEn: "Healthy", labelHi: "स्वस्थ" },
   { id: "quick", icon: "⚡", labelEn: "Quick ≤20m", labelHi: "जल्दी" },
-  { id: "veg", icon: "🥬", labelEn: "Veg", labelHi: "शाकाहारी" },
-  { id: "non-veg", icon: "🍗", labelEn: "Non-Veg", labelHi: "मांसाहारी" },
 ];
 
 const CUISINE_QUICK = [
@@ -45,8 +43,6 @@ export default function RecipeCategoryMenu({
   const isActive = (item) => {
     if (item.id === "trending") return sortTrending;
     if (item.id === "all") return !sortTrending && activeCategory === "all" && activeDiet === "all" && !maxCookTime;
-    if (item.id === "veg") return activeDiet === "veg";
-    if (item.id === "non-veg") return activeDiet === "non-veg";
     if (item.id === "quick") return !!maxCookTime && maxCookTime <= 20;
     if (item.id === "snack") return activeCategory === "snack";
     if (item.id === "healthy") return activeCategory === "healthy";
@@ -54,7 +50,7 @@ export default function RecipeCategoryMenu({
   };
 
   return (
-    <div className="sticky top-[57px] z-40 -mx-4 border-b border-white/[0.06] bg-[#0c0a08]/90 px-4 py-3 backdrop-blur-xl sm:top-[65px]">
+    <div className="hidden lg:block sticky top-[65px] z-40 -mx-4 border-b border-white/[0.06] bg-[#0c0a08]/90 px-4 py-3 backdrop-blur-xl">
       <div className="mx-auto max-w-6xl">
         <div className="recipe-menu-scroll flex gap-2 overflow-x-auto pb-1">
           {MENU_ITEMS.map((item) => (
