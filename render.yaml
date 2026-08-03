@@ -1,0 +1,19 @@
+# Render Blueprint — deploy Rasoira for iPhone / production
+# https://dashboard.render.com → New → Blueprint → connect repo Niravbodana/dangerai.com
+
+services:
+  - type: web
+    name: rasoira
+    runtime: node
+    plan: free
+    rootDir: aaj-kyabanayein
+    buildCommand: npm run install:all && npm run build:client && npm run db:init --prefix server
+    startCommand: NODE_ENV=production npm run start --prefix server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: HOST
+        value: 0.0.0.0
