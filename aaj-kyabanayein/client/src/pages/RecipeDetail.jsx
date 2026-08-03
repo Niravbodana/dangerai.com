@@ -16,7 +16,7 @@ import { track } from "../lib/analytics";
 import { canSaveOfflinePack, saveOfflinePack } from "../lib/offlinePacks";
 import usePageSeo from "../hooks/usePageSeo";
 import { breadcrumbSchema, recipeSchema } from "../lib/seo";
-import { getRecipeNutrition } from "../lib/nutrition";
+import { useHideMobileNav } from "../hooks/useHideMobileNav";
 import NutritionSummary from "../components/NutritionSummary";
 import { copyIngredients, printRecipe } from "../lib/recipeShare";
 import { getRecipeVideoId } from "../lib/recipeVideo";
@@ -75,6 +75,13 @@ export default function RecipeDetail() {
   const [imageVersion, setImageVersion] = useState(0);
   const [loadingMedia, setLoadingMedia] = useState(true);
   const [offlineSaved, setOfflineSaved] = useState(false);
+
+  useHideMobileNav(true);
+
+  useEffect(() => {
+    document.body.classList.add("recipe-detail-active");
+    return () => document.body.classList.remove("recipe-detail-active");
+  }, []);
   const [copiedIngredients, setCopiedIngredients] = useState(false);
 
   const load = () => {
@@ -265,7 +272,7 @@ export default function RecipeDetail() {
           />
           {loadingMedia && !recipe.thumbUrl && (
             <div className="absolute bottom-4 right-4 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80 backdrop-blur-sm">
-              Better photo…
+              {t("betterPhoto")}
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#14110e] via-[#14110e]/40 to-transparent" />
@@ -273,7 +280,7 @@ export default function RecipeDetail() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
+            className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
             aria-label={t("back")}
           >
             <IconArrowLeft className="h-5 w-5" />
@@ -282,7 +289,7 @@ export default function RecipeDetail() {
           <button
             type="button"
             onClick={handleFav}
-            className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${
+            className={`absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition ${
               isFav
                 ? "border-[var(--accent)]/40 bg-[var(--accent)]/20 text-[var(--accent-soft)]"
                 : "border-white/15 bg-black/40 text-white hover:bg-black/60"
@@ -365,14 +372,14 @@ export default function RecipeDetail() {
                   onClick={handleCopyIngredients}
                   className="premium-btn-outline tap-smooth px-3 py-2 text-xs"
                 >
-                  {copiedIngredients ? "Copied!" : "Copy list"}
+                  {copiedIngredients ? t("copied") : t("copyList")}
                 </button>
                 <button
                   type="button"
                   onClick={handlePrint}
                   className="premium-btn-outline tap-smooth px-3 py-2 text-xs"
                 >
-                  Print
+                  {t("print")}
                 </button>
               </div>
             </div>
@@ -488,7 +495,7 @@ export default function RecipeDetail() {
             className="premium-btn-outline tap-smooth shrink-0 px-3 py-4 text-xs"
             title="Offline pack (Plus)"
           >
-            {offlineSaved ? "Saved" : "Offline"}
+            {offlineSaved ? t("offlineSaved") : t("offline")}
           </button>
           <button
             type="button"

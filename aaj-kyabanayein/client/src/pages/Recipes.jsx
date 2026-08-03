@@ -152,7 +152,7 @@ export default function Recipes() {
             }`}
           >
             <IconFilter className="h-3.5 w-3.5" />
-            Filters{activeFilters > 0 ? ` (${activeFilters})` : ""}
+            {t("filters")}{activeFilters > 0 ? ` (${activeFilters})` : ""}
           </button>
         </div>
 

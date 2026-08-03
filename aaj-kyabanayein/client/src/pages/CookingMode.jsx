@@ -18,6 +18,7 @@ import { shouldShowAccountWall } from "../lib/accountWall";
 import { getStreak } from "../lib/streak";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
+import { useTouchDevice } from "../hooks/useTouchDevice";
 
 function VoiceButton({ text, lang, label, onSpeak }) {
   const { speak, stop, speaking, supported } = useSpeech(lang);
@@ -106,6 +107,7 @@ export default function CookingMode() {
   const { lang } = useLanguage();
   const { user } = useAuth();
   const { openSignup } = useAuthModal();
+  const isTouch = useTouchDevice();
   const [recipe, setRecipe] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
@@ -376,7 +378,7 @@ export default function CookingMode() {
           {handsFree && <span className="text-[10px] text-[var(--accent-soft)]">🎤 Listening</span>}
         </div>
         <p className="mx-auto mt-1 max-w-2xl text-center text-[10px] text-[var(--text-secondary)]">
-          Space = next · ← → navigate · R = repeat
+          {isTouch ? ui.mobileHint : ui.keyboardHint}
         </p>
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((Math.min(stepIndex + 1, steps.length)) / steps.length) * 100}%` }} />

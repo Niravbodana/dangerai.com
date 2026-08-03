@@ -92,7 +92,9 @@ function AppContent() {
           </Routes>
         </Suspense>
       </main>
-      <Footer />
+      <div className="hidden md:block">
+        <Footer />
+      </div>
       <MobileNav />
       <AuthModal />
     </div>
