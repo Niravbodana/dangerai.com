@@ -1,10 +1,21 @@
 /** Helpers for curated collections list */
 
 const FILTER_GROUPS = {
-  quick: ["15-min", "kids-tiffin"],
+  quick: ["15-min", "kids-tiffin", "tamil-tiffin"],
   festival: ["diwali-sweets", "sunday-lunch", "guests-coming"],
   budget: ["budget-50"],
   healthy: ["diabetic-friendly", "protein-power"],
+  regional: [
+    "gujarati-thali",
+    "punjabi-weekend",
+    "maharashtrian-favs",
+    "bengali-comfort",
+    "rajasthani-plate",
+    "hyderabadi-special",
+    "kerala-home",
+    "tamil-tiffin",
+    "south-comfort",
+  ],
 };
 
 export function filterCollections(collections, filterBy = "all") {

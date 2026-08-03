@@ -62,6 +62,7 @@ export const DEFAULT_TASTE = {
   kidsFriendly: false,
   diabeticFriendly: false,
   familySize: 4,
+  homeState: "",
 };
 
 export function getTasteProfile() {
@@ -97,6 +98,7 @@ export function getProfileCompletion(profile = getTasteProfile()) {
     { key: "skillLevel", label: "Skill level", done: !!profile.skillLevel },
     { key: "cookTimeMax", label: "Cook time", done: profile.cookTimeMax > 0 },
     { key: "preferCuisines", label: "Cuisines", done: (profile.preferCuisines?.length || 0) > 0 },
+    { key: "homeState", label: "Home state", done: !!profile.homeState },
     { key: "appliances", label: "Appliances", done: (profile.appliances?.length || 0) > 0 },
     { key: "cookingPreferences", label: "Cooking style", done: (profile.cookingPreferences?.length || 0) > 0 },
     { key: "allergies", label: "Allergies", done: profile.noAllergies || (profile.allergies?.length || 0) > 0 },
