@@ -8,6 +8,7 @@ import authRouter from "./routes/auth.js";
 import mealsRouter from "./routes/meals.js";
 import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js";
 import socialRouter from "./routes/social.js";
+import kitchenRouter from "./routes/kitchen.js";
 import adminRouter from "./routes/admin.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { securityHeaders } from "./middleware/security.js";
@@ -54,6 +55,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api", kitchenRouter);
 app.use("/api", socialRouter);
 app.use("/api", mealsUserRouter);
 app.use("/api", mealsRouter);
@@ -73,6 +75,12 @@ app.get("/", (_req, res) => {
       "POST /api/plan/healthy",
       "/api/pricing",
       "POST /api/plan",
+      "GET /api/maid/helpers",
+      "GET /api/maid/view/:token",
+      "GET /api/sync",
+      "POST /api/recipes/import",
+      "POST /api/grocery/restock",
+      "GET /api/festivals/upcoming",
       "POST /api/auth/register",
       "POST /api/auth/login",
       "POST /api/auth/google",

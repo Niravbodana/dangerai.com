@@ -103,5 +103,51 @@ export function createSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe ON recipe_ingredients(recipe_id);
     CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
     CREATE INDEX IF NOT EXISTS idx_saved_meals_user ON saved_meals(user_id);
+
+    CREATE TABLE IF NOT EXISTS user_sync (
+      user_id TEXT NOT NULL,
+      sync_key TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, sync_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS kitchen_helpers (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      language TEXT DEFAULT 'hi',
+      phone TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS helper_tokens (
+      token TEXT PRIMARY KEY,
+      helper_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      expires_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS imported_recipes (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      source_url TEXT NOT NULL,
+      title TEXT,
+      source_type TEXT,
+      recipe_json TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      user_id TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      subscription_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, endpoint)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_kitchen_helpers_user ON kitchen_helpers(user_id);
+    CREATE INDEX IF NOT EXISTS idx_imported_recipes_user ON imported_recipes(user_id);
   `);
 }

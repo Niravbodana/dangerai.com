@@ -33,6 +33,8 @@ const Family = lazy(() => import('./pages/Family'));
 const StreakPage = lazy(() => import('./pages/Streak'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Admin = lazy(() => import('./pages/Admin'));
+const KitchenHub = lazy(() => import('./pages/KitchenHub'));
+const HelperView = lazy(() => import('./pages/HelperView'));
 
 function AuthRouteHandler() {
   const [params] = useSearchParams();
@@ -90,6 +92,8 @@ function AppContent() {
             <Route path="/add-meal" element={<AddMeal />} />
             <Route path="/my-meals" element={<MyMeals />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/kitchen" element={<KitchenHub />} />
+            <Route path="/helper/:token" element={<HelperView />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -13,6 +13,7 @@ const NAV = [
   { to: "/collections", key: "collections" },
   { to: "/pantry", key: "pantry" },
   { to: "/planner", key: "mealPlan" },
+  { to: "/kitchen", key: "kitchen" },
 ];
 
 export default function Navbar() {

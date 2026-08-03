@@ -1,12 +1,13 @@
 import fs from "fs";
 import { DB_PATH } from "./connection.js";
-import { seedFromCurated } from "./migrate.js";
+import { seedFromCurated, initDatabase } from "./migrate.js";
 import { upsertRecipe } from "./recipeRepository.js";
 import { WORLD_CUISINE_RECIPES } from "../data/recipeBookWorldCuisines.js";
 import { VEG_EXPANSION_RECIPES } from "../data/recipeBookVegExpansion.js";
 
 /** Create DB on first run and import recipes if empty. */
 export function ensureDatabase() {
+  initDatabase();
   const exists = fs.existsSync(DB_PATH);
   if (!exists) {
     const { recipes, total } = seedFromCurated();
