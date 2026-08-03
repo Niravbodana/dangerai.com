@@ -18,6 +18,7 @@ export function searchRecipes(params = {}) {
     q = "",
     cuisine = null,
     region = null,
+    state = null,
     festival = null,
     mealType = null,
     diet = null,
@@ -26,12 +27,16 @@ export function searchRecipes(params = {}) {
     minCalories = null,
     maxCalories = null,
     minProtein = null,
+    allergen = null,
+    equipment = null,
+    minQualityScore = null,
+    includeIntelligence = false,
     mode = "keyword",
     page = 1,
     limit = 24,
   } = params;
 
-  const cacheKey = JSON.stringify({ q, cuisine, region, festival, mealType, diet, difficulty, maxCookTime, minCalories, maxCalories, minProtein, mode, page, limit });
+  const cacheKey = JSON.stringify({ q, cuisine, region, state, festival, mealType, diet, difficulty, maxCookTime, minCalories, maxCalories, minProtein, allergen, equipment, minQualityScore, includeIntelligence, mode, page, limit });
   const cached = searchCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
     return cached.result;
@@ -52,14 +57,26 @@ export function searchRecipes(params = {}) {
 
   results = applyAdvancedFilters(results, {
     region,
+    state,
     festival,
     difficulty,
     minCalories,
     maxCalories,
     minProtein,
+    allergen,
+    equipment,
     q,
     mode,
   });
+
+  if (includeIntelligence) {
+    const intelResults = searchIntelligenceDb({ q, cuisine, mealType, reviewStatus: "approved", limit: 100 });
+    for (const row of intelResults) {
+      if (!results.find((r) => r.id === row.id)) {
+        results.push({ id: row.id, title: row.title, cuisine: row.cuisine, _fromIntelligence: true });
+      }
+    }
+  }
 
   const total = results.length;
   const offset = (Math.max(1, page) - 1) * limit;
@@ -95,13 +112,22 @@ function applyAdvancedFilters(results, filters) {
   return results.filter((r) => {
     const recipe = getRecipeById(r.id) || r;
     if (filters.region && recipe.region && recipe.region !== filters.region) return false;
-    if (filters.festival && recipe.festival !== filters.festival) return false;
+    if (filters.state && recipe.state && recipe.state !== filters.state) return false;
+    if (filters.festival && recipe.festival !== filters.festival && recipe.festivalAssociation !== filters.festival) return false;
     if (filters.difficulty && recipe.difficulty !== filters.difficulty) return false;
     if (filters.minCalories && (recipe.calories || 0) < filters.minCalories) return false;
     if (filters.maxCalories && (recipe.calories || 9999) > filters.maxCalories) return false;
     if (filters.minProtein) {
       const protein = recipe.nutrition?.proteinG || recipe.proteinG || 0;
       if (protein < filters.minProtein) return false;
+    }
+    if (filters.allergen) {
+      const allergens = recipe.allergens || [];
+      if (!allergens.includes(filters.allergen)) return false;
+    }
+    if (filters.equipment) {
+      const equip = (recipe.cookingEquipment || []).join(" ").toLowerCase();
+      if (!equip.includes(filters.equipment.toLowerCase())) return false;
     }
     if (filters.q && filters.mode === "ingredient") {
       const blob = (recipe.ingredients || []).map((i) => i.name).join(" ").toLowerCase();
@@ -135,9 +161,9 @@ function buildFacets(results) {
 export function searchIntelligenceDb(params = {}) {
   ensureIntelligenceDb();
   const db = getIntelligenceDb();
-  const { q, cuisine, mealType, reviewStatus = "approved", limit = 50 } = params;
+  const { q, cuisine, mealType, reviewStatus = "approved", minQualityScore, limit = 50 } = params;
 
-  let sql = "SELECT id, slug, title, cuisine, meal_type, diet, calories, protein_g, review_status, seo_title FROM recipe_intelligence WHERE review_status = ?";
+  let sql = "SELECT id, slug, title, cuisine, meal_type, diet, calories, protein_g, review_status, seo_title, quality_score, nutrition_status FROM recipe_intelligence WHERE review_status = ?";
   const sqlParams = [reviewStatus];
 
   if (cuisine) {
@@ -148,12 +174,16 @@ export function searchIntelligenceDb(params = {}) {
     sql += " AND meal_type = ?";
     sqlParams.push(mealType);
   }
+  if (minQualityScore) {
+    sql += " AND quality_score >= ?";
+    sqlParams.push(minQualityScore);
+  }
   if (q) {
     sql += " AND (title LIKE ? OR slug LIKE ?)";
     sqlParams.push(`%${q}%`, `%${q}%`);
   }
 
-  sql += " ORDER BY title LIMIT ?";
+  sql += " ORDER BY quality_score DESC, title LIMIT ?";
   sqlParams.push(limit);
 
   return db.prepare(sql).all(...sqlParams);

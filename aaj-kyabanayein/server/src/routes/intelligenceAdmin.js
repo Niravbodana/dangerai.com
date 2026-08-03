@@ -31,6 +31,15 @@ import {
   getRecipeAuditTrail,
   getResearchBrief,
 } from "../research/index.js";
+import {
+  runEnterpriseResearch,
+  getAgentRuns,
+  getAgentRunStats,
+  getIngredientStats,
+  searchIngredients,
+  seedIngredientDatabase,
+  AGENT_NAMES,
+} from "../enterprise/index.js";
 
 const router = Router();
 
@@ -39,12 +48,19 @@ router.use(adminMiddleware);
 
 ensureIntelligenceDb();
 seedSourceRegistry();
+seedIngredientDatabase();
 
 router.get("/dashboard", (_req, res) => {
   res.json({
     success: true,
     pipeline: getPipelineStatus(),
     research: getCatalogStats(),
+    enterprise: {
+      version: "2.0",
+      agents: AGENT_NAMES,
+      agentStats: getAgentRunStats(),
+      ingredients: getIngredientStats(),
+    },
     review: getReviewStats(),
     jobs: getQueueStats(),
     search: getSearchIndexStats(),
@@ -156,6 +172,7 @@ router.post("/jobs/process-one", async (_req, res) => {
   const result = await processOneJob({
     pipeline_run: async (payload) => runRecipePipeline(payload),
     research_run: async (payload) => runResearchPipeline(payload),
+    enterprise_run: async (payload) => runEnterpriseResearch(payload),
   });
   res.json({ success: true, result });
 });
@@ -193,6 +210,79 @@ router.post("/research/run-sync", async (req, res) => {
       offset: req.body?.offset || 0,
       cuisines: req.body?.cuisines || null,
       dryRun: req.body?.dryRun === true,
+    });
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/enterprise/status", (_req, res) => {
+  res.json({
+    success: true,
+    version: "2.0",
+    catalog: getCatalogStats(),
+    agents: AGENT_NAMES,
+    agentStats: getAgentRunStats(),
+    ingredients: getIngredientStats(),
+  });
+});
+
+router.get("/enterprise/agents", (req, res) => {
+  res.json({
+    success: true,
+    agents: AGENT_NAMES,
+    stats: getAgentRunStats(),
+    runs: getAgentRuns({
+      recipeId: req.query.recipeId || null,
+      runId: req.query.runId || null,
+      limit: parseInt(req.query.limit) || 50,
+    }),
+  });
+});
+
+router.get("/enterprise/agents/:recipeId", (req, res) => {
+  res.json({
+    success: true,
+    recipeId: req.params.recipeId,
+    runs: getAgentRuns({ recipeId: req.params.recipeId }),
+    audit: getRecipeAuditTrail(req.params.recipeId),
+  });
+});
+
+router.get("/ingredients", (req, res) => {
+  res.json({
+    success: true,
+    ...searchIngredients({
+      q: req.query.q || null,
+      category: req.query.category || null,
+      limit: parseInt(req.query.limit) || 50,
+      offset: parseInt(req.query.offset) || 0,
+    }),
+    stats: getIngredientStats(),
+  });
+});
+
+router.post("/enterprise/run", (req, res) => {
+  const opts = {
+    limit: req.body?.limit || 5,
+    offset: req.body?.offset || 0,
+    cuisines: req.body?.cuisines || null,
+    dryRun: req.body?.dryRun === true,
+    minQualityScore: req.body?.minQualityScore || 60,
+  };
+  const jobId = enqueueJob("enterprise_run", opts);
+  res.json({ success: true, jobId, message: "Enterprise research job enqueued", opts });
+});
+
+router.post("/enterprise/run-sync", async (req, res) => {
+  try {
+    const report = await runEnterpriseResearch({
+      limit: req.body?.limit || 5,
+      offset: req.body?.offset || 0,
+      cuisines: req.body?.cuisines || null,
+      dryRun: req.body?.dryRun === true,
+      minQualityScore: req.body?.minQualityScore || 60,
     });
     res.json({ success: true, report });
   } catch (err) {

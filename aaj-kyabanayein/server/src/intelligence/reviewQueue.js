@@ -26,21 +26,30 @@ export function enqueueForReview(recipe, qualityResult) {
   db.prepare(`
     INSERT OR REPLACE INTO recipe_review_queue (
       id, recipe_id, status, duplicate_score, similarity_score,
-      license_status, image_license_status, quality_issues, preview_json
+      license_status, image_license_status, quality_issues, preview_json,
+      quality_score, nutrition_status, verification_status
     ) VALUES (
       @id, @recipe_id, @status, @duplicate_score, @similarity_score,
-      @license_status, @image_license_status, @quality_issues, @preview_json
+      @license_status, @image_license_status, @quality_issues, @preview_json,
+      @quality_score, @nutrition_status, @verification_status
     )
   `).run({
     id,
     recipe_id: recipe.id,
     status: qualityResult.autoApprove ? "approved" : "pending",
-    duplicate_score: qualityResult.scores?.duplicate || 0,
-    similarity_score: qualityResult.scores?.similarity || 0,
+    duplicate_score: qualityResult.scores?.duplicate || recipe.duplicateScore || 0,
+    similarity_score: qualityResult.scores?.similarity || recipe.similarityScore || 0,
     license_status: recipe.commercialUseAllowed ? "verified" : "unknown",
     image_license_status: recipe.imageLicense || "none",
     quality_issues: JSON.stringify(qualityResult.issues || []),
-    preview_json: JSON.stringify(preview),
+    preview_json: JSON.stringify({
+      ...preview,
+      qualityScore: recipe.qualityScore || Math.round((qualityResult.scores?.quality || 0) * 100),
+      qualityGrade: recipe.qualityGrade,
+    }),
+    quality_score: recipe.qualityScore || Math.round((qualityResult.scores?.quality || 0) * 100),
+    nutrition_status: recipe.nutritionStatus || "unknown",
+    verification_status: recipe.verificationStatus || "pending_review",
   });
 
   if (qualityResult.autoApprove) {
@@ -119,6 +128,9 @@ function parseReviewRow(row) {
     ...row,
     qualityIssues: row.quality_issues ? JSON.parse(row.quality_issues) : [],
     preview: row.preview_json ? JSON.parse(row.preview_json) : null,
+    qualityScore: row.quality_score ?? 0,
+    nutritionStatus: row.nutrition_status || "unknown",
+    verificationStatus: row.verification_status || "pending_review",
   };
 }
 

@@ -25,6 +25,10 @@ export default function AdminIntelligence({ onMessage }) {
   const [audit, setAudit] = useState([]);
   const [research, setResearch] = useState(null);
   const [researchAudit, setResearchAudit] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [pipeline, setPipeline] = useState(null);
+  const [ingredients, setIngredients] = useState([]);
+  const [agentData, setAgentData] = useState(null);
   const [subTab, setSubTab] = useState("overview");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -32,16 +36,24 @@ export default function AdminIntelligence({ onMessage }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [d, q, s, a] = await Promise.all([
+      const [d, q, s, a, j, p, ing, ag] = await Promise.all([
         intelFetch("/dashboard"),
         intelFetch("/review-queue?status=pending&limit=30"),
         intelFetch("/sources"),
         intelFetch("/audit-log?limit=30"),
+        intelFetch("/jobs"),
+        intelFetch("/pipeline/status"),
+        intelFetch("/ingredients?limit=20"),
+        intelFetch("/enterprise/agents?limit=20"),
       ]);
       setDash(d);
       setQueue(q.items || []);
       setSources(s.sources || []);
       setAudit(a.log || []);
+      setJobs(j.jobs || []);
+      setPipeline(p);
+      setIngredients(ing.items || []);
+      setAgentData(ag);
       setResearch(d.research || null);
     } catch (err) {
       onMessage?.(err.message);
@@ -134,6 +146,36 @@ export default function AdminIntelligence({ onMessage }) {
     }
   };
 
+  const runEnterprise = async (dryRun = false) => {
+    setLoading(true);
+    try {
+      const res = await intelFetch("/enterprise/run-sync", {
+        method: "POST",
+        body: JSON.stringify({ limit: 3, dryRun, minQualityScore: 60 }),
+      });
+      const r = res.report || {};
+      onMessage?.(`Enterprise v2: ${r.generated || 0} generated, avg score ${r.avgQualityScore || 0}, ${r.rejected || 0} rejected`);
+      await load();
+    } catch (err) {
+      onMessage?.(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processOneJob = async () => {
+    setLoading(true);
+    try {
+      const res = await intelFetch("/jobs/process-one", { method: "POST" });
+      onMessage?.(res.result?.processed ? `Job processed: ${res.result.jobType}` : "No pending jobs");
+      await load();
+    } catch (err) {
+      onMessage?.(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadResearchAudit = async (recipeId) => {
     try {
       const res = await intelFetch(`/research/audit/${recipeId}`);
@@ -154,8 +196,13 @@ export default function AdminIntelligence({ onMessage }) {
 
   const subTabs = [
     { id: "overview", label: "Overview" },
+    { id: "agents", label: "Agents" },
     { id: "research", label: "Research" },
     { id: "review", label: "Review Queue" },
+    { id: "quality", label: "Quality" },
+    { id: "ingredients", label: "Ingredients" },
+    { id: "jobs", label: "Jobs" },
+    { id: "pipeline", label: "Pipeline" },
     { id: "sources", label: "Sources" },
     { id: "audit", label: "Audit Log" },
   ];
@@ -183,11 +230,11 @@ export default function AdminIntelligence({ onMessage }) {
         </button>
         <button
           type="button"
-          onClick={() => runResearch(false)}
+          onClick={() => runEnterprise(false)}
           disabled={loading}
-          className="rounded-full bg-violet-600 px-4 py-1.5 text-sm text-white disabled:opacity-50"
+          className="rounded-full bg-indigo-600 px-4 py-1.5 text-sm text-white disabled:opacity-50"
         >
-          Run Research (5)
+          Run Enterprise v2 (3)
         </button>
       </div>
 
@@ -201,6 +248,34 @@ export default function AdminIntelligence({ onMessage }) {
           <StatCard label="Postgres" value={dash.pipeline?.postgresConfigured ? "Yes" : "SQLite"} />
           <StatCard label="Research Seeds" value={dash.research?.seedsAvailable} />
           <StatCard label="Research Target" value={dash.research?.target?.toLocaleString?.() || "50,000"} />
+          <StatCard label="Ingredients DB" value={dash.enterprise?.ingredients?.total} />
+          <StatCard label="AI Agents" value={dash.enterprise?.agents?.length || 10} />
+        </div>
+      )}
+
+      {subTab === "agents" && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {(agentData?.agents || dash?.enterprise?.agents || []).map((name) => (
+              <div key={name} className="rounded-xl border border-indigo-500/20 bg-indigo-950/10 p-3 text-xs">
+                <div className="font-semibold text-indigo-300">{name.replace(/_/g, " ")}</div>
+                <div className="mt-1 text-[var(--text-secondary)]">
+                  runs: {agentData?.stats?.byAgent?.find((a) => a.agent_name === name)?.runs || 0}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => runEnterprise(true)} disabled={loading} className="rounded-lg bg-white/10 px-3 py-1.5 text-sm">Dry Run</button>
+            <button type="button" onClick={() => runEnterprise(false)} disabled={loading} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white">Generate (3)</button>
+          </div>
+          <div className="max-h-64 space-y-1 overflow-y-auto text-xs font-mono">
+            {(agentData?.runs || []).map((r) => (
+              <div key={r.id} className="rounded border border-white/5 p-2">
+                <span className="text-indigo-300">{r.agent_name}</span> · {r.recipe_id} · conf {Math.round((r.confidence || 0) * 100)}% · {r.status}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -253,6 +328,8 @@ export default function AdminIntelligence({ onMessage }) {
               <thead className="bg-white/5 text-xs uppercase text-[var(--text-secondary)]">
                 <tr>
                   <th className="p-2">Recipe</th>
+                  <th className="p-2">Score</th>
+                  <th className="p-2">Nutrition</th>
                   <th className="p-2">Dup %</th>
                   <th className="p-2">License</th>
                   <th className="p-2">Image</th>
@@ -268,6 +345,8 @@ export default function AdminIntelligence({ onMessage }) {
                         {item.preview?.title || item.recipe_id}
                       </button>
                     </td>
+                    <td className="p-2">{item.qualityScore ?? item.preview?.qualityScore ?? "—"}</td>
+                    <td className="p-2">{item.nutritionStatus || "—"}</td>
                     <td className="p-2">{Math.round((item.duplicate_score || 0) * 100)}%</td>
                     <td className="p-2">{item.license_status}</td>
                     <td className="p-2">{item.image_license_status}</td>
@@ -283,6 +362,77 @@ export default function AdminIntelligence({ onMessage }) {
             </table>
             {!queue.length && <p className="p-4 text-sm text-[var(--text-secondary)]">No pending reviews.</p>}
           </div>
+        </div>
+      )}
+
+      {subTab === "quality" && (
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-secondary)]">Quality score breakdown (0–100): ingredients 15%, nutrition 20%, instructions 15%, SEO 10%, license 15%, image 10%, duplicate 15%.</p>
+          <div className="overflow-x-auto rounded-xl border border-white/10">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-white/5 text-xs uppercase text-[var(--text-secondary)]">
+                <tr>
+                  <th className="p-2">Recipe</th>
+                  <th className="p-2">Score</th>
+                  <th className="p-2">Grade</th>
+                  <th className="p-2">Nutrition</th>
+                  <th className="p-2">Verification</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queue.map((item) => (
+                  <tr key={item.id} className="border-t border-white/5">
+                    <td className="p-2">{item.preview?.title || item.recipe_id}</td>
+                    <td className="p-2 font-semibold">{item.qualityScore ?? item.preview?.qualityScore ?? "—"}</td>
+                    <td className="p-2">{item.preview?.qualityGrade || "—"}</td>
+                    <td className="p-2">{item.nutritionStatus}</td>
+                    <td className="p-2">{item.verificationStatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {subTab === "ingredients" && (
+        <div className="space-y-3">
+          <div className="text-sm text-[var(--text-secondary)]">
+            Master ingredient database — {dash?.enterprise?.ingredients?.total || 0} records (target 1M+)
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {ingredients.map((ing) => (
+              <div key={ing.id} className="rounded-xl border border-white/10 p-3 text-sm">
+                <strong>{ing.englishName}</strong>
+                <div className="text-xs text-[var(--text-secondary)]">{ing.hindiName} · {ing.category}</div>
+                {ing.allergens?.length > 0 && <div className="text-xs text-amber-300">Allergens: {ing.allergens.join(", ")}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {subTab === "jobs" && (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <button type="button" onClick={processOneJob} disabled={loading} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm text-white">Process One Job</button>
+            <StatCard label="Pending" value={dash?.jobs?.pending} />
+          </div>
+          <div className="max-h-64 space-y-1 overflow-y-auto text-xs font-mono">
+            {jobs.map((j) => (
+              <div key={j.id} className="rounded border border-white/5 p-2">
+                {j.job_type} · {j.status} · attempts {j.attempts}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {subTab === "pipeline" && pipeline && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Postgres" value={pipeline.postgresConfigured ? "Yes" : "SQLite"} />
+          <StatCard label="Datasets" value={pipeline.registeredDatasets?.length} />
+          <button type="button" onClick={runPipeline} disabled={loading} className="rounded-lg bg-amber-600 px-3 py-1.5 text-sm text-white">Run Pipeline (20)</button>
         </div>
       )}
 

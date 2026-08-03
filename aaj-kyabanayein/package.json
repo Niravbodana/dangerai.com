@@ -36,6 +36,9 @@
     "test:server": "npm run test --prefix server",
     "test:all": "npm run test --prefix client && npm run test --prefix server",
     "research:run": "node scripts/run-research.mjs run",
-    "research:status": "node scripts/run-research.mjs status"
+    "research:status": "node scripts/run-research.mjs status",
+    "enterprise:run": "node scripts/run-enterprise-research.mjs run",
+    "enterprise:status": "node scripts/run-enterprise-research.mjs status",
+    "enterprise:agents": "node scripts/run-enterprise-research.mjs agents"
   }
 }
