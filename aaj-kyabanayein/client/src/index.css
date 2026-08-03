@@ -960,8 +960,17 @@ body {
   display: flex;
   gap: 1rem;
   width: max-content;
-  animation: gallery-scroll 40s linear infinite;
   padding: 0 1rem;
+  will-change: transform;
+}
+
+/* CSS fallback for no-JS; JS marquee uses --live class */
+.home-gallery-track:not(.home-gallery-track--live) {
+  animation: gallery-scroll 30s linear infinite;
+}
+
+.home-gallery-track--live {
+  animation: none;
 }
 
 .home-gallery-track:hover {
@@ -969,8 +978,8 @@ body {
 }
 
 @keyframes gallery-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .home-gallery-card {

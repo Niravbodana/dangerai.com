@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchTrendingRecipes } from "../api";
 import RecipeImage from "./RecipeImage";
@@ -21,22 +21,71 @@ function isFallbackItem(recipe) {
   return String(recipe.id).startsWith("gallery-");
 }
 
+function useMarquee(trackRef, itemCount) {
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || itemCount < 2) return undefined;
+
+    let offset = 0;
+    let paused = false;
+    let rafId = 0;
+    let lastTs = 0;
+    const speed = 42; // px per second — smooth on iPhone
+
+    const pause = () => { paused = true; };
+    const resume = () => { paused = false; };
+
+    const tick = (ts) => {
+      if (!lastTs) lastTs = ts;
+      const delta = Math.min(ts - lastTs, 32);
+      lastTs = ts;
+
+      if (!paused) {
+        offset += (speed * delta) / 1000;
+        const loopWidth = track.scrollWidth / 2;
+        if (loopWidth > 0 && offset >= loopWidth) offset -= loopWidth;
+        track.style.transform = `translate3d(-${offset}px, 0, 0)`;
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    track.addEventListener("touchstart", pause, { passive: true });
+    track.addEventListener("touchend", resume);
+    track.addEventListener("mouseenter", pause);
+    track.addEventListener("mouseleave", resume);
+
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      track.removeEventListener("touchstart", pause);
+      track.removeEventListener("touchend", resume);
+      track.removeEventListener("mouseenter", pause);
+      track.removeEventListener("mouseleave", resume);
+      track.style.transform = "";
+    };
+  }, [trackRef, itemCount]);
+}
+
 export default function HomeTrendingGallery() {
+  const trackRef = useRef(null);
   const [recipes, setRecipes] = useState([]);
 
   useEffect(() => {
     fetchTrendingRecipes(12)
       .then((data) => setRecipes(data.recipes || []))
-      .catch(() => setRecipes(FALLBACK_GALLERY));
+      .catch(() => setRecipes([]));
   }, []);
 
-  const displayItems = useMemo(() => {
-    const items = recipes.length >= 6 ? recipes : [...recipes, ...FALLBACK_GALLERY].slice(0, 12);
-    if (!items.length) return FALLBACK_GALLERY;
-    return [...items, ...items];
-  }, [recipes]);
+  const marqueeItems = useMemo(
+    () => [...FALLBACK_GALLERY, ...FALLBACK_GALLERY],
+    [],
+  );
 
   const gridItems = recipes.length >= 6 ? recipes.slice(0, 6) : FALLBACK_GALLERY;
+
+  useMarquee(trackRef, marqueeItems.length);
 
   return (
     <section className="home-section border-t border-white/[0.06]">
@@ -58,28 +107,25 @@ export default function HomeTrendingGallery() {
       </div>
 
       <div className="home-gallery-scroll mt-10">
-        <div className="home-gallery-track">
-          {displayItems.map((recipe, i) => {
-            const to = isFallbackItem(recipe) ? "/recipes" : `/recipe/${recipe.id}`;
-            const key = `${recipe.id}-${i}`;
-            return (
-              <Link key={key} to={to} className="home-gallery-card group">
-                <RecipeImage
-                  recipeId={recipe.id}
-                  src={getImageSrc(recipe)}
-                  alt={recipe.nameHi || recipe.name}
-                  className="h-full w-full object-cover"
-                />
-                <div className="home-gallery-card__overlay">
-                  <span className="home-gallery-card__tag">{recipe.cuisine || "Indian"}</span>
-                  <p className="font-semibold text-white">{recipe.nameHi || recipe.name}</p>
-                  <p className="mt-1 text-xs text-[var(--accent-soft)] opacity-0 transition group-hover:opacity-100">
-                    Recipe dekho →
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
+        <div ref={trackRef} className="home-gallery-track home-gallery-track--live">
+          {marqueeItems.map((recipe, i) => (
+            <Link key={`${recipe.id}-${i}`} to="/recipes" className="home-gallery-card group">
+              <img
+                src={recipe.thumbUrl}
+                alt={recipe.nameHi || recipe.name}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="home-gallery-card__overlay">
+                <span className="home-gallery-card__tag">{recipe.cuisine}</span>
+                <p className="font-semibold text-white">{recipe.nameHi || recipe.name}</p>
+                <p className="mt-1 text-xs text-[var(--accent-soft)] opacity-0 transition group-hover:opacity-100 group-active:opacity-100">
+                  Recipe dekho →
+                </p>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
