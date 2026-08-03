@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import StepVoicePanel from "../components/StepVoicePanel";
 import { useSpeech, getSpeechLangCode } from "../hooks/useSpeech";
 import { useVoiceCommands } from "../hooks/useVoiceCommands";
 import { useWakeLock } from "../hooks/useWakeLock";
@@ -22,29 +23,11 @@ import { useTouchDevice } from "../hooks/useTouchDevice";
 import { useSwipe } from "../hooks/useSwipe";
 import { trackRecipeCooked } from "../lib/recentRecipes";
 
-function VoiceButton({ text, lang, label, onSpeak }) {
-  const { speak, stop, speaking, supported } = useSpeech(lang);
-  if (!supported) return null;
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (speaking) stop();
-        else {
-          speak(text);
-          onSpeak?.();
-        }
-      }}
-      className={`tap-smooth flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition ${
-        speaking
-          ? "bg-[var(--accent)] text-[#14110e]"
-          : "border border-white/15 bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-      }`}
-      aria-label={label}
-    >
-      {speaking ? "⏹ Stop" : "🔊 Listen"}
-    </button>
-  );
+function getStepTexts(current, recipe, stepIndex, instructionSteps) {
+  const en = current?.title || recipe?.steps?.[stepIndex] || instructionSteps[stepIndex] || "";
+  const hi = current?.titleHi || recipe?.stepsHi?.[stepIndex] || en;
+  const gu = recipe?.stepsGu?.[stepIndex] || hi;
+  return { en, hi, gu };
 }
 
 function StepTimer({ timerKey, minutes, timers, ensureTimer, toggleTimer, resetTimer }) {
@@ -177,13 +160,18 @@ export default function CookingMode() {
   const isDone = current?.type === "done" || stepIndex >= steps.length - 1;
   const ui = getCookUI(cookLang);
 
-  const stepText = current
-    ? cookLang === "hi" || cookLang === "gu" || cookLang === "mr"
-      ? current.titleHi || current.title
+  const stepTexts = useMemo(
+    () => getStepTexts(current, recipe, stepIndex, instructionSteps),
+    [current, recipe, stepIndex, instructionSteps],
+  );
+
+  const stepText = cookLang === "hi"
+    ? stepTexts.hi
+    : cookLang === "gu"
+      ? stepTexts.gu
       : cookLang === "hinglish"
-        ? `${current.title}${current.titleHi ? ` — ${current.titleHi}` : ""}`
-        : current.title || current.titleHi
-    : "";
+        ? `${stepTexts.en}${stepTexts.hi ? ` — ${stepTexts.hi}` : ""}`
+        : stepTexts.en;
 
   const voiceLang = speechLang;
   const stepMinutes = estimateStepMinutes(stepText);
@@ -411,12 +399,12 @@ export default function CookingMode() {
             toggleTimer={toggleTimer}
             resetTimer={resetTimer}
           />
-          {supported && stepText && (
-            <div className="mt-5 flex justify-center gap-2">
-              <VoiceButton
-                text={stepText}
-                lang={voiceLang}
-                label="Listen to step"
+          {stepText && (
+            <div className="mt-5">
+              <StepVoicePanel
+                texts={stepTexts}
+                activeLang={cookLang === "mr" || cookLang === "hinglish" ? "hi" : cookLang}
+                onLangChange={setCookLang}
                 onSpeak={() => recordVoiceUse()}
               />
             </div>

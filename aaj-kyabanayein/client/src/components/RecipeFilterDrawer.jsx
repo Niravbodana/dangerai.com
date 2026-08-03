@@ -17,24 +17,26 @@ const MEALS = [
 ];
 
 const CUISINES = [
-  { id: "all", labelEn: "All cuisines", labelHi: "सभी व्यंजन" },
-  { id: "indian", labelEn: "Indian", labelHi: "भारतीय" },
-  { id: "north-indian", labelEn: "North Indian", labelHi: "उत्तर भारतीय" },
-  { id: "south-indian", labelEn: "South Indian", labelHi: "दक्षिण भारतीय" },
-  { id: "gujarati", labelEn: "Gujarati", labelHi: "गुजराती" },
-  { id: "maharashtrian", labelEn: "Maharashtrian", labelHi: "महाराष्ट्रीय" },
-  { id: "bengali", labelEn: "Bengali", labelHi: "बंगाली" },
-  { id: "punjabi", labelEn: "Punjabi", labelHi: "पंजाबी" },
-  { id: "chinese", labelEn: "Chinese", labelHi: "चाइनीज़" },
-  { id: "thai", labelEn: "Thai", labelHi: "थाई" },
-  { id: "mexican", labelEn: "Mexican", labelHi: "मेक्सिकन" },
-  { id: "mughlai", labelEn: "Mughlai", labelHi: "मुग़लाई" },
+  { id: "all", labelEn: "All cuisines", labelHi: "सभी व्यंजन", icon: "🌍" },
+  { id: "indian", labelEn: "Indian", labelHi: "भारतीय", icon: "🇮🇳" },
+  { id: "north-indian", labelEn: "North Indian", labelHi: "उत्तर भारतीय", icon: "🍛" },
+  { id: "south-indian", labelEn: "South Indian", labelHi: "दक्षिण भारतीय", icon: "🥘" },
+  { id: "gujarati", labelEn: "Gujarati", labelHi: "गुजराती", icon: "🫓" },
+  { id: "maharashtrian", labelEn: "Maharashtrian", labelHi: "महाराष्ट्रीय", icon: "🍲" },
+  { id: "bengali", labelEn: "Bengali", labelHi: "बंगाली", icon: "🐟" },
+  { id: "punjabi", labelEn: "Punjabi", labelHi: "पंजाबी", icon: "🫓" },
+  { id: "chinese", labelEn: "Chinese", labelHi: "चाइनीज़", icon: "🥡" },
+  { id: "thai", labelEn: "Thai", labelHi: "थाई", icon: "🍜" },
+  { id: "mexican", labelEn: "Mexican", labelHi: "मेक्सिकन", icon: "🌮" },
+  { id: "mughlai", labelEn: "Mughlai", labelHi: "मुग़लाई", icon: "👑" },
+  { id: "afghani", labelEn: "Afghani", labelHi: "अफ़गानी", icon: "🥙" },
+  { id: "indonesian", labelEn: "Indonesian", labelHi: "इंडोनेशियाई", icon: "🍚" },
+  { id: "turkish", labelEn: "Turkish", labelHi: "तुर्की", icon: "🧆" },
 ];
 
 const STEPS = [
   { key: "browse", labelEn: "Browse", labelHi: "ब्राउज़" },
   { key: "meal", labelEn: "Meal", labelHi: "भोजन" },
-  { key: "cuisine", labelEn: "Cuisine", labelHi: "व्यंजन" },
 ];
 
 function StepCard({ icon, title, desc, active, onClick }) {
@@ -76,6 +78,13 @@ export default function RecipeFilterDrawer({
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goBack = () => (step === 0 ? onClose() : setStep((s) => s - 1));
 
+  const handleCuisinePick = (cuisineId) => {
+    onCuisineSelect(cuisineId);
+    if (sortTrending || cuisineId !== "all") {
+      onSelect("trending");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[150] lg:hidden">
       <button type="button" className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={onClose} aria-label="Close filters" />
@@ -105,20 +114,41 @@ export default function RecipeFilterDrawer({
 
         <div className="recipe-filter-drawer__body">
           {step === 0 && (
-            <div className="space-y-2">
-              <p className="recipe-filter-drawer__hint">
-                {lang === "hi" ? "Kya explore karna hai?" : "What would you like to explore?"}
-              </p>
-              {BROWSE.map((item) => (
-                <StepCard
-                  key={item.id}
-                  icon={item.icon}
-                  title={lang === "hi" ? item.labelHi : item.labelEn}
-                  desc={lang === "hi" ? item.descHi : item.descEn}
-                  active={item.id === "trending" ? sortTrending : !sortTrending && activeCategory === "all" && !maxCookTime}
-                  onClick={() => onSelect(item.id)}
-                />
-              ))}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="recipe-filter-drawer__hint">
+                  {lang === "hi" ? "Kya explore karna hai?" : "What would you like to explore?"}
+                </p>
+                {BROWSE.map((item) => (
+                  <StepCard
+                    key={item.id}
+                    icon={item.icon}
+                    title={lang === "hi" ? item.labelHi : item.labelEn}
+                    desc={lang === "hi" ? item.descHi : item.descEn}
+                    active={item.id === "trending" ? sortTrending : !sortTrending && activeCategory === "all" && !maxCookTime}
+                    onClick={() => onSelect(item.id)}
+                  />
+                ))}
+              </div>
+
+              <div>
+                <p className="recipe-filter-drawer__hint mb-2">
+                  {lang === "hi" ? "🔥 Hot Makings — cuisine chuno" : "🔥 Hot Makings — pick a cuisine"}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {CUISINES.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => handleCuisinePick(c.id)}
+                      className={`recipe-filter-chip recipe-filter-chip--cuisine ${activeCuisine === c.id ? "recipe-filter-chip--active" : ""}`}
+                    >
+                      <span className="mr-1">{c.icon}</span>
+                      {lang === "hi" ? c.labelHi : c.labelEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -136,26 +166,6 @@ export default function RecipeFilterDrawer({
                   onClick={() => onSelect(item.id)}
                 />
               ))}
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-2">
-              <p className="recipe-filter-drawer__hint">
-                {lang === "hi" ? "Kaunsi cuisine pasand hai?" : "Pick a cuisine"}
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {CUISINES.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => onCuisineSelect(c.id)}
-                    className={`recipe-filter-chip ${activeCuisine === c.id ? "recipe-filter-chip--active" : ""}`}
-                  >
-                    {lang === "hi" ? c.labelHi : c.labelEn}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
         </div>
