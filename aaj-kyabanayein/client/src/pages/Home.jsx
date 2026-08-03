@@ -9,6 +9,9 @@ import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import MoodTonight from "../components/MoodTonight";
 import RecentCooksStrip from "../components/RecentCooksStrip";
 import HomeTrendingGallery from "../components/HomeTrendingGallery";
+import HomeProudMoment from "../components/HomeProudMoment";
+import HomeCookingSteps from "../components/HomeCookingSteps";
+import HomeTestimonials from "../components/HomeTestimonials";
 import { getStreak } from "../lib/streak";
 import { IconArrowRight } from "../components/Icons";
 
@@ -29,7 +32,8 @@ export default function Home() {
               <span className="home-gradient-text">aapka pride</span>
             </h1>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base lg:mx-0">
-              Aaj kya banaye? Search karo → ingredients dekho → step-by-step pakao.
+              Ghar ka khana banana koi chhoti baat nahi — yeh pyaar hai, care hai, tradition hai.
+              Rasoira aapke saath hai har meal mein.
             </p>
             <div className="mx-auto mt-6 max-w-xl lg:mx-0">
               <RecipeSearch large />
@@ -46,6 +50,14 @@ export default function Home() {
                 <Link to="/streak" className="text-xs text-[var(--accent-soft)]">🔥 {streak.current} din</Link>
               )}
             </div>
+            <p className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-secondary)] lg:justify-start">
+              <span className="flex -space-x-1">
+                {["🍛", "👩‍🍳", "❤️"].map((e) => (
+                  <span key={e} className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs">{e}</span>
+                ))}
+              </span>
+              Bharat bhar ki ghar ki rasoiyanon ka bharosa
+            </p>
           </div>
 
           <div className="home-hero__visual relative mx-auto w-full max-w-[280px] sm:max-w-[320px] lg:max-w-none">
@@ -71,6 +83,9 @@ export default function Home() {
       </section>
 
       <MoodTonight />
+      <HomeProudMoment />
+      <HomeCookingSteps />
+      <HomeTrendingGallery />
       <HotMakings />
       <RecentCooksStrip />
 
@@ -80,8 +95,8 @@ export default function Home() {
         </div>
       </section>
 
-      <HomeTrendingGallery />
       <CuisineExplorer />
+      <HomeTestimonials />
 
       <section className="home-section pb-20">
         <div className="mx-auto max-w-6xl px-4">
