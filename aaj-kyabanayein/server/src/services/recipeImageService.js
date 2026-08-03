@@ -38,6 +38,7 @@ const NOISE_WORDS = new Set([
 const WRONG_DISHES = [
   "dosa", "pizza", "burger", "sushi", "taco", "sandwich",
   "airplane", "aircraft", "plane", "helicopter", "car", "train",
+  "antonov", "boeing", "airbus", "jet", "aviation",
 ];
 
 const RAW_INGREDIENT_PATTERNS = [
@@ -354,11 +355,26 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
   if (!id) throw new Error("Recipe id required");
 
   const cached = cachePath(id);
-  if (!force && fs.existsSync(cached)) return cached;
+  const directThumb = getDirectThumbOverride(recipe);
+
+  if (!force && fs.existsSync(cached)) {
+    const audit = auditCachedImage(recipe);
+    const meta = readImageMeta(id);
+    if (directThumb) {
+      const usesOverride =
+        meta?.source === "curated-thumb" ||
+        meta?.originalUrl === directThumb;
+      if (audit.ok && usesOverride) return cached;
+      invalidateCachedImage(id);
+    } else if (audit.ok) {
+      return cached;
+    } else {
+      invalidateCachedImage(id);
+    }
+  }
 
   if (force && fs.existsSync(cached)) {
-    fs.unlinkSync(cached);
-    if (fs.existsSync(metaPath(id))) fs.unlinkSync(metaPath(id));
+    invalidateCachedImage(id);
   }
 
   if (inFlight.has(id)) return inFlight.get(id);

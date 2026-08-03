@@ -22,6 +22,8 @@ export const DIRECT_THUMB_OVERRIDES = {
   "sindhi-kadhi": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Kadhi_Pakora.jpg/330px-Kadhi_Pakora.jpg",
   "avial": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Aviyal%2CKerala_cuisine.jpg/330px-Aviyal%2CKerala_cuisine.jpg",
   "kerala-avial": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Aviyal%2CKerala_cuisine.jpg/330px-Aviyal%2CKerala_cuisine.jpg",
+  "aamras-puri": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Fluffy_Poori_%28cropped%29.JPG/330px-Fluffy_Poori_%28cropped%29.JPG",
+  "aloo-tikki": "https://www.themealdb.com/images/media/meals/uttupv1511815050.jpg",
 };
 
 export const IMAGE_SEARCH_OVERRIDES = {
@@ -36,6 +38,8 @@ export const IMAGE_SEARCH_OVERRIDES = {
   "veg-manchurian": "Gobi manchurian",
   "avial": "Avial",
   "kerala-avial": "Avial",
+  "aamras-puri": "Aamras",
+  "aloo-tikki": "Aloo tikki",
   "poha": "Poha dish",
   "oats-upma": "Upma",
   "thalipeeth": "Thalipeeth",

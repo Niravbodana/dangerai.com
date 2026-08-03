@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchRecipe } from "../api";
+import { fetchRecipe, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
-import { getRecentRecipeIds } from "../lib/recentRecipes";
+import {
+  getRecentRecipeIds,
+  isEligibleForCookAgain,
+  sanitizeRecentRecipes,
+} from "../lib/recentRecipes";
 import RecipeImage from "./RecipeImage";
 
 export default function RecentCooksStrip() {
@@ -10,15 +14,43 @@ export default function RecentCooksStrip() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    const ids = getRecentRecipeIds(6);
-    if (!ids.length) return;
-    Promise.all(
-      ids.map((id) =>
-        fetchRecipe(id)
-          .then((d) => d?.recipe)
-          .catch(() => null)
-      )
-    ).then((recipes) => setItems(recipes.filter(Boolean)));
+    sanitizeRecentRecipes();
+    const ids = getRecentRecipeIds(12);
+
+    async function load() {
+      const fromRecent = ids.length
+        ? await Promise.all(
+            ids.map((id) =>
+              fetchRecipe(id)
+                .then((d) => d?.recipe)
+                .catch(() => null)
+            )
+          )
+        : [];
+
+      let recipes = fromRecent.filter((r) => r && isEligibleForCookAgain(r));
+
+      if (recipes.length < 4) {
+        try {
+          const trending = await fetchTrendingRecipes(8);
+          const extra = (trending.recipes || []).filter(isEligibleForCookAgain);
+          const seen = new Set(recipes.map((r) => r.id));
+          for (const r of extra) {
+            if (!seen.has(r.id)) {
+              recipes.push(r);
+              seen.add(r.id);
+            }
+            if (recipes.length >= 6) break;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
+      setItems(recipes.slice(0, 6));
+    }
+
+    load();
   }, []);
 
   if (!items.length) return null;
@@ -46,6 +78,7 @@ export default function RecentCooksStrip() {
                     src=""
                     alt={name}
                     recipeId={recipe.id}
+                    eager={false}
                     className="h-full w-full object-cover"
                   />
                 </div>
