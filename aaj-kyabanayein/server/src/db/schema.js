@@ -149,5 +149,27 @@ export function createSchema(db) {
 
     CREATE INDEX IF NOT EXISTS idx_kitchen_helpers_user ON kitchen_helpers(user_id);
     CREATE INDEX IF NOT EXISTS idx_imported_recipes_user ON imported_recipes(user_id);
+
+    CREATE TABLE IF NOT EXISTS site_config (
+      key TEXT PRIMARY KEY,
+      value_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS payment_orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      plan_id TEXT NOT NULL,
+      razorpay_order_id TEXT,
+      razorpay_payment_id TEXT,
+      amount INTEGER NOT NULL,
+      currency TEXT DEFAULT 'INR',
+      status TEXT DEFAULT 'created',
+      created_at TEXT NOT NULL,
+      paid_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_payment_orders_user ON payment_orders(user_id);
+    CREATE INDEX IF NOT EXISTS idx_payment_orders_razorpay ON payment_orders(razorpay_order_id);
   `);
 }

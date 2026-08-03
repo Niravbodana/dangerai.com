@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthModalProvider, useAuthModal } from './context/AuthModalContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SiteConfigProvider } from './context/SiteConfigContext';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import Footer from './components/Footer';
@@ -114,13 +115,15 @@ export default function App() {
 
   const tree = (
     <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <AuthModalProvider>
-            <AppContent />
-          </AuthModalProvider>
-        </AuthProvider>
-      </LanguageProvider>
+      <SiteConfigProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AuthModalProvider>
+              <AppContent />
+            </AuthModalProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </SiteConfigProvider>
     </ThemeProvider>
   );
 

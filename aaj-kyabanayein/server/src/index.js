@@ -10,6 +10,8 @@ import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js
 import socialRouter from "./routes/social.js";
 import kitchenRouter from "./routes/kitchen.js";
 import adminRouter from "./routes/admin.js";
+import siteRouter from "./routes/site.js";
+import paymentsRouter from "./routes/payments.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
@@ -19,6 +21,7 @@ import { warmTrendingRecipeImages } from "./services/recipeImageService.js";
 import { ensureDatabase } from "./db/ensureDatabase.js";
 import { initRecipeCatalog } from "./data/recipes.js";
 import { startQualityGuardianOnBoot } from "./services/qualityGuardian.js";
+import { getFullConfig } from "./services/siteConfigService.js";
 
 initSentry();
 
@@ -42,6 +45,7 @@ loadEnv();
 ensureDatabase();
 initRecipeCatalog(true);
 loadCustomMealsOnStartup();
+getFullConfig(); // seed site_config defaults
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,9 +55,15 @@ const isProd = process.env.NODE_ENV === "production";
 const corsOrigin = process.env.CORS_ORIGIN;
 app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((o) => o.trim()) } : undefined));
 app.use(securityHeaders);
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf.toString();
+  },
+}));
 
 app.use("/api/auth", authRouter);
+app.use("/api/site", siteRouter);
+app.use("/api/payments", paymentsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api", kitchenRouter);
 app.use("/api", socialRouter);
@@ -80,6 +90,10 @@ app.get("/", (_req, res) => {
       "GET /api/sync",
       "POST /api/recipes/import",
       "POST /api/grocery/restock",
+      "GET /api/site/config",
+      "POST /api/payments/create-order",
+      "POST /api/payments/verify",
+      "GET /api/admin/config",
       "GET /api/festivals/upcoming",
       "POST /api/auth/register",
       "POST /api/auth/login",

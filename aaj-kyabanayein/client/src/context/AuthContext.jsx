@@ -46,6 +46,12 @@ export function AuthProvider({ children }) {
     loadUser();
   }, [loadUser]);
 
+  useEffect(() => {
+    if (user?.plan) {
+      import("../lib/subscription.js").then(({ syncPlanFromServer }) => syncPlanFromServer(user.plan));
+    }
+  }, [user?.plan]);
+
   const login = async (email, password) => {
     const data = await apiLogin(email, password, guestMergePayload());
     localStorage.setItem("akb-token", data.token);

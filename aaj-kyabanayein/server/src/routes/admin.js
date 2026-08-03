@@ -2,6 +2,8 @@ import { Router } from "express";
 import { optionalAuth } from "../middleware/auth.js";
 import { adminMiddleware } from "../middleware/adminAuth.js";
 import { getGuardianReport, runQualityGuardian } from "../services/qualityGuardian.js";
+import { getBugGuardianReport, runBugGuardian } from "../services/bugGuardian.js";
+import { getAdminConfig, updateAdminConfig, getPublicConfig } from "../services/siteConfigService.js";
 import { RECIPE_INDEX, getRecipeById, enrichRecipe } from "../data/recipes.js";
 import { upsertRecipe, getRecipeCount } from "../db/recipeRepository.js";
 import { validateIngredientSemantics } from "../lib/ingredientProfiles.js";
@@ -113,6 +115,34 @@ router.patch("/recipes/:id", (req, res) => {
   });
   upsertRecipe(updated);
   res.json({ success: true, recipe: updated });
+});
+
+// ——— Site config (partners, social, payments) ———
+router.get("/config", (_req, res) => {
+  res.json({ success: true, config: getAdminConfig(), publicPreview: getPublicConfig() });
+});
+
+router.put("/config", (req, res) => {
+  const config = updateAdminConfig(req.body || {});
+  res.json({ success: true, config: getAdminConfig(), message: "Config saved" });
+});
+
+router.patch("/config/partners/:id", (req, res) => {
+  const id = req.params.id;
+  const current = getAdminConfig();
+  const partners = { ...current.partners, [id]: { ...current.partners?.[id], id, ...req.body } };
+  updateAdminConfig({ partners });
+  res.json({ success: true, partner: partners[id] });
+});
+
+// ——— Bug Guardian (full site scan + auto-fix) ———
+router.get("/bug-guardian/report", (_req, res) => {
+  res.json({ success: true, report: getBugGuardianReport() });
+});
+
+router.post("/bug-guardian/run", async (req, res) => {
+  const report = await runBugGuardian({ fix: req.body?.fix !== false });
+  res.json({ success: true, report });
 });
 
 export default router;

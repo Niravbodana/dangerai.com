@@ -170,6 +170,8 @@ function saveSubscription(data) {
 export function getEffectivePlan() {
   const sub = getSubscription();
   if (sub.plan === "free") return "free";
+  // Paid plans from server have no trialEnds
+  if (!sub.trialEnds && sub.plan !== "free") return sub.plan;
   if (sub.trialEnds && new Date(sub.trialEnds).getTime() < Date.now()) return "free";
   return sub.plan;
 }
@@ -197,6 +199,19 @@ export function setSubscriptionPlan(planId) {
       : null,
   };
   return saveSubscription(data);
+}
+
+/** Sync plan from server after Razorpay payment or login */
+export function syncPlanFromServer(planId) {
+  if (!planId || planId === "free") {
+    return saveSubscription({ plan: "free", activatedAt: new Date().toISOString(), trialStartedAt: null, trialEnds: null });
+  }
+  return saveSubscription({
+    plan: planId,
+    activatedAt: new Date().toISOString(),
+    trialStartedAt: null,
+    trialEnds: null,
+  });
 }
 
 export function startTrial(planId = "plus") {

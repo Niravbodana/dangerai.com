@@ -1,6 +1,7 @@
 /**
  * Grocery engine — aggregation, dedup, pantry deduction, provider-ready.
  */
+import { getPartnerList, buildPartnerSearchUrl, isPartnerComingSoon } from "./siteConfigService.js";
 
 const INGREDIENT_ALIASES = {
   pyaz: "onion",
@@ -36,55 +37,19 @@ const CATEGORY_ORDER = [
   "Other",
 ];
 
-export const GROCERY_PROVIDERS = {
-  instamart: {
-    id: "instamart",
-    name: "Instamart",
-    searchUrl: (query) =>
-      `https://www.swiggy.com/instamart/search?custom_back=true&query=${encodeURIComponent(query)}`,
-  },
-  blinkit: {
-    id: "blinkit",
-    name: "Blinkit",
-    searchUrl: (query) =>
-      `https://blinkit.com/s/?q=${encodeURIComponent(query)}`,
-  },
-  zepto: {
-    id: "zepto",
-    name: "Zepto",
-    searchUrl: (query) =>
-      `https://www.zeptonow.com/search?query=${encodeURIComponent(query)}`,
-  },
-  bigbasket: {
-    id: "bigbasket",
-    name: "BigBasket",
-    searchUrl: (query) =>
-      `https://www.bigbasket.com/ps/?q=${encodeURIComponent(query)}`,
-  },
-  zomato: {
-    id: "zomato",
-    name: "Zomato",
-    searchUrl: (query) =>
-      `https://www.zomato.com/search?q=${encodeURIComponent(query)}`,
-    type: "delivery",
-  },
-  swiggy: {
-    id: "swiggy",
-    name: "Swiggy",
-    searchUrl: (query) =>
-      `https://www.swiggy.com/search?query=${encodeURIComponent(query)}`,
-    type: "delivery",
-  },
-};
-
 export function getGroceryProviders() {
-  return Object.values(GROCERY_PROVIDERS);
+  return getPartnerList().map((p) => ({
+    id: p.id,
+    name: p.name,
+    type: p.type || "grocery",
+    comingSoon: Boolean(p.comingSoon),
+    enabled: p.enabled !== false,
+    searchUrl: buildPartnerSearchUrl(p.id, "groceries"),
+  }));
 }
 
 export function getProviderSearchUrl(providerId, query) {
-  const provider = GROCERY_PROVIDERS[providerId];
-  if (!provider) return null;
-  return provider.searchUrl(query || "groceries");
+  return buildPartnerSearchUrl(providerId, query || "groceries");
 }
 
 function normalizeKey(name = "") {
@@ -208,11 +173,12 @@ const ESSENTIAL_STAPLES = [
 /** Compare provider deep-links for one item (no fake prices — links only). */
 export function compareProvidersForItem(itemName) {
   const query = itemName || "groceries";
-  return Object.values(GROCERY_PROVIDERS).map((p) => ({
+  return getPartnerList().map((p) => ({
     id: p.id,
     name: p.name,
     type: p.type || "grocery",
-    url: p.searchUrl(query),
+    comingSoon: isPartnerComingSoon(p.id),
+    url: buildPartnerSearchUrl(p.id, query),
   }));
 }
 
