@@ -6,7 +6,8 @@ import RecipeCard from "../components/RecipeCard";
 import RecipeGridSkeleton from "../components/RecipeGridSkeleton";
 import RecipeSearch from "../components/RecipeSearch";
 import RecipeCategoryMenu from "../components/RecipeCategoryMenu";
-import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
+import RecipeFilterDrawer from "../components/RecipeFilterDrawer";
+import DietToggle from "../components/DietToggle";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
 import { loadRecipeFilters, saveRecipeFilters } from "../lib/recipeFilters";
@@ -46,6 +47,7 @@ export default function Recipes() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [trendingSearches, setTrendingSearches] = useState([]);
   const [maxCookTime, setMaxCookTime] = useState(null);
 
@@ -169,7 +171,7 @@ export default function Recipes() {
     });
   };
 
-  const activeFilters = [diet !== "all", cuisine !== "all", category !== "all", !!maxCookTime].filter(Boolean).length;
+  const activeFilters = [cuisine !== "all", category !== "all", !!maxCookTime, sortTrending].filter(Boolean).length;
 
   const clearFilters = () => {
     setDiet("all");
@@ -199,9 +201,51 @@ export default function Recipes() {
           </p>
         </div>
 
-        <div className="mx-auto mt-6 max-w-2xl">
+        {/* Mobile: sticky bar under logo — filter menu left + veg toggle */}
+        <div className="sticky top-[57px] z-40 -mx-4 mt-4 border-b border-white/[0.06] bg-[#0c0a08]/92 px-4 py-3 backdrop-blur-xl lg:hidden">
+          <div className="recipes-toolbar mx-auto max-w-2xl">
+            <button
+              type="button"
+              onClick={() => setFilterDrawerOpen(true)}
+              className="recipes-toolbar__menu tap-smooth"
+            >
+              <span className="recipes-toolbar__menu-icon">☰</span>
+              <span className="text-left">
+                <span className="block text-xs font-semibold text-[var(--text-primary)]">
+                  {lang === "hi" ? "फ़िल्टर & मेनू" : "Filters & Menu"}
+                </span>
+                <span className="block text-[10px] text-[var(--text-secondary)]">
+                  {lang === "hi" ? "Step by step" : "Step-by-step"}
+                </span>
+              </span>
+              {activeFilters > 0 && (
+                <span className="recipes-toolbar__badge">{activeFilters}</span>
+              )}
+            </button>
+            <DietToggle
+              value={diet}
+              onChange={(id) => { setDiet(id); setPage(1); }}
+              lang={lang}
+            />
+          </div>
+        </div>
+
+        <div className="mx-auto mt-5 max-w-2xl">
           <RecipeSearch />
         </div>
+
+        <RecipeFilterDrawer
+          open={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
+          sortTrending={sortTrending}
+          activeCategory={category}
+          activeCuisine={cuisine}
+          maxCookTime={maxCookTime}
+          onSelect={handleMenuSelect}
+          onCuisineSelect={handleCuisineSelect}
+          activeFilterCount={activeFilters}
+          onClear={clearFilters}
+        />
 
         {stateInfo && (
           <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 p-4">
@@ -243,7 +287,7 @@ export default function Recipes() {
           onCuisineSelect={handleCuisineSelect}
         />
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-5 hidden flex-wrap items-center justify-center gap-2 lg:flex">
           <button
             type="button"
             onClick={() => setSort(false)}
@@ -262,6 +306,11 @@ export default function Recipes() {
           >
             {t("hotMakings")}
           </button>
+          <DietToggle
+            value={diet}
+            onChange={(id) => { setDiet(id); setPage(1); }}
+            lang={lang}
+          />
           <button
             type="button"
             onClick={() => setFiltersOpen((o) => !o)}
@@ -277,26 +326,7 @@ export default function Recipes() {
         </div>
 
         {filtersOpen && (
-          <div className="mx-auto mt-4 max-w-3xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                { id: "all", label: "All" },
-                { id: "veg", label: t("veg"), icon: <VegSymbol className="h-3 w-3" /> },
-                { id: "non-veg", label: t("nonVeg"), icon: <NonVegSymbol className="h-3 w-3" /> },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => { setDiet(opt.id); setPage(1); }}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                    diet === opt.id ? "bg-white/15 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-white/8"
-                  }`}
-                >
-                  {opt.icon}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+          <div className="mx-auto mt-4 hidden max-w-3xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 lg:block">
             <div className="filter-row">
               <span className="filter-row__label">Meal</span>
               <div className="filter-row__chips">
