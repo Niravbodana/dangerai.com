@@ -23,6 +23,8 @@ export default function AdminIntelligence({ onMessage }) {
   const [queue, setQueue] = useState([]);
   const [sources, setSources] = useState([]);
   const [audit, setAudit] = useState([]);
+  const [research, setResearch] = useState(null);
+  const [researchAudit, setResearchAudit] = useState([]);
   const [subTab, setSubTab] = useState("overview");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -40,6 +42,7 @@ export default function AdminIntelligence({ onMessage }) {
       setQueue(q.items || []);
       setSources(s.sources || []);
       setAudit(a.log || []);
+      setResearch(d.research || null);
     } catch (err) {
       onMessage?.(err.message);
     } finally {
@@ -114,6 +117,32 @@ export default function AdminIntelligence({ onMessage }) {
     }
   };
 
+  const runResearch = async (dryRun = false) => {
+    setLoading(true);
+    try {
+      const res = await intelFetch("/research/run-sync", {
+        method: "POST",
+        body: JSON.stringify({ limit: 5, dryRun }),
+      });
+      const r = res.report || {};
+      onMessage?.(`Research: ${r.generated || 0} generated, ${r.rejected || 0} rejected, ${r.queued || 0} queued`);
+      await load();
+    } catch (err) {
+      onMessage?.(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadResearchAudit = async (recipeId) => {
+    try {
+      const res = await intelFetch(`/research/audit/${recipeId}`);
+      setResearchAudit(res.trail || []);
+    } catch (err) {
+      onMessage?.(err.message);
+    }
+  };
+
   const preview = async (item) => {
     try {
       const res = await intelFetch(`/review-queue/${item.id}`);
@@ -125,6 +154,7 @@ export default function AdminIntelligence({ onMessage }) {
 
   const subTabs = [
     { id: "overview", label: "Overview" },
+    { id: "research", label: "Research" },
     { id: "review", label: "Review Queue" },
     { id: "sources", label: "Sources" },
     { id: "audit", label: "Audit Log" },
@@ -151,6 +181,14 @@ export default function AdminIntelligence({ onMessage }) {
         >
           Run Pipeline (20)
         </button>
+        <button
+          type="button"
+          onClick={() => runResearch(false)}
+          disabled={loading}
+          className="rounded-full bg-violet-600 px-4 py-1.5 text-sm text-white disabled:opacity-50"
+        >
+          Run Research (5)
+        </button>
       </div>
 
       {subTab === "overview" && dash && (
@@ -161,6 +199,42 @@ export default function AdminIntelligence({ onMessage }) {
           <StatCard label="Approved" value={dash.intelligenceRecipes?.approved || 0} />
           <StatCard label="Jobs Pending" value={dash.jobs?.pending || 0} />
           <StatCard label="Postgres" value={dash.pipeline?.postgresConfigured ? "Yes" : "SQLite"} />
+          <StatCard label="Research Seeds" value={dash.research?.seedsAvailable} />
+          <StatCard label="Research Target" value={dash.research?.target?.toLocaleString?.() || "50,000"} />
+        </div>
+      )}
+
+      {subTab === "research" && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Target Recipes" value={research?.target?.toLocaleString?.() || "50,000"} />
+            <StatCard label="Seeds Available" value={research?.seedsAvailable} />
+            <StatCard label="Cuisines" value={research?.cuisines} />
+            <StatCard label="Dish Patterns" value={research?.dishPatterns} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => runResearch(true)} disabled={loading} className="rounded-lg bg-white/10 px-3 py-1.5 text-sm">
+              Dry Run (5)
+            </button>
+            <button type="button" onClick={() => runResearch(false)} disabled={loading} className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm text-white">
+              Generate & Queue (5)
+            </button>
+          </div>
+          <p className="text-xs text-[var(--text-secondary)]">
+            Research pipeline generates original recipes from factual knowledge only. Every recipe enters the review queue with full audit trail.
+          </p>
+          {researchAudit.length > 0 && (
+            <div className="rounded-xl border border-violet-500/30 bg-violet-950/20 p-3">
+              <div className="mb-2 text-sm font-semibold">Recipe Audit Trail</div>
+              <div className="max-h-48 space-y-1 overflow-y-auto text-xs font-mono">
+                {researchAudit.map((e) => (
+                  <div key={e.id} className="rounded border border-white/5 p-2">
+                    <span className="text-violet-300">{e.event_type}</span> · {e.nutrition_status} · {e.verification_status} · {e.created_at}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -201,6 +275,7 @@ export default function AdminIntelligence({ onMessage }) {
                     <td className="p-2 space-x-1">
                       <button type="button" onClick={() => approve(item.recipe_id)} className="rounded bg-emerald-700 px-2 py-0.5 text-xs">Approve</button>
                       <button type="button" onClick={() => reject(item.recipe_id)} className="rounded bg-red-800 px-2 py-0.5 text-xs">Reject</button>
+                      <button type="button" onClick={() => loadResearchAudit(item.recipe_id)} className="rounded bg-violet-800 px-2 py-0.5 text-xs">Audit</button>
                     </td>
                   </tr>
                 ))}

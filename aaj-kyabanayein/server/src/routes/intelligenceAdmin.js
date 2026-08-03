@@ -25,6 +25,12 @@ import {
 import { getPipelineStatus, runRecipePipeline } from "../pipeline/pipelineRunner.js";
 import { readSkippedLog } from "../pipeline/license/skipLogger.js";
 import { ensureIntelligenceDb } from "../intelligence/repository.js";
+import {
+  runResearchPipeline,
+  getCatalogStats,
+  getRecipeAuditTrail,
+  getResearchBrief,
+} from "../research/index.js";
 
 const router = Router();
 
@@ -38,6 +44,7 @@ router.get("/dashboard", (_req, res) => {
   res.json({
     success: true,
     pipeline: getPipelineStatus(),
+    research: getCatalogStats(),
     review: getReviewStats(),
     jobs: getQueueStats(),
     search: getSearchIndexStats(),
@@ -148,8 +155,49 @@ router.get("/jobs", (req, res) => {
 router.post("/jobs/process-one", async (_req, res) => {
   const result = await processOneJob({
     pipeline_run: async (payload) => runRecipePipeline(payload),
+    research_run: async (payload) => runResearchPipeline(payload),
   });
   res.json({ success: true, result });
+});
+
+router.get("/research/status", (_req, res) => {
+  res.json({ success: true, catalog: getCatalogStats() });
+});
+
+router.get("/research/audit/:recipeId", (req, res) => {
+  const trail = getRecipeAuditTrail(req.params.recipeId);
+  res.json({ success: true, recipeId: req.params.recipeId, trail });
+});
+
+router.get("/research/brief/:briefId", (req, res) => {
+  const brief = getResearchBrief(req.params.briefId);
+  if (!brief) return res.status(404).json({ success: false, message: "Brief not found" });
+  res.json({ success: true, brief });
+});
+
+router.post("/research/run", (req, res) => {
+  const opts = {
+    limit: req.body?.limit || 10,
+    offset: req.body?.offset || 0,
+    cuisines: req.body?.cuisines || null,
+    dryRun: req.body?.dryRun === true,
+  };
+  const jobId = enqueueJob("research_run", opts);
+  res.json({ success: true, jobId, message: "Research job enqueued", opts });
+});
+
+router.post("/research/run-sync", async (req, res) => {
+  try {
+    const report = await runResearchPipeline({
+      limit: req.body?.limit || 10,
+      offset: req.body?.offset || 0,
+      cuisines: req.body?.cuisines || null,
+      dryRun: req.body?.dryRun === true,
+    });
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 export default router;
