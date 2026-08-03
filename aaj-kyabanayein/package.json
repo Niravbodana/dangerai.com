@@ -17,6 +17,8 @@
     "verify": "node scripts/verify-project.mjs",
     "audit-recipes": "node scripts/audit-recipe-quality.mjs",
     "audit-images": "node scripts/audit-recipe-images.mjs",
+    "audit-fix-all": "node scripts/audit-fix-all.mjs",
+    "cache-premium-thumbs": "node scripts/cache-premium-thumbs.mjs",
     "refetch-images": "node scripts/refetch-bad-images.mjs",
     "fix-ingredients": "node scripts/fix-all-ingredients.mjs",
     "guardian": "node -e \"import('./server/src/services/qualityGuardian.js').then(m=>m.runQualityGuardian({fix:true}).then(r=>console.log(JSON.stringify(r,null,2))))\"",

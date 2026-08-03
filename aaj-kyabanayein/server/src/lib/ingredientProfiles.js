@@ -34,6 +34,70 @@ export const SAVORY_STAPLES = [
   "green chilli",
 ];
 
+const INDIAN_CUISINES = [
+  "indian",
+  "north-indian",
+  "south-indian",
+  "gujarati",
+  "maharashtrian",
+  "bengali",
+  "punjabi",
+  "mughlai",
+  "rajasthani",
+  "kerala",
+  "hyderabadi",
+  "chettinad",
+  "goan",
+  "kashmiri",
+  "awadhi",
+];
+
+const INDIAN_ONLY_STAPLES = [
+  "garam masala",
+  "kasuri methi",
+  "curry leaves",
+  "turmeric",
+  "cumin seeds",
+  "cumin powder",
+  "coriander powder",
+  "mustard seeds",
+  "amchur",
+  "hing",
+  "asafoetida",
+];
+
+export function isIndianCuisine(recipe) {
+  const c = String(recipe?.cuisine || "").toLowerCase();
+  const blob = `${recipe?.name || ""} ${(recipe?.tags || []).join(" ")}`.toLowerCase();
+
+  const NON_INDIAN = [
+    "mexican", "chinese", "thai", "italian", "french", "american", "continental",
+    "mediterranean", "turkish", "afghani", "indonesian", "japanese", "korean",
+    "greek", "spanish", "british", "irish", "german", "vietnamese", "lebanese",
+  ];
+  if (NON_INDIAN.some((tag) => c.includes(tag))) return false;
+
+  if (INDIAN_CUISINES.some((tag) => c.includes(tag))) return true;
+  if (/india|desi|tandoor|masala|dal |sabzi|thali|paneer|biryani|dosa|idli|sambar|chole|rajma/i.test(blob)) {
+    return true;
+  }
+  return c === "indian" || (!c && /indian/i.test(blob));
+}
+
+function isIndianOnlyStaple(ingredient) {
+  const key = norm(ingredient?.name || "");
+  return INDIAN_ONLY_STAPLES.some((s) => key.includes(norm(s)));
+}
+
+export const CONTINENTAL_EXTRAS = [
+  { name: "Olive oil", nameHi: "ऑलिव ऑयल", quantity: "2 tbsp" },
+  { name: "Garlic", nameHi: "लहसुन", quantity: "3 cloves" },
+  { name: "Onion", nameHi: "प्याज", quantity: "1 medium" },
+  { name: "Salt", nameHi: "नमक", quantity: "to taste" },
+  { name: "Black pepper", nameHi: "काली मिर्च", quantity: "1/2 tsp" },
+  { name: "Butter", nameHi: "मक्खन", quantity: "1 tbsp" },
+];
+
 const SWEET_EXTRAS = [
   { name: "Sugar", nameHi: "चीनी", quantity: "as needed" },
   { name: "Ghee", nameHi: "घी", quantity: "2 tbsp" },
@@ -103,6 +167,10 @@ export function sanitizeIngredients(recipe, ingredients = []) {
     list = list.filter((ing) => !isSavoryStaple(ing));
   }
 
+  if (!isIndianCuisine(recipe)) {
+    list = list.filter((ing) => !isIndianOnlyStaple(ing));
+  }
+
   return list;
 }
 
@@ -140,6 +208,18 @@ export function validateIngredientSemantics(recipe) {
           type: "forbidden-savory-in-sweet",
           ingredient: ing.name,
           profile,
+        });
+      }
+    }
+  }
+
+  if (!isIndianCuisine(recipe)) {
+    for (const ing of ingredients) {
+      if (isIndianOnlyStaple(ing)) {
+        issues.push({
+          type: "indian-staple-in-international",
+          ingredient: ing.name,
+          cuisine: recipe.cuisine,
         });
       }
     }

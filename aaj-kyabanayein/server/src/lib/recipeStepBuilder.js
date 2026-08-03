@@ -13,6 +13,8 @@ import {
   detectIngredientProfile,
   sanitizeIngredients,
   profileExtras,
+  isIndianCuisine,
+  CONTINENTAL_EXTRAS,
 } from "./ingredientProfiles.js";
 
 const MIN_INGREDIENTS = 6;
@@ -58,7 +60,8 @@ function dedupeIngredients(list) {
   });
 }
 
-function pickExtras(style, isNonVeg) {
+function pickExtras(style, isNonVeg, recipe) {
+  if (!isIndianCuisine(recipe)) return CONTINENTAL_EXTRAS;
   const styleExtras = STYLE_EXTRAS[style] || STYLE_EXTRAS.Curry;
   const base = isNonVeg ? NONVEG_BASE : VEG_BASE;
   return [...base.slice(0, 4), ...styleExtras.slice(0, 3), ...COMMON_STAPLES];
@@ -83,7 +86,7 @@ export function expandIngredients(recipe, ingredients = recipe.ingredients || []
   const extras =
     profile === "sweet" || profile === "beverage"
       ? profileExtras(profile)
-      : pickExtras(detectStyle(recipe), isNonVeg);
+      : pickExtras(detectStyle(recipe), isNonVeg, recipe);
 
   list = dedupeIngredients([main, ...list.slice(1), ...extras]);
 
@@ -187,7 +190,48 @@ export function stepsNeedReplacement(recipe, steps, ingredients) {
   return false;
 }
 
+function buildContinentalEnSteps(recipe, ingredients) {
+  const buckets = bucketIngredients(ingredients);
+  const main = joinNames(buckets.main) || recipe.name;
+  const aromatics = joinNames(buckets.aromatic) || "garlic and onion";
+  const season = joinNames(buckets.spice) || "salt, pepper and herbs";
+  const extras = joinNames([...buckets.other, ...buckets.liquid].slice(0, 4));
+  const garnish = joinNames(buckets.garnish) || "fresh herbs and lemon";
+  const spread = spreadIngredientsAcrossSteps(ingredients);
+
+  return [
+    `Prep all ingredients: ${spread[0] || main}${spread[1] ? `, ${spread[1]}` : ""}.`,
+    `Heat oil or butter in a pan on medium-high heat.`,
+    `Sauté ${aromatics} until fragrant and lightly golden.`,
+    `Add ${main}${extras ? ` with ${extras}` : ""}. Cook until done, seasoning with ${season}.`,
+    `Taste and adjust seasoning. Reduce sauce if needed.`,
+    `Plate, garnish with ${garnish}, and serve immediately while hot.`,
+  ].slice(0, MAX_STEPS);
+}
+
+function buildContinentalHiSteps(recipe, ingredients) {
+  const buckets = bucketIngredients(ingredients);
+  const main = joinNames(buckets.main, "hi") || recipe.nameHi || recipe.name;
+  const aromatics = joinNames(buckets.aromatic, "hi") || "लहसुन और प्याज";
+  const season = joinNames(buckets.spice, "hi") || "नमक, काली मिर्च और जड़ी-बूटी";
+  const extras = joinNames([...buckets.other, ...buckets.liquid].slice(0, 4), "hi");
+  const garnish = joinNames(buckets.garnish, "hi") || "ताजी जड़ी-बूटी और नींबू";
+  const spread = spreadIngredientsAcrossSteps(ingredients, "hi");
+
+  return [
+    `सारी सामग्री तैयार करें: ${spread[0] || main}${spread[1] ? `, ${spread[1]}` : ""}।`,
+    `पैन में तेल या मक्खन गर्म करें।`,
+    `${aromatics} हल्का सुनहरा होने तक भूनें।`,
+    `${main}${extras ? ` और ${extras}` : ""} डालकर ${season} से सीज़न करके पकाएं।`,
+    `स्वाद चखें। जरूरत हो तो सॉस गाढ़ा करें।`,
+    `${garnish} से गार्निश करके गरमागरम परोसें।`,
+  ].slice(0, MAX_STEPS);
+}
+
 function buildEnSteps(recipe, ingredients) {
+  if (!isIndianCuisine(recipe)) {
+    return buildContinentalEnSteps(recipe, ingredients);
+  }
   const style = detectStyle(recipe);
   const isNonVeg = recipe.diet?.includes("non-veg");
   const buckets = bucketIngredients(ingredients);
@@ -255,6 +299,9 @@ function buildEnSteps(recipe, ingredients) {
 }
 
 function buildHiSteps(recipe, ingredients) {
+  if (!isIndianCuisine(recipe)) {
+    return buildContinentalHiSteps(recipe, ingredients);
+  }
   const style = detectStyle(recipe);
   const isNonVeg = recipe.diet?.includes("non-veg");
   const buckets = bucketIngredients(ingredients);
