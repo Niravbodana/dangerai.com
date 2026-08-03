@@ -10,6 +10,7 @@ import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js
 import socialRouter from "./routes/social.js";
 import kitchenRouter from "./routes/kitchen.js";
 import adminRouter from "./routes/admin.js";
+import intelligenceAdminRouter from "./routes/intelligenceAdmin.js";
 import siteRouter from "./routes/site.js";
 import paymentsRouter from "./routes/payments.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
@@ -23,6 +24,7 @@ import { initRecipeCatalog } from "./data/recipes.js";
 import { startQualityGuardianOnBoot } from "./services/qualityGuardian.js";
 import { getFullConfig } from "./services/siteConfigService.js";
 import { warmFeaturedCookAgainImages } from "./services/featuredCookAgainService.js";
+import { ensureIntelligenceDb, seedSourceRegistry } from "./intelligence/index.js";
 
 initSentry();
 
@@ -45,6 +47,8 @@ function loadEnv() {
 loadEnv();
 ensureDatabase();
 initRecipeCatalog(true);
+ensureIntelligenceDb();
+seedSourceRegistry();
 loadCustomMealsOnStartup();
 getFullConfig(); // seed site_config defaults
 
@@ -66,6 +70,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/site", siteRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/admin/intelligence", intelligenceAdminRouter);
 app.use("/api", kitchenRouter);
 app.use("/api", socialRouter);
 app.use("/api", mealsUserRouter);

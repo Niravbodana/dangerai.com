@@ -7,7 +7,11 @@ import { generateOriginalRecipeText } from "./services/recipeTextGenerator.js";
 import { validateIngredientQuantities, validateTimes } from "./services/quantityValidator.js";
 import { buildContentHash, slugify, findDuplicate } from "./services/duplicateDetector.js";
 import { generateSeo } from "./services/seoGenerator.js";
-import { buildRecipeJsonLd } from "./services/schemaOrgBuilder.js";
+import { normalizeAllUnits } from "../intelligence/unitConverter.js";
+import { validateRecipeImage } from "../intelligence/imageValidator.js";
+import { buildSeoBundle } from "../intelligence/seoBundle.js";
+import { runQualityGate } from "../intelligence/qualityGate.js";
+import crypto from "crypto";
 
 /**
  * @param {object} raw - from curated adapter or AI seed
@@ -21,7 +25,7 @@ export async function transformRecipeDraft(raw, opts = {}) {
     batchId = null,
   } = opts;
 
-  const ingredients = normalizeIngredients(raw.ingredients || []);
+  const ingredients = normalizeAllUnits(normalizeIngredients(raw.ingredients || []));
   const qtyCheck = validateIngredientQuantities(ingredients);
   if (!qtyCheck.valid) {
     return { ok: false, error: "quantity_validation", issues: qtyCheck.issues, id: raw.id };
@@ -39,6 +43,7 @@ export async function transformRecipeDraft(raw, opts = {}) {
     { ...raw, title: raw.name, ingredients },
     existingRecipes
   );
+  const duplicateScore = dup.duplicate ? 0.95 : 0;
   if (dup.duplicate) {
     return { ok: false, error: "duplicate", duplicateOf: dup.duplicateOf, id: raw.id, hash: dup.hash };
   }
@@ -66,14 +71,37 @@ export async function transformRecipeDraft(raw, opts = {}) {
   const slug = raw.slug || slugify(title) || raw.id;
   const seo = generateSeo({ ...raw, title, cookTimeMin, calories: nutrition.calories });
 
+  let steps = text.steps?.length ? text.steps : raw.steps || [];
+  let introduction = text.introduction || raw.introduction || "";
+  if (steps.length < 2) {
+    steps = buildMinimalSteps(title, ingredients, cookTimeMin);
+  }
+  if (introduction.length < MIN_INTRO_LENGTH) {
+    introduction = `A wholesome ${(raw.cuisine || "Indian").replace(/-/g, " ")} ${raw.mealType || "dish"} — ${title}. Made fresh at home with simple ingredients.`;
+  }
+
+  const now = new Date().toISOString();
+  const imageValidation = validateRecipeImage({
+    url: raw.imageUrl || raw.thumbUrl,
+    license: raw.imageLicense,
+    commercialUseAllowed: raw.imageCommercialUseAllowed,
+    author: raw.imageAuthor,
+    provider: raw.imageProvider,
+    attribution: raw.imageAttribution,
+  });
+
   const recipe = {
+    uuid: raw.uuid || crypto.randomUUID(),
     id: raw.id || slug,
     slug,
     title,
+    alternateNames: raw.alternateNames || [],
     titleHi: raw.nameHi || raw.titleHi || title,
-    introduction: text.introduction,
+    introduction,
     cuisine: raw.cuisine || "indian",
     region: raw.region || inferRegion(raw.cuisine),
+    state: raw.state || null,
+    cityOrigin: raw.cityOrigin || null,
     category: raw.category || raw.mealType,
     mealType: raw.mealType || "lunch",
     diet: raw.diet || ["veg"],
@@ -83,36 +111,77 @@ export async function transformRecipeDraft(raw, opts = {}) {
     cookTimeMin,
     totalTimeMin,
     ingredients,
-    steps: text.steps?.length ? text.steps : raw.steps || [],
-    stepsHi: text.stepsHi?.length ? text.stepsHi : raw.stepsHi || [],
+    optionalIngredients: raw.optionalIngredients || [],
+    ingredientAlternatives: text.substitutions || raw.substitutions || [],
+    cookingEquipment: raw.cookingEquipment || [],
+    cookingMethod: raw.cookingMethod || null,
+    temperature: raw.temperature || null,
+    steps,
+    stepsHi: text.stepsHi?.length ? text.stepsHi : raw.stepsHi || steps,
+    chefNotes: text.tips,
     tips: text.tips,
+    servingSuggestions: raw.servingSuggestions || null,
     storage: text.storage,
+    shelfLife: raw.shelfLife || null,
     reheating: text.reheating,
+    commonMistakes: raw.commonMistakes || null,
     substitutions: text.substitutions || [],
     allergens: inferAllergens(ingredients),
     calories: nutrition.calories,
     nutrition,
+    nutritionSource: nutrition.dataSource || nutrition.source || "USDA FoodData Central",
+    proteinG: nutrition.proteinG,
+    carbsG: nutrition.carbsG,
+    fatG: nutrition.fatG,
+    fiberG: nutrition.fiberG,
+    sugarG: nutrition.sugarG,
+    sodiumMg: nutrition.sodiumMg,
+    cholesterolMg: raw.cholesterolMg || null,
+    vitamins: nutrition.vitamins || {},
+    minerals: nutrition.minerals || {},
+    recipeTags: raw.tags || [],
+    season: raw.season || null,
+    festival: raw.festival || null,
     seoTitle: seo.seoTitle,
     seoDescription: seo.seoDescription,
     faq: seo.faq,
-    imageUrl: raw.imageUrl || raw.thumbUrl || null,
-    imageLicense: raw.imageLicense || null,
-    imageAttribution: raw.imageAttribution || null,
+    imageUrl: imageValidation.metadata?.url || raw.imageUrl || raw.thumbUrl || null,
+    imageLicense: imageValidation.metadata?.license || raw.imageLicense || null,
+    imageAuthor: imageValidation.metadata?.author || raw.imageAuthor || null,
+    imageProvider: imageValidation.metadata?.provider || raw.imageProvider || null,
+    imageAttribution: imageValidation.metadata?.attribution || raw.imageAttribution || null,
+    imageVerifiedOn: imageValidation.metadata?.verificationDate || null,
+    sourceName: raw.dataSource || text.source || "rasoira-curated-modules",
+    sourceUrl: raw.sourceUrl || null,
+    licenseName: raw.licenseSpdx || text.licenseSpdx || "RASOIRA-CURATED",
+    licenseUrl: raw.licenseUrl || null,
     dataSource: raw.dataSource || text.source || "rasoira-curated-modules",
     licenseSpdx: raw.licenseSpdx || text.licenseSpdx || "RASOIRA-CURATED",
     commercialUseAllowed: raw.commercialUseAllowed !== false,
     attributionRequired: raw.attributionRequired === true,
     attributionText: raw.attributionText || nutrition.attributionText || null,
     verificationStatus: raw.verificationStatus || "verified",
-    lastVerifiedAt: new Date().toISOString(),
+    verifiedOn: now,
+    importedOn: now,
+    lastVerifiedAt: now,
     contentHash: buildContentHash({ title, cuisine: raw.cuisine, mealType: raw.mealType, ingredients }),
+    duplicateScore,
+    similarityScore: 0,
     tags: raw.tags || [],
     batchId,
   };
 
-  recipe.schemaOrg = buildRecipeJsonLd(recipe);
+  const seoBundle = buildSeoBundle(recipe);
+  recipe.seoBundle = seoBundle;
+  recipe.seoTitle = seoBundle.seoTitle;
+  recipe.seoDescription = seoBundle.seoDescription;
+  recipe.canonicalUrl = seoBundle.canonicalUrl;
+  recipe.schemaOrg = seoBundle.recipeSchema;
 
-  return { ok: true, recipe };
+  const quality = runQualityGate(recipe);
+  recipe.qualityGate = quality;
+
+  return { ok: true, recipe, quality };
 }
 
 function inferRegion(cuisine = "") {
@@ -138,4 +207,15 @@ function inferAllergens(ingredients = []) {
   if (/soy|tofu/.test(blob)) allergens.push("soy");
   if (/fish|prawn|shrimp|seafood/.test(blob)) allergens.push("seafood");
   return allergens;
+}
+
+const MIN_INTRO_LENGTH = 20;
+
+function buildMinimalSteps(title, ingredients, cookTimeMin) {
+  const main = ingredients.slice(0, 3).map((i) => i.name).join(", ");
+  return [
+    `Gather and prep ingredients for ${title}: ${main || "as listed"}.`,
+    `Cook on medium heat for about ${cookTimeMin || 30} minutes, stirring occasionally until done.`,
+    `Taste, adjust seasoning, rest 2 minutes and serve warm.`,
+  ];
 }

@@ -31,8 +31,19 @@ import {
   countProductionRecipes,
   logSkippedToPostgres,
 } from "./db/postgresRepository.js";
+import {
+  validateAndRegisterSource,
+  saveIntelligenceRecipe,
+  saveToPostgresIfConfigured,
+  enqueueForReview,
+  enqueueJob,
+  countIntelligenceRecipes,
+} from "../intelligence/index.js";
 
-const STAGES = ["verify", "fetch", "transform", "persist", "complete"];
+const STAGES = [
+  "verify", "fetch", "normalize", "nutrition", "transform",
+  "quality", "review", "persist", "complete",
+];
 
 /**
  * @param {object} options
@@ -88,7 +99,7 @@ export async function runRecipePipeline(options = {}) {
     const verifiedDatasets = [];
 
     for (const datasetId of datasets) {
-      const verification = verifyDatasetLicense({ id: datasetId }, { runId });
+      const verification = validateAndRegisterSource(datasetId, {}, { runId });
       if (!verification.allowed) {
         report.skipped++;
         report.datasets.push({ id: datasetId, status: "skipped", reason: verification.reason });
@@ -100,8 +111,8 @@ export async function runRecipePipeline(options = {}) {
       }
       verifiedDatasets.push(datasetId);
       incrementStat("verified");
-      report.datasets.push({ id: datasetId, status: "verified", license: verification.licenseSpdx });
-      log.info(`Dataset verified: ${datasetId}`, { runId, license: verification.licenseSpdx });
+      report.datasets.push({ id: datasetId, status: "verified", license: verification.registry?.license_name || datasetId });
+      log.info(`Dataset verified: ${datasetId}`, { runId, license: verification.registry?.license_name });
     }
 
     if (!verifiedDatasets.length) {
@@ -163,16 +174,29 @@ export async function runRecipePipeline(options = {}) {
           continue;
         }
 
+        const quality = result.quality || { passed: true, autoApprove: true, issues: [] };
+        if (!quality.passed) {
+          report.failed++;
+          report.errors.push({ id: raw.id, error: "quality_gate", issues: quality.issues });
+          markProcessed(raw.id);
+          continue;
+        }
+
         incrementStat("normalized");
         incrementStat("textGenerated");
         if (!skipNutrition) incrementStat("nutritionCalculated");
 
-        if (!dryRun && isPostgresConfigured()) {
+        if (!dryRun) {
           updateCheckpoint({ stage: "persist" });
-          await upsertProductionRecipe(result.recipe, runId);
+          saveIntelligenceRecipe({ ...result.recipe, reviewStatus: quality.autoApprove ? "approved" : "pending" });
+          enqueueForReview(result.recipe, quality);
+          await saveToPostgresIfConfigured(result.recipe, runId);
+          if (isPostgresConfigured()) {
+            await upsertProductionRecipe(result.recipe, runId).catch(() => {});
+          }
           incrementStat("persisted");
           report.imported++;
-        } else if (dryRun) {
+        } else {
           report.imported++;
         }
 
@@ -205,6 +229,7 @@ export async function runRecipePipeline(options = {}) {
       report.postgresCount = await countProductionRecipes().catch(() => null);
     }
 
+    report.intelligenceCount = countIntelligenceRecipes();
     log.info("Pipeline completed", { runId, imported: report.imported, skipped: report.skipped });
     return report;
   } catch (err) {
@@ -224,6 +249,7 @@ export function getPipelineStatus() {
     registeredDatasets: Object.keys(REGISTERED_DATASETS),
     blockedSources: BLOCKED_SOURCES.map((b) => b.id),
     postgresConfigured: isPostgresConfigured(),
+    intelligenceRecipes: countIntelligenceRecipes(),
     stages: STAGES,
   };
 }

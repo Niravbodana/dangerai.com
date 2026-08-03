@@ -46,6 +46,7 @@ import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
+import { searchRecipes, getSearchIndexStats } from "../intelligence/searchService.js";
 import { attachRecipeVideo } from "../data/recipeVideos.js";
 import path from "path";
 import fs from "fs";
@@ -206,6 +207,26 @@ router.post("/ai/recommend", optionalAuth, (req, res) => {
   const { context = {}, options = {} } = req.body || {};
   const result = recommendRecipes(context, options);
   res.json({ success: true, ...result });
+});
+
+router.get("/recipes/search", (req, res) => {
+  const result = searchRecipes({
+    q: req.query.q || "",
+    cuisine: req.query.cuisine || null,
+    region: req.query.region || null,
+    festival: req.query.festival || null,
+    mealType: req.query.mealType || null,
+    diet: req.query.diet || null,
+    difficulty: req.query.difficulty || null,
+    maxCookTime: req.query.maxCookTime ? Number(req.query.maxCookTime) : null,
+    minCalories: req.query.minCalories ? Number(req.query.minCalories) : null,
+    maxCalories: req.query.maxCalories ? Number(req.query.maxCalories) : null,
+    minProtein: req.query.minProtein ? Number(req.query.minProtein) : null,
+    mode: req.query.mode || "keyword",
+    page: parseInt(req.query.page) || 1,
+    limit: Math.min(50, parseInt(req.query.limit) || 24),
+  });
+  res.json({ success: true, ...result, index: getSearchIndexStats() });
 });
 
 router.get("/recipes/enrichment-status", (_req, res) => {

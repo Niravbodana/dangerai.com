@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { invalidateSiteConfig } from "../context/SiteConfigContext.jsx";
 import { clearProvidersCache } from "../lib/groceryProviders.js";
+import AdminIntelligence from "../components/AdminIntelligence.jsx";
 
 const API = "/api/admin";
 const TOKEN_STORAGE = "rasoira_admin_token";
@@ -31,6 +32,7 @@ const TABS = [
   { id: "social", label: "Social & Links" },
   { id: "payments", label: "Payments" },
   { id: "quality", label: "Quality" },
+  { id: "intelligence", label: "Intelligence" },
   { id: "bugfixer", label: "Bug Fixer" },
 ];
 
@@ -475,6 +477,10 @@ export default function Admin() {
                 )}
               </div>
             </div>
+          )}
+
+          {tab === "intelligence" && (
+            <AdminIntelligence onMessage={setMessage} />
           )}
 
           {tab === "bugfixer" && (

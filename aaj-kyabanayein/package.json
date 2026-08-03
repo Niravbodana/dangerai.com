@@ -32,6 +32,8 @@
     "pipeline:status": "node scripts/run-recipe-pipeline.mjs status",
     "pipeline:verify": "node scripts/run-recipe-pipeline.mjs verify",
     "pipeline:skipped": "node scripts/run-recipe-pipeline.mjs skipped",
-    "pipeline:init-db": "node scripts/run-recipe-pipeline.mjs init-db"
+    "pipeline:init-db": "node scripts/run-recipe-pipeline.mjs init-db",
+    "test:server": "npm run test --prefix server",
+    "test:all": "npm run test --prefix client && npm run test --prefix server"
   }
 }

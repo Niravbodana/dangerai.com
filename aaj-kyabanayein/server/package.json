@@ -15,7 +15,9 @@
     "pipeline:run": "node ../scripts/run-recipe-pipeline.mjs run",
     "pipeline:status": "node ../scripts/run-recipe-pipeline.mjs status",
     "pipeline:verify": "node ../scripts/run-recipe-pipeline.mjs verify",
-    "pipeline:init-db": "node ../scripts/run-recipe-pipeline.mjs init-db"
+    "pipeline:init-db": "node ../scripts/run-recipe-pipeline.mjs init-db",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@sentry/node": "^9.47.1",
@@ -26,5 +28,8 @@
     "google-auth-library": "^11.0.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.5"
   }
 }

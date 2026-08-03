@@ -39,9 +39,11 @@ export async function initPostgresSchema() {
   const path = await import("path");
   const { fileURLToPath } = await import("url");
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const sql = fs.readFileSync(path.join(__dirname, "postgresSchema.sql"), "utf-8");
   const p = await getPostgresPool();
-  await p.query(sql);
+  for (const file of ["postgresSchema.sql", "postgresSchemaPhase2.sql"]) {
+    const sql = fs.readFileSync(path.join(__dirname, file), "utf-8");
+    await p.query(sql);
+  }
 }
 
 export function isPostgresConfigured() {
