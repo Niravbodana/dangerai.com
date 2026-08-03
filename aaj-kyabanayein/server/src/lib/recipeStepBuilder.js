@@ -9,6 +9,11 @@ import {
   NONVEG_BASE,
 } from "../data/recipeTemplates.js";
 import { hasDevanagari, isGenericSteps } from "./recipeQuality.js";
+import {
+  detectIngredientProfile,
+  sanitizeIngredients,
+  profileExtras,
+} from "./ingredientProfiles.js";
 
 const MIN_INGREDIENTS = 6;
 const MIN_STEPS = 5;
@@ -59,11 +64,11 @@ function pickExtras(style, isNonVeg) {
   return [...base.slice(0, 4), ...styleExtras.slice(0, 3), ...COMMON_STAPLES];
 }
 
-/** Grow thin ingredient lists to MIN_INGREDIENTS using pantry staples. */
+/** Grow thin ingredient lists to MIN_INGREDIENTS using profile-aware pantry staples. */
 export function expandIngredients(recipe, ingredients = recipe.ingredients || []) {
   const isNonVeg = recipe.diet?.includes("non-veg");
-  const style = detectStyle(recipe);
-  let list = dedupeIngredients([...ingredients]);
+  const profile = detectIngredientProfile(recipe);
+  let list = sanitizeIngredients(recipe, dedupeIngredients([...ingredients]));
 
   if (list.length >= MIN_INGREDIENTS) return list;
 
@@ -75,7 +80,11 @@ export function expandIngredients(recipe, ingredients = recipe.ingredients || []
       quantity: "as needed",
     };
 
-  const extras = pickExtras(style, isNonVeg);
+  const extras =
+    profile === "sweet" || profile === "beverage"
+      ? profileExtras(profile)
+      : pickExtras(detectStyle(recipe), isNonVeg);
+
   list = dedupeIngredients([main, ...list.slice(1), ...extras]);
 
   while (list.length < MIN_INGREDIENTS && extras.length) {

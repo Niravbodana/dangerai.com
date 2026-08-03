@@ -1,5 +1,6 @@
 /**
  * Per-recipe image overrides for dishes where generic Wikipedia titles fail.
+ * Only verified working URLs (HTTP 200).
  */
 export const DIRECT_THUMB_OVERRIDES = {
   "dal-tadka": "https://www.themealdb.com/images/media/meals/wuxrtu1483564410.jpg",
@@ -17,17 +18,8 @@ export const DIRECT_THUMB_OVERRIDES = {
   "sweet-pongal": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Sakkarai_pongal.jpg/330px-Sakkarai_pongal.jpg",
   "pongal": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Ven_pongal_with_sambar_and_chutney.jpg/330px-Ven_pongal_with_sambar_and_chutney.jpg",
   "tamil-pongal-venn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Ven_pongal_with_sambar_and_chutney.jpg/330px-Ven_pongal_with_sambar_and_chutney.jpg",
-  "sooji-halwa": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Sooji_Halwa.jpg/330px-Sooji_Halwa.jpg",
-  "sandesh": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Sandesh.JPG/330px-Sandesh.JPG",
-  "tinda-masala": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Bhindi_masala.jpg/330px-Bhindi_masala.jpg",
-  "tomato-rasam-veg": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Rasam_%28Indian_cuisine%29.jpg/330px-Rasam_%28Indian_cuisine%29.jpg",
-  "lemon-rasam": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Rasam_%28Indian_cuisine%29.jpg/330px-Rasam_%28Indian_cuisine%29.jpg",
-  "rasam": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Rasam_%28Indian_cuisine%29.jpg/330px-Rasam_%28Indian_cuisine%29.jpg",
-  "sindhi-kadhi": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Kadhi_chawal.jpg/330px-Kadhi_chawal.jpg",
-  "veg-momos": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Momo_nepal.jpg/330px-Momo_nepal.jpg",
-  "sev-tameta-nu-shaak": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_onion_curry.jpg/330px-Tomato_onion_curry.jpg",
-  "gujarati-sev-tameta": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_onion_curry.jpg/330px-Tomato_onion_curry.jpg",
-  "tomato-bath": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Tomato_rice.jpg/330px-Tomato_rice.jpg",
+  "sooji-halwa": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Orient_sweets_%28special_halva%29_Samarkand%2C_Siyab.jpg/330px-Orient_sweets_%28special_halva%29_Samarkand%2C_Siyab.jpg",
+  "sindhi-kadhi": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Kadhi_Pakora.jpg/330px-Kadhi_Pakora.jpg",
 };
 
 export const IMAGE_SEARCH_OVERRIDES = {
@@ -50,6 +42,9 @@ export const IMAGE_SEARCH_OVERRIDES = {
   "zunka": "Jhunka",
   "ven-pongal": "Pongal dish",
   "tinda-masala": "Bhindi masala",
+  "tomato-rasam-veg": "Rasam",
+  "sandesh": "Sandesh sweet",
+  "veg-momos": "Momos dumpling",
 };
 
 export function getImageSearchOverride(recipe) {

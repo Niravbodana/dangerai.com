@@ -124,7 +124,11 @@ export default function Recipes() {
       setSort(true);
       return;
     }
-    setSearchParams({});
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("sort");
+      return next;
+    });
     if (id === "all") {
       setDiet("all");
       setCategory("all");
@@ -133,8 +137,14 @@ export default function Recipes() {
     }
     if (id === "veg" || id === "non-veg") {
       setDiet(id);
-      setCategory("all");
       setMaxCookTime(null);
+      if (category.startsWith("veg-") && id === "non-veg") {
+        setCategory(category.replace("veg-", "nonveg-"));
+      } else if (category.startsWith("nonveg-") && id === "veg") {
+        setCategory(category.replace("nonveg-", "veg-"));
+      } else if (category === "all") {
+        setCategory("all");
+      }
       return;
     }
     if (id === "quick") {
@@ -151,6 +161,12 @@ export default function Recipes() {
   const handleCuisineSelect = (id) => {
     setCuisine(id);
     setPage(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === "all") next.delete("cuisine");
+      else next.set("cuisine", id);
+      return next;
+    });
   };
 
   const activeFilters = [diet !== "all", cuisine !== "all", category !== "all", !!maxCookTime].filter(Boolean).length;
@@ -222,6 +238,7 @@ export default function Recipes() {
           activeCuisine={cuisine}
           activeDiet={diet}
           sortTrending={sortTrending}
+          maxCookTime={maxCookTime}
           onSelect={handleMenuSelect}
           onCuisineSelect={handleCuisineSelect}
         />

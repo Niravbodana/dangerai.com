@@ -36,6 +36,7 @@ export default function RecipeCategoryMenu({
   activeCuisine,
   activeDiet,
   sortTrending,
+  maxCookTime,
   onSelect,
   onCuisineSelect,
 }) {
@@ -43,12 +44,13 @@ export default function RecipeCategoryMenu({
 
   const isActive = (item) => {
     if (item.id === "trending") return sortTrending;
-    if (item.id === "all") return !sortTrending && activeCategory === "all" && activeDiet === "all";
+    if (item.id === "all") return !sortTrending && activeCategory === "all" && activeDiet === "all" && !maxCookTime;
     if (item.id === "veg") return activeDiet === "veg";
     if (item.id === "non-veg") return activeDiet === "non-veg";
-    if (item.id === "quick") return activeCategory === "quick";
+    if (item.id === "quick") return !!maxCookTime && maxCookTime <= 20;
     if (item.id === "snack") return activeCategory === "snack";
-    return !sortTrending && activeCategory === item.id && activeDiet === "all";
+    if (item.id === "healthy") return activeCategory === "healthy";
+    return !sortTrending && activeCategory === item.id && activeDiet === "all" && !maxCookTime;
   };
 
   return (

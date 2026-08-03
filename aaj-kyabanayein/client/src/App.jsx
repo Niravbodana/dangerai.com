@@ -32,6 +32,7 @@ const TasteProfilePage = lazy(() => import('./pages/TasteProfile'));
 const Family = lazy(() => import('./pages/Family'));
 const StreakPage = lazy(() => import('./pages/Streak'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Admin = lazy(() => import('./pages/Admin'));
 
 function AuthRouteHandler() {
   const [params] = useSearchParams();
@@ -89,6 +90,7 @@ function AppContent() {
             <Route path="/add-meal" element={<AddMeal />} />
             <Route path="/my-meals" element={<MyMeals />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

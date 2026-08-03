@@ -65,7 +65,12 @@ npm run dev           # starts API (5000) + app (3000) together — recommended
 npm run audit-images          # check matching (shahi paneer, dal tadka, etc.)
 npm run audit-images -- --fix # auto-refetch bad photos + save to DB
 npm run sync-images -- --force-bad   # re-sync only mismatched photos
+npm run fix-ingredients       # sanitize all recipe ingredients in SQLite
 ```
+
+**Admin panel:** `http://localhost:3000/admin` — set `ADMIN_SECRET` in `server/.env`, enter key in UI. Run Quality Guardian, fix individual recipes, view ingredient/photo issues.
+
+On server start, **Quality Guardian** auto-fixes only bad/missing photos (not full re-sync). Disable: `GUARDIAN_DISABLED=1`.
 
 **Or two terminals:**
 

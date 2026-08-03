@@ -18,6 +18,7 @@ const { isGenericSteps, hasDevanagari, isQualityRecipe } = await import(
   path.join(serverRoot, "src/lib/recipeQuality.js")
 );
 const { ingredientCoverage } = await import(path.join(serverRoot, "src/lib/recipeStepBuilder.js"));
+const { validateIngredientSemantics } = await import(path.join(serverRoot, "src/lib/ingredientProfiles.js"));
 
 ensureDatabase();
 initRecipeCatalog(true);
@@ -29,6 +30,7 @@ const report = {
   shortSteps: 0,
   missingHindi: 0,
   lowIngredientCoverage: 0,
+  ingredientMismatch: 0,
   qualityPass: 0,
   failures: [],
 };
@@ -58,7 +60,12 @@ for (const meta of RECIPE_INDEX) {
     report.lowIngredientCoverage++;
     issues.push("low-coverage");
   }
-  if (isQualityRecipe(r)) report.qualityPass++;
+  const semantic = validateIngredientSemantics(r);
+  if (!semantic.ok) {
+    report.ingredientMismatch = (report.ingredientMismatch || 0) + 1;
+    issues.push(`ingredient-mismatch:${semantic.issues.map((i) => i.ingredient).join(",")}`);
+  }
+  if (isQualityRecipe(r) && semantic.ok) report.qualityPass++;
 
   if (issues.length) {
     report.failures.push({ id: meta.id, name: meta.name, issues });
