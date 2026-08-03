@@ -171,5 +171,23 @@ export function createSchema(db) {
 
     CREATE INDEX IF NOT EXISTS idx_payment_orders_user ON payment_orders(user_id);
     CREATE INDEX IF NOT EXISTS idx_payment_orders_razorpay ON payment_orders(razorpay_order_id);
+
+    CREATE TABLE IF NOT EXISTS recipe_provenance (
+      recipe_id TEXT PRIMARY KEY REFERENCES recipes(id) ON DELETE CASCADE,
+      source_system TEXT NOT NULL,
+      external_id TEXT,
+      source_url TEXT,
+      license_spdx TEXT NOT NULL,
+      commercial_use_allowed INTEGER NOT NULL DEFAULT 0,
+      attribution_required INTEGER NOT NULL DEFAULT 0,
+      attribution_text TEXT,
+      content_hash TEXT,
+      ingest_batch_id TEXT,
+      verification_status TEXT DEFAULT 'verified',
+      fetched_at TEXT,
+      verified_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_recipe_provenance_source ON recipe_provenance(source_system);
   `);
 }

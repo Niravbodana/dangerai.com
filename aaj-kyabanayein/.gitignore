@@ -17,5 +17,6 @@ server/data/rasoira.db
 server/data/rasoira.db-shm
 server/data/rasoira.db-wal
 server/data/enriched-cache/
+server/data/pipeline/
 server/src/data/saved-meals.json
 server/src/data/custom-meals.json
