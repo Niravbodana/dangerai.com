@@ -2,9 +2,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { recipeMatchesSearch, scoreRecipeSearch } from "../lib/searchUtils.js";
-import { ENGLISH_STEPS, HINDI_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
+import { ENGLISH_STEPS, HINDI_STEPS } from "./recipeTemplates.js";
 import { logger } from "../lib/logger.js";
 import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
+import { buildIngredientAwareSteps, expandIngredients } from "../lib/recipeStepBuilder.js";
 import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,18 +64,6 @@ function inferHealthy(recipe) {
   return false;
 }
 
-function expandThinIngredients(recipe) {
-  const ings = recipe.ingredients || [];
-  if (ings.length >= 3) return ings;
-  const isNonVeg = recipe.diet?.includes("non-veg");
-  const main = ings[0] || { name: "Vegetable", nameHi: "सब्जी", quantity: "2 cups" };
-  const styleMatch = (recipe.name || "").match(
-    /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
-  );
-  const style = styleMatch ? styleMatch[1].charAt(0).toUpperCase() + styleMatch[1].slice(1).toLowerCase() : "Curry";
-  return buildIngredients(main, style, isNonVeg);
-}
-
 export function enrichRecipe(recipe) {
   const cuisine = inferCuisine(recipe);
   const isHealthy = inferHealthy(recipe);
@@ -87,28 +76,20 @@ export function enrichRecipe(recipe) {
           ? `nonveg-${recipe.mealType}`
           : `veg-${recipe.mealType}`;
 
-  const ingredients = expandThinIngredients(recipe);
+  const ingredients = expandIngredients(recipe, recipe.ingredients || []);
 
-  let steps = !isGenericSteps(recipe.steps) ? recipe.steps : ENGLISH_STEPS[recipe.id];
-  let stepsHi = recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" ")) ? recipe.stepsHi : HINDI_STEPS[recipe.id];
+  let baseSteps = !isGenericSteps(recipe.steps) ? recipe.steps : ENGLISH_STEPS[recipe.id];
+  let baseStepsHi =
+    recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" "))
+      ? recipe.stepsHi
+      : HINDI_STEPS[recipe.id];
 
-  if (!steps?.length && ingredients[0]) {
-    const isNonVeg = recipe.diet?.includes("non-veg");
-    const styleMatch = (recipe.name || "").match(
-      /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
-    );
-    const style = styleMatch ? styleMatch[1] : "Curry";
-    steps = buildStepsEn(ingredients[0].name, style, isNonVeg);
-    stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
+  if (isGenericSteps(baseSteps)) baseSteps = ENGLISH_STEPS[recipe.id] || [];
+  if (!baseStepsHi?.length || !hasDevanagari(baseStepsHi.join(" "))) {
+    baseStepsHi = HINDI_STEPS[recipe.id] || [];
   }
 
-  if (!stepsHi?.length && steps?.length && ingredients[0]) {
-    const styleMatch = (recipe.name || "").match(
-      /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
-    );
-    const style = styleMatch ? styleMatch[1] : "Curry";
-    stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
-  }
+  const { steps, stepsHi } = buildIngredientAwareSteps(recipe, ingredients, baseSteps, baseStepsHi);
 
   return {
     ...recipe,

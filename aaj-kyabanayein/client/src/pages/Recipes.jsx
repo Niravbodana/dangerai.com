@@ -10,9 +10,24 @@ import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
 import { loadRecipeFilters, saveRecipeFilters } from "../lib/recipeFilters";
 import useDebounce from "../hooks/useDebounce";
+import { getTasteProfile } from "../lib/tasteProfile";
+import { getStateById, stateLabel } from "../data/indianStates";
+
+const STATE_COLLECTION = {
+  gujarat: "gujarati-thali",
+  punjab: "punjabi-weekend",
+  maharashtra: "maharashtrian-favs",
+  "west-bengal": "bengali-comfort",
+  rajasthan: "rajasthani-plate",
+  telangana: "hyderabadi-special",
+  kerala: "kerala-home",
+  "tamil-nadu": "tamil-tiffin",
+};
 
 export default function Recipes() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const homeState = getTasteProfile().homeState;
+  const stateInfo = getStateById(homeState);
   const [searchParams, setSearchParams] = useSearchParams();
   const sortTrending = searchParams.get("sort") === "trending";
 
@@ -128,6 +143,36 @@ export default function Recipes() {
         <div className="mx-auto mt-6 max-w-2xl">
           <RecipeSearch />
         </div>
+
+        {stateInfo && (
+          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 p-4">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              {lang === "hi"
+                ? `${stateLabel(stateInfo, "hi")} — aapke state ki recipes`
+                : `${stateLabel(stateInfo, "en")} — recipes from your home state`}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(stateInfo.tags || []).slice(0, 4).map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => applyTrendingSearch(tag)}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent-soft)]"
+                >
+                  {tag}
+                </button>
+              ))}
+              {STATE_COLLECTION[homeState] && (
+                <a
+                  href={`/collections/${STATE_COLLECTION[homeState]}`}
+                  className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[#14110e]"
+                >
+                  {lang === "hi" ? "Poori collection dekho" : "View full collection"}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <button

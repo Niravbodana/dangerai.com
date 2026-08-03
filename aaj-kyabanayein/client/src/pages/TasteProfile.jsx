@@ -13,7 +13,8 @@ import {
   saveTasteProfile,
 } from "../lib/tasteProfile";
 import { track } from "../lib/analytics";
-import { INDIAN_STATES, stateLabel } from "../data/indianStates";
+import { INDIAN_STATES, stateLabel, defaultLanguageForState } from "../data/indianStates";
+import { useLanguage } from "../context/LanguageContext";
 
 const CUISINES = [
   "north-indian", "south-indian", "gujarati", "maharashtrian",
@@ -23,6 +24,7 @@ const CUISINES = [
 export default function TasteProfilePage() {
   const [profile, setProfile] = useState(getTasteProfile);
   const [saved, setSaved] = useState(false);
+  const { setLang } = useLanguage();
   const completion = useMemo(() => getProfileCompletion(profile), [profile]);
 
   const update = (partial) => {
@@ -32,6 +34,9 @@ export default function TasteProfilePage() {
 
   const save = () => {
     saveTasteProfile(profile);
+    if (profile.homeState && !localStorage.getItem("akb-lang-manual")) {
+      setLang(defaultLanguageForState(profile.homeState));
+    }
     track("taste_profile_save", { diet: profile.diet, spice: profile.spice, completion: completion.percent });
     setSaved(true);
   };
@@ -102,7 +107,9 @@ export default function TasteProfilePage() {
 
         <div>
           <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{/* home state */}Home state / राज्य</p>
-          <p className="mb-3 text-xs text-[var(--text-secondary)]">Aaj Kya Banaye mein aapke state ki recipes priority milegi</p>
+          <p className="mb-3 text-xs text-[var(--text-secondary)]">
+            Aaj Kya Banaye mein aapke state ki recipes priority milegi. Save par language bhi set hogi (aap kabhi bhi EN/हिं switch kar sakte ho).
+          </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
