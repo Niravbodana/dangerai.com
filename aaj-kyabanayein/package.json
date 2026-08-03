@@ -14,6 +14,7 @@
     "build-recipe-books": "npm run build-recipe-books --prefix server",
     "prefetch-images": "npm run prefetch-images --prefix server",
     "verify": "node scripts/verify-project.mjs",
+    "audit-recipes": "node scripts/audit-recipe-quality.mjs",
     "generate-sitemap": "node scripts/generate-sitemap.mjs"
   }
 }

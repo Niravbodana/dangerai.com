@@ -184,7 +184,15 @@ async function findImageUrl(recipe) {
       ...c,
       score: (c.score || 0.5) + scoreTitle(c.title || "", name) * 0.3,
     }))
-    .filter((c) => scoreTitle(c.title || "", name) >= 0.25 || c.source === "thumb-embedded");
+    .filter((c) => {
+      const titleScore = scoreTitle(c.title || "", name);
+      if (c.source === "thumb-embedded") return true;
+      if (titleScore < 0.45) return false;
+      for (const dish of WRONG_DISHES) {
+        if ((c.title || "").toLowerCase().includes(dish) && !recipeWantsDish(name, dish)) return false;
+      }
+      return true;
+    });
 
   candidates.sort((a, b) => (b.score || 0) - (a.score || 0));
   if (candidates[0]) return candidates[0];
