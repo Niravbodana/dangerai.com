@@ -7,6 +7,8 @@ import { logger } from "../lib/logger.js";
 import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
 import { buildIngredientAwareSteps, expandIngredients } from "../lib/recipeStepBuilder.js";
 import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
+import { isDatabaseReady } from "../db/migrate.js";
+import * as recipeRepo from "../db/recipeRepository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED_DIR = path.join(__dirname, "curated");
@@ -123,6 +125,24 @@ function toIndexEntry(recipe) {
 }
 
 function loadCuratedData() {
+  if (isDatabaseReady()) {
+    try {
+      recipeIndex = recipeRepo.getRecipeIndex();
+      const enrichedCache = new Map();
+      getRecipeByIdImpl = (id) => {
+        if (customRecipes.has(id)) return customRecipes.get(id);
+        const raw = recipeRepo.getRecipeById(id);
+        if (!raw) return null;
+        if (!enrichedCache.has(id)) enrichedCache.set(id, enrichRecipe(raw));
+        return enrichedCache.get(id);
+      };
+      logger.info(`SQLite: ${recipeIndex.length} recipes loaded`);
+      return;
+    } catch (err) {
+      logger.warn(`SQLite load failed, falling back to JSON: ${err.message}`);
+    }
+  }
+
   if (!fs.existsSync(INDEX_FILE) || !fs.existsSync(RECIPES_FILE)) {
     logger.warn("Curated recipes not found — run: npm run build-recipe-books");
     return;
@@ -161,12 +181,20 @@ let getRecipeByIdImpl = (id) => {
   return recipeById.get(id) || null;
 };
 
+let catalogLoaded = false;
+
+export function initRecipeCatalog(force = false) {
+  if (catalogLoaded && !force) return;
+  loadCuratedData();
+  catalogLoaded = true;
+}
+
 if (process.env.NODE_ENV !== "production") {
   console.time("recipes-load");
-  loadCuratedData();
+  initRecipeCatalog();
   console.timeEnd("recipes-load");
 } else {
-  loadCuratedData();
+  initRecipeCatalog();
 }
 
 export const RECIPE_COUNT = recipeIndex.length;
@@ -241,6 +269,9 @@ function buildCuisinesList() {
     italian: { en: "Italian", hi: "इटालियन" },
     thai: { en: "Thai", hi: "थाई" },
     mexican: { en: "Mexican", hi: "मेक्सिकन" },
+    afghani: { en: "Afghani", hi: "अफ़गानी" },
+    indonesian: { en: "Indonesian", hi: "इंडोनेशियाई" },
+    turkish: { en: "Turkish", hi: "तुर्की" },
     continental: { en: "Continental", hi: "कॉन्टिनेंटल" },
     healthy: { en: "Healthy", hi: "स्वस्थ" },
     japanese: { en: "Japanese", hi: "जापानी" },
@@ -331,7 +362,10 @@ export function isNonVegRecipe(r) {
 export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const thumb = meta.thumbUrl || full?.thumbUrl;
-  const imageUrl = resolveRecipeImageUrl({ id: meta.id, thumbUrl: thumb });
+  const localImage = meta.localImage || full?.localImage;
+  const imageUrl = localImage
+    ? `/api/recipes/image/${meta.id}`
+    : resolveRecipeImageUrl({ id: meta.id, thumbUrl: thumb });
   return {
     id: meta.id,
     name: meta.name,

@@ -53,8 +53,12 @@ Restart both server and client after setting env vars. Login/signup modal will s
 ```bash
 cd aaj-kyabanayein
 npm run install:all   # first time only
+npm run db:init       # SQLite database + 941 recipes (first time)
+npm run sync-images   # download photos locally (optional, ~10 min)
 npm run dev           # starts API (5000) + app (3000) together — recommended
 ```
+
+**Database:** SQLite (`server/data/rasoira.db`) — recipes, users, favorites, ratings, saved meals. Photos cache in `server/data/image-cache/` so bar-bar fetch nahi hota.
 
 **Or two terminals:**
 

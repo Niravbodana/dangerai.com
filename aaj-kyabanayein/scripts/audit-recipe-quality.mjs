@@ -10,18 +10,20 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const serverRoot = path.join(__dirname, "..", "server");
 
-const { enrichRecipe } = await import(path.join(serverRoot, "src/data/recipes.js"));
+const { enrichRecipe, initRecipeCatalog, RECIPE_INDEX, getRecipeById } = await import(
+  path.join(serverRoot, "src/data/recipes.js")
+);
+const { ensureDatabase } = await import(path.join(serverRoot, "src/db/ensureDatabase.js"));
 const { isGenericSteps, hasDevanagari, isQualityRecipe } = await import(
   path.join(serverRoot, "src/lib/recipeQuality.js")
 );
 const { ingredientCoverage } = await import(path.join(serverRoot, "src/lib/recipeStepBuilder.js"));
 
-const recipes = JSON.parse(
-  fs.readFileSync(path.join(serverRoot, "src/data/curated/recipes.json"), "utf-8")
-);
+ensureDatabase();
+initRecipeCatalog(true);
 
 const report = {
-  total: recipes.length,
+  total: RECIPE_INDEX.length,
   thinIngredients: 0,
   genericSteps: 0,
   shortSteps: 0,
@@ -31,8 +33,9 @@ const report = {
   failures: [],
 };
 
-for (const raw of recipes) {
-  const r = enrichRecipe(raw);
+for (const meta of RECIPE_INDEX) {
+  const raw = getRecipeById(meta.id);
+  const r = raw || enrichRecipe(meta);
   const issues = [];
 
   if ((r.ingredients?.length || 0) < 6) {
@@ -58,7 +61,7 @@ for (const raw of recipes) {
   if (isQualityRecipe(r)) report.qualityPass++;
 
   if (issues.length) {
-    report.failures.push({ id: raw.id, name: raw.name, issues });
+    report.failures.push({ id: meta.id, name: meta.name, issues });
   }
 }
 

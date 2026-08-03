@@ -18,6 +18,8 @@
     "audit-recipes": "node scripts/audit-recipe-quality.mjs",
     "audit-customers": "node scripts/customer-audit-10k.mjs",
     "merge-recipes": "node server/src/scripts/mergeNewRecipes.js",
+    "db:init": "npm run db:init --prefix server",
+    "sync-images": "npm run sync-images --prefix server",
     "generate-sitemap": "node scripts/generate-sitemap.mjs"
   }
 }

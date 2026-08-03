@@ -109,6 +109,15 @@ export default function Recipes() {
       .finally(() => setLoading(false));
   }, [diet, cuisine, category, page, debouncedSearch, sortTrending, maxCookTime]);
 
+  const setSort = (trending) => {
+    setSearchParams(trending ? { sort: "trending" } : {});
+    setPage(1);
+    if (trending) {
+      setCategory("all");
+      setMaxCookTime(null);
+    }
+  };
+
   const handleMenuSelect = (id) => {
     setPage(1);
     if (id === "trending") {
@@ -116,7 +125,6 @@ export default function Recipes() {
       return;
     }
     setSearchParams({});
-    setSortTrendingLocal(false);
     if (id === "all") {
       setDiet("all");
       setCategory("all");
@@ -138,19 +146,6 @@ export default function Recipes() {
     setDiet("all");
     setMaxCookTime(null);
     setCategory(id);
-  };
-
-  const setSortTrendingLocal = (trending) => {
-    setSearchParams(trending ? { sort: "trending" } : {});
-    setPage(1);
-  };
-
-  const setSort = (trending) => {
-    setSortTrendingLocal(trending);
-    if (trending) {
-      setCategory("all");
-      setMaxCookTime(null);
-    }
   };
 
   const handleCuisineSelect = (id) => {

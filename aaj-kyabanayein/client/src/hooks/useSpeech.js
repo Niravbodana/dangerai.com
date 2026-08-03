@@ -10,10 +10,10 @@ const LANG_MAP = {
 
 const SPEECH_RATES = {
   en: 0.9,
-  hi: 0.72,
-  hinglish: 0.76,
-  gu: 0.72,
-  mr: 0.72,
+  hi: 0.68,
+  hinglish: 0.72,
+  gu: 0.68,
+  mr: 0.68,
 };
 
 function pickVoice(langCode) {
@@ -22,18 +22,24 @@ function pickVoice(langCode) {
   const target = LANG_MAP[langCode] || "en-IN";
   const prefix = target.split("-")[0];
 
-  const preferred = voices.find(
+  const femaleIndian = voices.find(
     (v) =>
       v.lang.startsWith(target) &&
-      /female|lekha|priya|heera|neural|natural|google/i.test(v.name)
+      /female|lekha|heera|kalpana|priya|neural|natural|google.*hindi|hindi.*female/i.test(v.name)
   );
-  if (preferred) return preferred;
+  if (femaleIndian) return femaleIndian;
+
+  const hindiFemale = voices.find(
+    (v) =>
+      (v.lang.startsWith("hi") || v.lang.startsWith(target)) &&
+      /female|lekha|heera|kalpana|priya/i.test(v.name)
+  );
+  if (hindiFemale && langCode !== "en") return hindiFemale;
 
   const exact = voices.find((v) => v.lang.startsWith(target));
   if (exact) return exact;
 
-  const langMatch = voices.find((v) => v.lang.startsWith(prefix));
-  return langMatch || null;
+  return voices.find((v) => v.lang.startsWith(prefix)) || null;
 }
 
 export function useSpeech(lang = "en") {

@@ -23,6 +23,12 @@ const CUISINE_QUICK = [
   { id: "bengali", labelEn: "Bengali", labelHi: "बंगाली" },
   { id: "punjabi", labelEn: "Punjabi", labelHi: "पंजाबी" },
   { id: "chinese", labelEn: "Chinese", labelHi: "चाइनीज़" },
+  { id: "thai", labelEn: "Thai", labelHi: "थाई" },
+  { id: "mexican", labelEn: "Mexican", labelHi: "मेक्सिकन" },
+  { id: "afghani", labelEn: "Afghani", labelHi: "अफ़गानी" },
+  { id: "indonesian", labelEn: "Indonesian", labelHi: "इंडोनेशियाई" },
+  { id: "mughlai", labelEn: "Mughlai", labelHi: "मुग़लाई" },
+  { id: "turkish", labelEn: "Turkish", labelHi: "तुर्की" },
 ];
 
 export default function RecipeCategoryMenu({
