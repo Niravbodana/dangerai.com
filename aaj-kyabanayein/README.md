@@ -68,7 +68,7 @@ npm run sync-images -- --force-bad   # re-sync only mismatched photos
 npm run fix-ingredients       # sanitize all recipe ingredients in SQLite
 ```
 
-**Admin panel:** `http://localhost:3000/admin` — set `ADMIN_SECRET` in `server/.env`, enter key in UI. Run Quality Guardian, fix individual recipes, view ingredient/photo issues.
+**Admin panel:** `http://localhost:3000/admin` — login with **admin** / **Nirav@123** (change via `ADMIN_USERNAME` & `ADMIN_PASSWORD` in `server/.env`). Manage partners, payments, social links, quality & bug fixer.
 
 On server start, **Quality Guardian** auto-fixes only bad/missing photos (not full re-sync). Disable: `GUARDIAN_DISABLED=1`.
 
