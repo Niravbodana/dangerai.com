@@ -70,6 +70,14 @@ npm run dev:client    # Terminal 2 → http://localhost:3000
 > **Vite proxy error `ECONNREFUSED 127.0.0.1:5000`?**  
 > Sirf `dev:client` chalaya hai — backend band hai. `npm run dev` use karo, ya alag terminal mein `npm run dev:server` chalao. Check: `curl http://localhost:5000/api/health`
 
+> **Port 3000 already in use / server crash?**  
+> Purana dev server band nahi hua. Pehle ports free karo, phir dubara start karo:
+> ```bash
+> npm run dev:kill
+> npm run dev
+> ```
+> Agar 3000 busy ho to Vite automatically 3001 try karega — terminal mein jo URL dikhe wahi kholo.
+
 > **Note:** `npm install` no longer downloads recipes from the internet. Curated ~900 recipes ship with the repo. To rebuild from APIs (slow): `npm run build-recipe-books -- --force`
 
 ### Phone on same Wi‑Fi (Mac)

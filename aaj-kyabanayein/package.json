@@ -20,6 +20,7 @@
     "merge-recipes": "node server/src/scripts/mergeNewRecipes.js",
     "db:init": "npm run db:init --prefix server",
     "sync-images": "npm run sync-images --prefix server",
+    "dev:kill": "node scripts/kill-dev-ports.mjs",
     "generate-sitemap": "node scripts/generate-sitemap.mjs"
   }
 }

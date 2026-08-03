@@ -43,3 +43,29 @@ export function removeFavorite(userId, recipeId) {
   fs.writeFileSync(FAV_FILE, JSON.stringify(data, null, 2));
   return data[userId] || [];
 }
+
+export function isFavorite(userId, recipeId) {
+  return getFavorites(userId).includes(recipeId);
+}
+
+export function mergeFavorites(userId, recipeIds = []) {
+  if (!userId || !recipeIds.length) return getFavorites(userId);
+  if (useDb()) {
+    const stmt = getDb().prepare(
+      "INSERT OR IGNORE INTO favorites (user_id, recipe_id, added_at) VALUES (?, ?, ?)"
+    );
+    const addedAt = new Date().toISOString();
+    for (const id of recipeIds) {
+      if (id) stmt.run(userId, id, addedAt);
+    }
+    return getFavorites(userId);
+  }
+  const data = fs.existsSync(FAV_FILE) ? JSON.parse(fs.readFileSync(FAV_FILE, "utf-8")) : {};
+  const existing = new Set(data[userId] || []);
+  for (const id of recipeIds) {
+    if (id) existing.add(id);
+  }
+  data[userId] = [...existing];
+  fs.writeFileSync(FAV_FILE, JSON.stringify(data, null, 2));
+  return data[userId];
+}
