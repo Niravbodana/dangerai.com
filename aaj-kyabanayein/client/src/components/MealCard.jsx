@@ -5,7 +5,7 @@ import RecipeImage from "./RecipeImage";
 
 const MEAL_LABEL = { breakfast: "Nashta", lunch: "Dopahar", dinner: "Raat", snack: "Snack" };
 
-export default function MealCard({ mealType, recipe }) {
+export default function MealCard({ mealType, recipe, variations = [] }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -44,6 +44,23 @@ export default function MealCard({ mealType, recipe }) {
           </div>
         </div>
       </div>
+
+      {variations?.length > 0 && (
+        <div className="border-t border-white/20 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase text-[var(--text-secondary)]">Swap options</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {variations.map((v) => (
+              <Link
+                key={v.id}
+                to={`/recipe/${v.id}`}
+                className="rounded-lg bg-white/8 px-2 py-1 text-xs text-[var(--accent-soft)] hover:bg-white/12"
+              >
+                {v.nameHi || v.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {expanded && (
         <div className="border-t border-white/40 px-5 py-4">

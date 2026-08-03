@@ -1,12 +1,13 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { fetchRecipe } from "../api";
+import { fetchRecipe, fetchFavorites } from "../api";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeGridSkeleton from "../components/RecipeGridSkeleton";
 import EmptyState from "../components/EmptyState";
 import { QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
-import { getLocalFavorites } from "../lib/guest";
+import { getLocalFavorites, setLocalFavorites } from "../lib/guest";
 import {
   addRecipeToCollection,
   copyCollectionShareLink,
@@ -29,6 +30,7 @@ const SORT_OPTIONS = [
 
 export default function Favorites() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCollectionId = searchParams.get("collection");
 
@@ -42,9 +44,23 @@ export default function Favorites() {
   const activeCollection = activeCollectionId ? getUserCollection(activeCollectionId) : null;
   const recipeOrder = activeCollection?.recipeIds || getLocalFavorites();
 
-  const load = () => {
+  const load = async () => {
     const collection = activeCollectionId ? getUserCollection(activeCollectionId) : null;
-    const ids = collection ? (collection.recipeIds || []) : getLocalFavorites();
+    let ids = collection ? (collection.recipeIds || []) : getLocalFavorites();
+
+    if (!collection && user) {
+      try {
+        const guestId = localStorage.getItem("akb-guest-id");
+        const data = await fetchFavorites(guestId);
+        if (data.ids?.length) {
+          ids = data.ids;
+          setLocalFavorites(ids);
+        }
+      } catch {
+        /* keep local */
+      }
+    }
+
     setCollections(getUserCollections());
 
     if (ids.length === 0) {
@@ -59,7 +75,7 @@ export default function Favorites() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [activeCollectionId]);
+  useEffect(() => { load(); }, [activeCollectionId, user]);
 
   const cuisines = useMemo(
     () => [...new Set(recipes.map((r) => r.cuisine).filter(Boolean))].sort(),
