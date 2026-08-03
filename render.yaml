@@ -7,7 +7,7 @@ services:
     runtime: node
     plan: free
     rootDir: aaj-kyabanayein
-    buildCommand: npm run install:all && npm run build:client && npm run db:init --prefix server
+    buildCommand: npm run install:all && npm run build:client && npm run db:init --prefix server && npm run cache-premium-thumbs && npm run fix-ingredients
     startCommand: NODE_ENV=production npm run start --prefix server
     healthCheckPath: /api/health
     envVars:
