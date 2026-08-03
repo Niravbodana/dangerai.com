@@ -5,6 +5,7 @@
  */
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
 import { getDirectThumbOverride, getImageSearchOverride } from "../data/recipeImageOverrides.js";
@@ -94,8 +95,52 @@ function metaPath(recipeId) {
   return path.join(META_DIR, `${recipeId}.json`);
 }
 
+function fileContentHash(filePath) {
+  return crypto.createHash("md5").update(fs.readFileSync(filePath)).digest("hex");
+}
+
+export function verifyCachedOverrideIntegrity(recipe) {
+  const id = recipe?.id;
+  const override = getDirectThumbOverride(recipe);
+  if (!id || !override) return true;
+  const cached = readCachedImage(id);
+  if (!cached) return false;
+  const meta = readImageMeta(id);
+  if (meta?.source !== "curated-thumb" || meta?.originalUrl !== override) return false;
+  if (!meta?.contentHash) return false;
+  try {
+    return fileContentHash(cached) === meta.contentHash;
+  } catch {
+    return false;
+  }
+}
+
+/** Ensure curated override image is on disk and bytes match expected download. */
+export async function ensureOverrideImageReady(recipe) {
+  const id = recipe?.id;
+  const override = getDirectThumbOverride(recipe);
+  if (!id || !override) return readCachedImage(id);
+
+  const integrityOk = verifyCachedOverrideIntegrity(recipe);
+  const audit = hasCachedImage(id) ? auditCachedImage(recipe) : { ok: false };
+  if (integrityOk && audit.ok) return readCachedImage(id);
+
+  await cacheImageFromUrl(id, override, "curated-thumb", {
+    force: true,
+    title: recipe.name || id,
+  });
+  return readCachedImage(id);
+}
+
+export function attachRecipeImageFields(recipe) {
+  if (!recipe?.id) return recipe;
+  const imageVersion = getImageCacheVersion(recipe.id);
+  const imageUrl = recipeImageUrl(recipe.id, imageVersion);
+  return { ...recipe, imageVersion, imageUrl, cdnImageUrl: imageUrl };
+}
+
 export function imageUrlForRecipe(recipeId) {
-  return `/api/recipes/image/${recipeId}`;
+  return recipeImageUrl(recipeId);
 }
 
 export function hasCachedImage(recipeId) {
@@ -469,6 +514,7 @@ export async function cacheImageFromUrl(recipeId, imageUrl, source = "external",
   ensureDirs();
   const dest = cachePath(recipeId);
   await downloadImage(imageUrl, dest);
+  const contentHash = fileContentHash(dest);
   fs.writeFileSync(
     metaPath(recipeId),
     JSON.stringify({
@@ -476,6 +522,7 @@ export async function cacheImageFromUrl(recipeId, imageUrl, source = "external",
       source,
       title: title || recipeId,
       originalUrl: imageUrl,
+      contentHash,
       score: source === "curated-thumb" ? 0.98 : null,
       fetchedAt: new Date().toISOString(),
     }, null, 2)

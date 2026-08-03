@@ -37,6 +37,8 @@ import {
   warmRecipeImage,
   auditCachedImage,
   invalidateCachedImage,
+  ensureOverrideImageReady,
+  attachRecipeImageFields,
 } from "../services/recipeImageService.js";
 import { getDirectThumbOverride } from "../data/recipeImageOverrides.js";
 import { getFeaturedCookAgainRecipes } from "../services/featuredCookAgainService.js";
@@ -70,6 +72,15 @@ router.get("/recipes/image/:id", async (req, res) => {
     res.type("image/jpeg");
     return res.sendFile(path.resolve(file));
   };
+
+  if (recipe && id !== DEFAULT_IMAGE_ID && getDirectThumbOverride(recipe)) {
+    try {
+      const file = await ensureOverrideImageReady(recipe);
+      if (file) return sendCached(file);
+    } catch {
+      /* fall through to generic pipeline */
+    }
+  }
 
   const cached = readCachedImage(id);
   if (cached && recipe && id !== DEFAULT_IMAGE_ID) {
@@ -123,7 +134,7 @@ router.get("/recipes/:id/load", async (req, res) => {
     res.json({
       success: true,
       ...result,
-      recipe: attachRecipeVideo(result.recipe),
+      recipe: attachRecipeImageFields(attachRecipeVideo(result.recipe)),
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -216,7 +227,7 @@ router.get("/recipes/:id", (req, res) => {
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   const merged = getCachedRecipeOverlay(recipe);
-  const full = attachRecipeVideo(enrichRecipeWithFlow(merged));
+  const full = attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged)));
   enrichRecipeInBackground(recipe);
   res.json({ success: true, recipe: full });
 });

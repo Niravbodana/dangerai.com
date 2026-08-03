@@ -266,14 +266,14 @@ export default function RecipeDetail() {
         {/* Hero */}
         <div className="relative h-72 overflow-hidden sm:h-80">
           <RecipeImage
-            src={recipe.thumbUrl || `/api/recipes/image/${recipe.id}`}
+            src={recipe.imageUrl || `/api/recipes/image/${recipe.id}`}
             alt={displayName}
-            recipeId={recipe.thumbUrl ? "" : recipe.id}
+            recipeId={recipe.id}
             eager
-            version={imageVersion}
+            version={recipe.imageVersion || imageVersion || 0}
             className="h-full w-full object-cover"
           />
-          {loadingMedia && !recipe.thumbUrl && (
+          {loadingMedia && (
             <div className="absolute bottom-4 right-4 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80 backdrop-blur-sm">
               {t("betterPhoto")}
             </div>

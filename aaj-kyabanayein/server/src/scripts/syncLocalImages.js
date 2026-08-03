@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import { getDb } from "../db/connection.js";
 import { createSchema } from "../db/schema.js";
 import { getRecipeById, setLocalImage, getRecipeCount } from "../db/recipeRepository.js";
-import { ensureRecipeImage, hasCachedImage, readCachedImage, auditCachedImage, invalidateCachedImage } from "../services/recipeImageService.js";
+import { ensureRecipeImage, hasCachedImage, readCachedImage, auditCachedImage, invalidateCachedImage, syncDirectThumbOverrides } from "../services/recipeImageService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -20,6 +20,12 @@ const FORCE_BAD = process.argv.includes("--force-bad");
 
 createSchema(getDb());
 fs.mkdirSync(CACHE_DIR, { recursive: true });
+
+if (process.argv.includes("--overrides-only")) {
+  const synced = await syncDirectThumbOverrides();
+  console.log(`Override sync: ${synced} curated images refreshed`);
+  process.exit(0);
+}
 
 const rows = getDb().prepare("SELECT id FROM recipes ORDER BY id").all();
 const toProcess = rows.slice(0, LIMIT);
