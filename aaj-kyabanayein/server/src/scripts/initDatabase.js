@@ -12,6 +12,7 @@ import { importRecipesFromJson, importJsonStores } from "../db/migrate.js";
 import { upsertRecipe, getRecipeCount, setLocalImage } from "../db/recipeRepository.js";
 import { WORLD_CUISINE_RECIPES } from "../data/recipeBookWorldCuisines.js";
 import { NEW_2026_RECIPES } from "../data/recipeBookNew2026.js";
+import { VEG_EXPANSION_RECIPES } from "../data/recipeBookVegExpansion.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED = path.join(__dirname, "../data/curated/recipes.json");
@@ -24,7 +25,7 @@ if (fs.existsSync(CURATED)) {
   imported += importRecipesFromJson(CURATED);
 }
 
-for (const raw of [...NEW_2026_RECIPES, ...WORLD_CUISINE_RECIPES]) {
+for (const raw of [...NEW_2026_RECIPES, ...WORLD_CUISINE_RECIPES, ...VEG_EXPANSION_RECIPES]) {
   upsertRecipe(raw);
   imported++;
 }

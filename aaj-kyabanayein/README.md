@@ -60,6 +60,13 @@ npm run dev           # starts API (5000) + app (3000) together — recommended
 
 **Database:** SQLite (`server/data/rasoira.db`) — recipes, users, favorites, ratings, saved meals. Photos cache in `server/data/image-cache/` so bar-bar fetch nahi hota.
 
+**Photo quality audit:**
+```bash
+npm run audit-images          # check matching (shahi paneer, dal tadka, etc.)
+npm run audit-images -- --fix # auto-refetch bad photos + save to DB
+npm run sync-images -- --force-bad   # re-sync only mismatched photos
+```
+
 **Or two terminals:**
 
 ```bash
