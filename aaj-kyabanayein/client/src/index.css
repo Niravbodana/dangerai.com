@@ -431,8 +431,18 @@ body {
 
 @media (max-width: 639px) {
   body { padding-bottom: 4.5rem; overflow-x: hidden; }
-  body.cooking-active { padding-bottom: 0; }
-  body.cooking-active .mobile-nav { display: none; }
+  body.cooking-active,
+  body.recipe-detail-active { padding-bottom: 0; }
+  body.cooking-active .mobile-nav,
+  body.recipe-detail-active .mobile-nav { display: none; }
+
+  .recipe-detail-page {
+    padding-bottom: 6.5rem;
+  }
+
+  .recipe-detail-cta {
+    z-index: 55;
+  }
 
   .app-shell { overflow-x: hidden; }
 
