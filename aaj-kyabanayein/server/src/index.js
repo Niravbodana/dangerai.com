@@ -71,49 +71,49 @@ app.use("/api", socialRouter);
 app.use("/api", mealsUserRouter);
 app.use("/api", mealsRouter);
 
-app.get("/", (_req, res) => {
-  res.json({
-    name: "Rasoira API",
-    version: "2.0.0",
-    endpoints: [
-      "/api/health",
-      "/api/recipes",
-      "/api/recipes/trending",
-      "/api/recipes/enrichment-status",
-      "POST /api/recipes/:id/enrich",
-      "/api/pantry/items",
-      "POST /api/pantry/suggest",
-      "POST /api/plan/healthy",
-      "/api/pricing",
-      "POST /api/plan",
-      "GET /api/maid/helpers",
-      "GET /api/maid/view/:token",
-      "GET /api/sync",
-      "POST /api/recipes/import",
-      "POST /api/grocery/restock",
-      "GET /api/site/config",
-      "POST /api/payments/create-order",
-      "POST /api/payments/verify",
-      "GET /api/admin/config",
-      "GET /api/festivals/upcoming",
-      "POST /api/auth/register",
-      "POST /api/auth/login",
-      "POST /api/auth/google",
-      "GET /api/auth/me",
-      "PUT /api/auth/preferences",
-    ],
-  });
-});
+const clientDist = path.join(__dirname, "../../client/dist");
+const serveClient = isProd && fs.existsSync(clientDist);
 
-if (isProd) {
-  const clientDist = path.join(__dirname, "../../client/dist");
-  if (fs.existsSync(clientDist)) {
-    app.use(express.static(clientDist));
-    app.get("*", (req, res, next) => {
-      if (req.path.startsWith("/api")) return next();
-      res.sendFile(path.join(clientDist, "index.html"));
+if (serveClient) {
+  app.use(express.static(clientDist));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+} else {
+  app.get("/", (_req, res) => {
+    res.json({
+      name: "Rasoira API",
+      version: "2.0.0",
+      endpoints: [
+        "/api/health",
+        "/api/recipes",
+        "/api/recipes/trending",
+        "/api/recipes/enrichment-status",
+        "POST /api/recipes/:id/enrich",
+        "/api/pantry/items",
+        "POST /api/pantry/suggest",
+        "POST /api/plan/healthy",
+        "/api/pricing",
+        "POST /api/plan",
+        "GET /api/maid/helpers",
+        "GET /api/maid/view/:token",
+        "GET /api/sync",
+        "POST /api/recipes/import",
+        "POST /api/grocery/restock",
+        "GET /api/site/config",
+        "POST /api/payments/create-order",
+        "POST /api/payments/verify",
+        "GET /api/admin/config",
+        "GET /api/festivals/upcoming",
+        "POST /api/auth/register",
+        "POST /api/auth/login",
+        "POST /api/auth/google",
+        "GET /api/auth/me",
+        "PUT /api/auth/preferences",
+      ],
     });
-  }
+  });
 }
 
 app.use("/api", notFoundHandler);
