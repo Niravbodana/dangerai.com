@@ -15,6 +15,8 @@ import {
   searchOpenverseImage,
   searchWikipediaSummary,
 } from "./fastImageSearch.js";
+import { resolveWikiThumbnailFirst } from "./wikiImageResolver.js";
+import { getWikiTitlesForRecipe, getSimilarRecipeId } from "../data/recipeImageCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -120,7 +122,8 @@ function extractCoreDishName(name = "", recipe = null) {
 }
 
 function recipeWantsDish(name = "", dish) {
-  return new RegExp(`\\b${dish}\\b`, "i").test(name);
+  const escaped = dish.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}s?\\b`, "i").test(name);
 }
 
 function isRawOrWrongImage(title = "", url = "", recipeName = "") {
@@ -195,6 +198,8 @@ async function findImageUrl(recipe) {
   }
 
   const curatedTitle = getImageSearchOverride(recipe) ? null : getCuratedWikiTitle(recipe);
+  const diet = recipe.diet || [];
+  const isVeg = diet.includes("veg") && !diet.includes("non-veg");
 
   // Kick Groq hints in parallel (don't block other sources)
   const hintsPromise = getAIImageHints(recipe).catch(() => null);
@@ -230,6 +235,9 @@ async function findImageUrl(recipe) {
       if (c.source === "thumb-embedded" || c.source === "curated-thumb") return true;
       if (titleScore < 0.45) return false;
       if (isRawOrWrongImage(c.title || "", c.imageUrl || "", name)) return false;
+      if (isVeg && /chicken|mutton|fish|meat|egg|prawn|shrimp|beef|pork|lamb/i.test(`${c.title || ""} ${c.imageUrl || ""}`)) {
+        return false;
+      }
       for (const dish of WRONG_DISHES) {
         if ((c.title || "").toLowerCase().includes(dish) && !recipeWantsDish(name, dish)) return false;
       }
@@ -252,22 +260,92 @@ async function findImageUrl(recipe) {
     if (meal) return meal;
   }
 
+  // Wikipedia REST by catalog titles (reliable thumb URLs)
+  const wikiTitles = getWikiTitlesForRecipe(recipe);
+  if (wikiTitles.length) {
+    const wiki = await resolveWikiThumbnailFirst(wikiTitles);
+    if (wiki) return { ...wiki, score: 0.88 };
+  }
+
   return null;
 }
 
-async function downloadImage(url, dest) {
-  const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`Image download failed: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  // Skip huge files — keep list fast
-  if (buf.length > 2_500_000) {
-    // still save but ok
+async function tryWikiCatalogMatch(recipe) {
+  const wikiTitles = getWikiTitlesForRecipe(recipe);
+  if (!wikiTitles.length) return null;
+  const wiki = await resolveWikiThumbnailFirst(wikiTitles);
+  return wiki ? { ...wiki, score: 0.88 } : null;
+}
+
+async function saveCachedMatch(id, recipe, match, cached) {
+  await downloadImage(match.imageUrl, cached);
+  fs.writeFileSync(
+    metaPath(id),
+    JSON.stringify({
+      recipeId: id,
+      recipeName: recipe.name,
+      source: match.source,
+      title: match.title,
+      originalUrl: match.imageUrl,
+      score: match.score,
+      fetchedAt: new Date().toISOString(),
+    }, null, 2)
+  );
+  return cached;
+}
+
+async function downloadImage(url, dest, retries = 3) {
+  let lastErr;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": USER_AGENT,
+          Accept: "image/*,*/*",
+          Referer: "https://en.wikipedia.org/",
+        },
+        signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+        redirect: "follow",
+      });
+      if ((res.status === 424 || res.status === 429) && attempt < retries - 1) {
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        continue;
+      }
+      if (!res.ok) throw new Error(`Image download failed: ${res.status}`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 500) throw new Error("Image too small");
+      fs.writeFileSync(dest, buf);
+      return buf;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries - 1) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+    }
   }
-  fs.writeFileSync(dest, buf);
-  return buf;
+  throw lastErr;
+}
+
+function copyFromSimilarRecipe(recipe) {
+  const recipeId = recipe?.id;
+  if (!recipeId) return null;
+  const similarId = getSimilarRecipeId(recipeId);
+  if (!similarId) return null;
+  const src = cachePath(similarId);
+  const dest = cachePath(recipeId);
+  if (!fs.existsSync(src)) return null;
+  fs.copyFileSync(src, dest);
+  fs.writeFileSync(
+    metaPath(recipeId),
+    JSON.stringify({
+      recipeId,
+      recipeName: recipe.name,
+      source: "similar-fallback",
+      title: recipe.name || similarId,
+      originalUrl: similarId,
+      score: 0.72,
+      fetchedAt: new Date().toISOString(),
+    }, null, 2)
+  );
+  return dest;
 }
 
 export async function ensureRecipeImage(recipe, { force = false } = {}) {
@@ -287,23 +365,34 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
 
   const promise = enqueueFetch(async () => {
     if (fs.existsSync(cached)) return cached;
-    const match = await withTimeout(findImageUrl(recipe), IMAGE_FETCH_TIMEOUT_MS);
-    if (!match?.imageUrl) throw new Error(`No image found for ${recipe.name}`);
+    let match = null;
+    try {
+      match = await withTimeout(findImageUrl(recipe), IMAGE_FETCH_TIMEOUT_MS);
+    } catch {
+      match = null;
+    }
 
-    await downloadImage(match.imageUrl, cached);
-    fs.writeFileSync(
-      metaPath(id),
-      JSON.stringify({
-        recipeId: id,
-        recipeName: recipe.name,
-        source: match.source,
-        title: match.title,
-        originalUrl: match.imageUrl,
-        score: match.score,
-        fetchedAt: new Date().toISOString(),
-      }, null, 2)
-    );
-    return cached;
+    if (match?.imageUrl) {
+      try {
+        return await saveCachedMatch(id, recipe, match, cached);
+      } catch {
+        /* try fallbacks below */
+      }
+    }
+
+    const wikiMatch = await tryWikiCatalogMatch(recipe);
+    if (wikiMatch?.imageUrl) {
+      try {
+        return await saveCachedMatch(id, recipe, wikiMatch, cached);
+      } catch {
+        /* try fallbacks below */
+      }
+    }
+
+    const similar = copyFromSimilarRecipe(recipe);
+    if (similar) return similar;
+
+    throw new Error(`No image found for ${recipe.name}`);
   });
 
   inFlight.set(id, promise);
@@ -335,6 +424,9 @@ export function readImageMeta(recipeId) {
 export function auditCachedImage(recipe) {
   const meta = readImageMeta(recipe.id);
   if (!meta) return { ok: false, issue: "missing-cache" };
+  if (meta.source === "similar-fallback") {
+    return { ok: true, meta, titleScore: meta.score || 0.72 };
+  }
   const titleScore = scoreTitle(meta.title || "", recipe.name || "");
   if (isRawOrWrongImage(meta.title || "", meta.originalUrl || "", recipe.name || "")) {
     return { ok: false, issue: "raw-or-wrong", meta, titleScore };

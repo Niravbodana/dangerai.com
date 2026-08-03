@@ -11,6 +11,12 @@ function cleanQuery(name = "") {
     .trim();
 }
 
+/** Openverse thumb URLs are API routes (404); prefer direct image URLs. */
+function pickOpenverseImageUrl(item) {
+  const candidates = [item?.url, item?.thumbnail].filter(Boolean);
+  return candidates.find((u) => !/api\.openverse\.org/i.test(u)) || null;
+}
+
 /** Openverse — free CC image search (Google-like speed without CSE key) */
 export async function searchOpenverseImage(recipeName) {
   const q = cleanQuery(recipeName);
@@ -34,7 +40,7 @@ export async function searchOpenverseImage(recipeName) {
       const title = `${item.title || ""} ${item.foreign_landing_url || ""}`.toLowerCase();
       const hits = words.filter((w) => title.includes(w)).length;
       if (words.length && hits < Math.ceil(words.length / 2)) continue;
-      const imageUrl = item.thumbnail || item.url;
+      const imageUrl = pickOpenverseImageUrl(item);
       if (!imageUrl || /logo|icon|avatar|svg/i.test(imageUrl)) continue;
       return {
         source: "openverse",
@@ -45,7 +51,7 @@ export async function searchOpenverseImage(recipeName) {
     }
 
     const fallback = results.find((r) => {
-      const imageUrl = r.thumbnail || r.url;
+      const imageUrl = pickOpenverseImageUrl(r);
       if (!imageUrl || /logo|icon|avatar|svg/i.test(imageUrl)) return false;
       const title = `${r.title || ""} ${r.foreign_landing_url || ""}`.toLowerCase();
       const hits = words.filter((w) => title.includes(w)).length;
@@ -56,7 +62,7 @@ export async function searchOpenverseImage(recipeName) {
     const hits = words.filter((w) => title.includes(w)).length;
     return {
       source: "openverse",
-      imageUrl: fallback.thumbnail || fallback.url,
+      imageUrl: pickOpenverseImageUrl(fallback),
       title: fallback.title || q,
       score: 0.55 + hits * 0.05,
     };
