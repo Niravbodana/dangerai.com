@@ -131,6 +131,18 @@ export const REGISTERED_DATASETS = {
     apiCommercialUse: true,
     notes: "10-agent pipeline — original, verified, commercially safe content.",
   },
+  "rasoira-phase3": {
+    id: "rasoira-phase3",
+    name: "Rasoira Phase 3 Curated Popular Recipe Library",
+    sourceUrl: "internal://rasoira/phase3",
+    licenseSpdx: "RASOIRA-AI",
+    commercialUseAllowed: true,
+    attributionRequired: false,
+    allowedFields: ["recipe_full"],
+    robotsTxtRespected: true,
+    apiCommercialUse: true,
+    notes: "Curated popular Indian recipes — researched for demand, written as original content.",
+  },
   "rasoira-user-submitted": {
     id: "rasoira-user-submitted",
     name: "User-submitted recipes",

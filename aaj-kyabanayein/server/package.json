@@ -20,6 +20,8 @@
     "research:status": "node ../scripts/run-research.mjs status",
     "enterprise:run": "node ../scripts/run-enterprise-research.mjs run",
     "enterprise:status": "node ../scripts/run-enterprise-research.mjs status",
+    "phase3:plan": "node ../scripts/run-phase3-import.mjs plan",
+    "phase3:import": "node ../scripts/run-phase3-import.mjs import",
     "test": "vitest run",
     "test:watch": "vitest"
   },

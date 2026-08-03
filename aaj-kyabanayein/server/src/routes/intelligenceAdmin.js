@@ -40,6 +40,13 @@ import {
   seedIngredientDatabase,
   AGENT_NAMES,
 } from "../enterprise/index.js";
+import {
+  runPhase3Import,
+  buildImportPlan,
+  getPhase3Status,
+  getImportProgress,
+  getPopularRecipeCount,
+} from "../phase3/index.js";
 
 const router = Router();
 
@@ -61,6 +68,7 @@ router.get("/dashboard", (_req, res) => {
       agentStats: getAgentRunStats(),
       ingredients: getIngredientStats(),
     },
+    phase3: getPhase3Status(),
     review: getReviewStats(),
     jobs: getQueueStats(),
     search: getSearchIndexStats(),
@@ -173,6 +181,7 @@ router.post("/jobs/process-one", async (_req, res) => {
     pipeline_run: async (payload) => runRecipePipeline(payload),
     research_run: async (payload) => runResearchPipeline(payload),
     enterprise_run: async (payload) => runEnterpriseResearch(payload),
+    phase3_import: async (payload) => runPhase3Import(payload),
   });
   res.json({ success: true, result });
 });
@@ -283,6 +292,53 @@ router.post("/enterprise/run-sync", async (req, res) => {
       cuisines: req.body?.cuisines || null,
       dryRun: req.body?.dryRun === true,
       minQualityScore: req.body?.minQualityScore || 60,
+    });
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/phase3/plan", (_req, res) => {
+  res.json({ success: true, ...getPhase3Status() });
+});
+
+router.get("/phase3/progress", (req, res) => {
+  const db = ensureIntelligenceDb();
+  res.json({
+    success: true,
+    items: getImportProgress(db, {
+      status: req.query.status || null,
+      cuisine: req.query.cuisine || null,
+      limit: parseInt(req.query.limit) || 100,
+    }),
+  });
+});
+
+router.post("/phase3/import", (req, res) => {
+  const opts = {
+    phase: req.body?.phase || 1,
+    limit: req.body?.limit || 5,
+    offset: req.body?.offset || 0,
+    cuisines: req.body?.cuisines || null,
+    categories: req.body?.categories || null,
+    dryRun: req.body?.dryRun === true,
+    minQualityScore: req.body?.minQualityScore || 70,
+  };
+  const jobId = enqueueJob("phase3_import", opts);
+  res.json({ success: true, jobId, message: "Phase 3 import job enqueued", opts });
+});
+
+router.post("/phase3/import-sync", async (req, res) => {
+  try {
+    const report = await runPhase3Import({
+      phase: req.body?.phase || 1,
+      limit: req.body?.limit || 5,
+      offset: req.body?.offset || 0,
+      cuisines: req.body?.cuisines || null,
+      categories: req.body?.categories || null,
+      dryRun: req.body?.dryRun === true,
+      minQualityScore: req.body?.minQualityScore || 70,
     });
     res.json({ success: true, report });
   } catch (err) {

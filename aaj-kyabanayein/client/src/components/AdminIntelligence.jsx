@@ -129,23 +129,6 @@ export default function AdminIntelligence({ onMessage }) {
     }
   };
 
-  const runResearch = async (dryRun = false) => {
-    setLoading(true);
-    try {
-      const res = await intelFetch("/research/run-sync", {
-        method: "POST",
-        body: JSON.stringify({ limit: 5, dryRun }),
-      });
-      const r = res.report || {};
-      onMessage?.(`Research: ${r.generated || 0} generated, ${r.rejected || 0} rejected, ${r.queued || 0} queued`);
-      await load();
-    } catch (err) {
-      onMessage?.(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const runEnterprise = async (dryRun = false) => {
     setLoading(true);
     try {
@@ -155,6 +138,22 @@ export default function AdminIntelligence({ onMessage }) {
       });
       const r = res.report || {};
       onMessage?.(`Enterprise v2: ${r.generated || 0} generated, avg score ${r.avgQualityScore || 0}, ${r.rejected || 0} rejected`);
+      await load();
+    } catch (err) {
+      onMessage?.(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const runPhase3Import = async (dryRun = false) => {
+    setLoading(true);
+    try {
+      const res = await intelFetch("/phase3/import-sync", {
+        method: "POST",
+        body: JSON.stringify({ phase: 1, limit: 3, dryRun, minQualityScore: 70 }),
+      });
+      const r = res.report || {};
+      onMessage?.(`Phase 3: ${r.imported || 0} imported, ${r.rejected || 0} rejected (popular recipes only)`);
       await load();
     } catch (err) {
       onMessage?.(err.message);
@@ -196,6 +195,7 @@ export default function AdminIntelligence({ onMessage }) {
 
   const subTabs = [
     { id: "overview", label: "Overview" },
+    { id: "phase3", label: "Phase 3 Import" },
     { id: "agents", label: "Agents" },
     { id: "research", label: "Research" },
     { id: "review", label: "Review Queue" },
@@ -230,11 +230,11 @@ export default function AdminIntelligence({ onMessage }) {
         </button>
         <button
           type="button"
-          onClick={() => runEnterprise(false)}
+          onClick={() => runPhase3Import(false)}
           disabled={loading}
-          className="rounded-full bg-indigo-600 px-4 py-1.5 text-sm text-white disabled:opacity-50"
+          className="rounded-full bg-rose-600 px-4 py-1.5 text-sm text-white disabled:opacity-50"
         >
-          Run Enterprise v2 (3)
+          Phase 3 Import (3)
         </button>
       </div>
 
@@ -250,6 +250,60 @@ export default function AdminIntelligence({ onMessage }) {
           <StatCard label="Research Target" value={dash.research?.target?.toLocaleString?.() || "50,000"} />
           <StatCard label="Ingredients DB" value={dash.enterprise?.ingredients?.total} />
           <StatCard label="AI Agents" value={dash.enterprise?.agents?.length || 10} />
+          <StatCard label="Phase 3 Curated" value={dash.phase3?.progress?.total} />
+          <StatCard label="Phase 3 Imported" value={dash.phase3?.progress?.imported} />
+        </div>
+      )}
+
+      {subTab === "phase3" && dash?.phase3 && (
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            India's most complete recipe library — curated popular recipes only. No random generation. Phase 1 imports most-searched dishes first.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Curated Recipes" value={dash.phase3.progress?.total} />
+            <StatCard label="Phase 1 Ready" value={dash.phase3.phase1Ready} />
+            <StatCard label="Imported" value={dash.phase3.progress?.imported} />
+            <StatCard label="Total Target" value={dash.phase3.plan?.totalTarget?.toLocaleString?.()} />
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => runPhase3Import(true)} disabled={loading} className="rounded-lg bg-white/10 px-3 py-1.5 text-sm">Dry Run (3)</button>
+            <button type="button" onClick={() => runPhase3Import(false)} disabled={loading} className="rounded-lg bg-rose-600 px-3 py-1.5 text-sm text-white">Import Popular (3)</button>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-white/10">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-white/5 text-xs uppercase text-[var(--text-secondary)]">
+                <tr>
+                  <th className="p-2">Cuisine/Category</th>
+                  <th className="p-2">Target</th>
+                  <th className="p-2">Curated</th>
+                  <th className="p-2">Imported</th>
+                  <th className="p-2">Gap</th>
+                  <th className="p-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(dash.phase3.plan?.targets || []).slice(0, 15).map((t) => (
+                  <tr key={t.key} className="border-t border-white/5">
+                    <td className="p-2 capitalize">{t.key.replace(/-/g, " ")}</td>
+                    <td className="p-2">{t.target}</td>
+                    <td className="p-2">{t.curatedInManifest}</td>
+                    <td className="p-2">{t.imported}</td>
+                    <td className="p-2">{t.gap}</td>
+                    <td className="p-2 text-xs">{t.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rounded-xl border border-rose-500/20 bg-rose-950/10 p-3">
+            <div className="mb-2 text-sm font-semibold">Phase 1 Top Priority</div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {(dash.phase3.plan?.phase1Top20 || []).map((r) => (
+                <span key={r.id} className="rounded-full bg-white/10 px-2 py-0.5">{r.name} ({r.cuisine})</span>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

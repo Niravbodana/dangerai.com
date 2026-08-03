@@ -39,6 +39,9 @@
     "research:status": "node scripts/run-research.mjs status",
     "enterprise:run": "node scripts/run-enterprise-research.mjs run",
     "enterprise:status": "node scripts/run-enterprise-research.mjs status",
-    "enterprise:agents": "node scripts/run-enterprise-research.mjs agents"
+    "enterprise:agents": "node scripts/run-enterprise-research.mjs agents",
+    "phase3:plan": "node scripts/run-phase3-import.mjs plan",
+    "phase3:count": "node scripts/run-phase3-import.mjs count",
+    "phase3:import": "node scripts/run-phase3-import.mjs import"
   }
 }
