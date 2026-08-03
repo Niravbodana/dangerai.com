@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { invalidateSiteConfig } from "../context/SiteConfigContext.jsx";
+import { clearProvidersCache } from "../lib/groceryProviders.js";
 
 const API = "/api/admin";
-const KEY_STORAGE = "rasoira_admin_key";
+const TOKEN_STORAGE = "rasoira_admin_token";
 
 function adminFetch(path, options = {}) {
-  const key = localStorage.getItem(KEY_STORAGE) || "";
+  const token = localStorage.getItem(TOKEN_STORAGE) || "";
   return fetch(`${API}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "X-Admin-Key": key,
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...(options.headers || {}),
     },
   }).then(async (res) => {
     const data = await res.json().catch(() => ({}));
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem(TOKEN_STORAGE);
+    }
     if (!res.ok) throw new Error(data.message || "Request failed");
     return data;
   });
@@ -55,7 +59,8 @@ function Toggle({ label, checked, onChange }) {
 }
 
 export default function Admin() {
-  const [key, setKey] = useState(localStorage.getItem(KEY_STORAGE) || "");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState("dashboard");
   const [dashboard, setDashboard] = useState(null);
@@ -87,12 +92,38 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (key) load();
-  }, [key, load]);
+    if (localStorage.getItem(TOKEN_STORAGE)) load();
+  }, [load]);
 
-  const saveKey = () => {
-    localStorage.setItem(KEY_STORAGE, key.trim());
-    load();
+  const doLogin = async (e) => {
+    e?.preventDefault();
+    setLoading(true);
+    setMessage("");
+    try {
+      const res = await fetch(`${API}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Login failed");
+      localStorage.setItem(TOKEN_STORAGE, data.token);
+      setPassword("");
+      await load();
+    } catch (err) {
+      setAuthed(false);
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem(TOKEN_STORAGE);
+    setAuthed(false);
+    setDashboard(null);
+    setConfig(null);
+    setMessage("Logged out");
   };
 
   const runGuardian = async () => {
@@ -139,6 +170,7 @@ export default function Admin() {
       const res = await adminFetch("/config", { method: "PUT", body: JSON.stringify(config) });
       setConfig(res.config);
       invalidateSiteConfig();
+      clearProvidersCache();
       setMessage("Config saved — live on site");
     } catch (err) {
       setMessage(err.message);
@@ -202,22 +234,54 @@ export default function Admin() {
         </Link>
       </div>
 
-      <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <label className="text-xs font-medium text-[var(--text-secondary)]">Admin key (X-Admin-Key)</label>
-        <div className="mt-2 flex gap-2">
-          <input
-            type="password"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            placeholder="ADMIN_SECRET from server .env"
-            className="flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm"
-          />
-          <button type="button" onClick={saveKey} className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[#14110e]">
-            Connect
+      {!authed ? (
+        <form onSubmit={doLogin} className="mb-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6 max-w-md">
+          <h2 className="font-display text-xl text-[var(--text-primary)]">Admin Login</h2>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">Rasoira admin panel — alag login</p>
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-4 w-full rounded-xl bg-[var(--accent)] py-2.5 text-sm font-medium text-[#14110e] disabled:opacity-50"
+          >
+            {loading ? "Logging in…" : "Login"}
+          </button>
+          {message && <p className="mt-3 text-xs text-red-300">{message}</p>}
+        </form>
+      ) : (
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Logged in as <span className="text-[var(--text-primary)]">{username}</span>
+          </p>
+          <button type="button" onClick={logout} className="text-xs text-[var(--accent-soft)] hover:underline">
+            Logout
           </button>
         </div>
-        {message && <p className="mt-2 text-xs text-amber-300">{message}</p>}
-      </div>
+      )}
+
+      {message && authed && <p className="mb-4 text-xs text-amber-300">{message}</p>}
 
       {authed && config && (
         <>

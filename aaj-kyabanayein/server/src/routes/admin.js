@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { optionalAuth } from "../middleware/auth.js";
 import { adminMiddleware } from "../middleware/adminAuth.js";
+import { validateAdminLogin, signAdminToken } from "../services/adminSessionService.js";
 import { getGuardianReport, runQualityGuardian } from "../services/qualityGuardian.js";
 import { getBugGuardianReport, runBugGuardian } from "../services/bugGuardian.js";
 import { getAdminConfig, updateAdminConfig, getPublicConfig } from "../services/siteConfigService.js";
@@ -10,6 +11,16 @@ import { validateIngredientSemantics } from "../lib/ingredientProfiles.js";
 import { auditCachedImage, hasCachedImage } from "../services/recipeImageService.js";
 
 const router = Router();
+
+router.post("/login", async (req, res) => {
+  const { username, password } = req.body || {};
+  const ok = await validateAdminLogin(username, password);
+  if (!ok) {
+    return res.status(401).json({ success: false, message: "Galat username ya password" });
+  }
+  const token = signAdminToken(username.trim());
+  res.json({ success: true, token, message: "Admin login successful" });
+});
 
 router.use(optionalAuth);
 router.use(adminMiddleware);

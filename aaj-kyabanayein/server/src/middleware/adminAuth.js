@@ -1,4 +1,5 @@
 import { findUserById } from "../services/userStore.js";
+import { verifyAdminToken } from "../services/adminSessionService.js";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "rasoira-admin-dev-key";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
@@ -13,6 +14,18 @@ export function adminMiddleware(req, res, next) {
     return next();
   }
 
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const payload = verifyAdminToken(authHeader.slice(7));
+      req.isAdmin = true;
+      req.adminUsername = payload.username;
+      return next();
+    } catch {
+      /* fall through — may be a regular user token */
+    }
+  }
+
   if (req.userId) {
     const user = findUserById(req.userId);
     if (user && ADMIN_EMAILS.length && ADMIN_EMAILS.includes(user.email?.toLowerCase())) {
@@ -21,5 +34,5 @@ export function adminMiddleware(req, res, next) {
     }
   }
 
-  return res.status(403).json({ success: false, message: "Admin access required" });
+  return res.status(403).json({ success: false, message: "Admin login required" });
 }
