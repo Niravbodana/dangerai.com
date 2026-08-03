@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
-import { useSpeech } from "../hooks/useSpeech";
+import { useSpeech, getSpeechLangCode } from "../hooks/useSpeech";
 import { useVoiceCommands } from "../hooks/useVoiceCommands";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { useStepTimers } from "../hooks/useStepTimers";
@@ -118,7 +118,8 @@ export default function CookingMode() {
   const [checkedItems, setCheckedItems] = useState({});
   const [handsFree, setHandsFree] = useState(false);
   const [cookLang, setCookLang] = useState(() => localStorage.getItem("akb-cook-lang") || lang || "en");
-  const { speak, stop, speaking, supported } = useSpeech(cookLang === "hinglish" ? "hi" : cookLang);
+  const speechLang = getSpeechLangCode(cookLang);
+  const { speak, stop, speaking, supported } = useSpeech(speechLang);
   const { timers, setTimers, ensureTimer, toggleTimer, resetTimer } = useStepTimers();
   const savedSession = useMemo(() => loadCookSession(id), [id]);
   const stepTextRef = useRef("");
@@ -184,7 +185,7 @@ export default function CookingMode() {
         : current.title || current.titleHi
     : "";
 
-  const voiceLang = cookLang === "en" ? "en" : "hi";
+  const voiceLang = speechLang;
   const stepMinutes = estimateStepMinutes(stepText);
   const stepCountRef = useRef(0);
   stepCountRef.current = steps.length;
@@ -333,7 +334,7 @@ export default function CookingMode() {
             </div>
             <label className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} className="accent-[var(--accent)]" />
-              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
+              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;पुढे&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
             </label>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               {ui.ingredients}

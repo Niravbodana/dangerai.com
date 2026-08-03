@@ -230,12 +230,20 @@ function buildCuisinesList() {
     indian: { en: "Indian", hi: "भारतीय" },
     "north-indian": { en: "North Indian", hi: "उत्तर भारतीय" },
     "south-indian": { en: "South Indian", hi: "दक्षिण भारतीय" },
+    gujarati: { en: "Gujarati", hi: "गुजराती" },
+    maharashtrian: { en: "Maharashtrian", hi: "महाराष्ट्रियन" },
+    punjabi: { en: "Punjabi", hi: "पंजाबी" },
+    bengali: { en: "Bengali", hi: "बंगाली" },
+    kerala: { en: "Kerala", hi: "केरल" },
+    hyderabadi: { en: "Hyderabadi", hi: "हैदराबादी" },
+    mughlai: { en: "Mughlai", hi: "मुग़लई" },
     chinese: { en: "Chinese", hi: "चाइनीज़" },
     italian: { en: "Italian", hi: "इटालियन" },
     thai: { en: "Thai", hi: "थाई" },
     mexican: { en: "Mexican", hi: "मेक्सिकन" },
     continental: { en: "Continental", hi: "कॉन्टिनेंटल" },
     healthy: { en: "Healthy", hi: "स्वस्थ" },
+    japanese: { en: "Japanese", hi: "जापानी" },
   };
 
   const list = [{ id: "all", label: "All", labelHi: "सभी" }];

@@ -15,6 +15,8 @@
     "prefetch-images": "npm run prefetch-images --prefix server",
     "verify": "node scripts/verify-project.mjs",
     "audit-recipes": "node scripts/audit-recipe-quality.mjs",
+    "audit-customers": "node scripts/customer-audit-10k.mjs",
+    "merge-recipes": "node server/src/scripts/mergeNewRecipes.js",
     "generate-sitemap": "node scripts/generate-sitemap.mjs"
   }
 }

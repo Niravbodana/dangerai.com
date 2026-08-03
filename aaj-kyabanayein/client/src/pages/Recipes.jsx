@@ -5,6 +5,7 @@ import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeGridSkeleton from "../components/RecipeGridSkeleton";
 import RecipeSearch from "../components/RecipeSearch";
+import RecipeCategoryMenu from "../components/RecipeCategoryMenu";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
@@ -46,6 +47,7 @@ export default function Recipes() {
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [trendingSearches, setTrendingSearches] = useState([]);
+  const [maxCookTime, setMaxCookTime] = useState(null);
 
   useEffect(() => {
     fetchCategories().then((data) => {
@@ -96,6 +98,7 @@ export default function Recipes() {
     if (cuisine !== "all") params.cuisine = cuisine;
     if (category !== "all") params.category = category;
     if (debouncedSearch) params.search = debouncedSearch;
+    if (maxCookTime) params.maxCookTime = maxCookTime;
 
     fetchRecipes(params)
       .then((data) => {
@@ -104,19 +107,64 @@ export default function Recipes() {
         setTotalPages(data.totalPages);
       })
       .finally(() => setLoading(false));
-  }, [diet, cuisine, category, page, debouncedSearch, sortTrending]);
+  }, [diet, cuisine, category, page, debouncedSearch, sortTrending, maxCookTime]);
 
-  const setSort = (trending) => {
+  const handleMenuSelect = (id) => {
+    setPage(1);
+    if (id === "trending") {
+      setSort(true);
+      return;
+    }
+    setSearchParams({});
+    setSortTrendingLocal(false);
+    if (id === "all") {
+      setDiet("all");
+      setCategory("all");
+      setMaxCookTime(null);
+      return;
+    }
+    if (id === "veg" || id === "non-veg") {
+      setDiet(id);
+      setCategory("all");
+      setMaxCookTime(null);
+      return;
+    }
+    if (id === "quick") {
+      setDiet("all");
+      setCategory("all");
+      setMaxCookTime(20);
+      return;
+    }
+    setDiet("all");
+    setMaxCookTime(null);
+    setCategory(id);
+  };
+
+  const setSortTrendingLocal = (trending) => {
     setSearchParams(trending ? { sort: "trending" } : {});
     setPage(1);
   };
 
-  const activeFilters = [diet !== "all", cuisine !== "all", category !== "all"].filter(Boolean).length;
+  const setSort = (trending) => {
+    setSortTrendingLocal(trending);
+    if (trending) {
+      setCategory("all");
+      setMaxCookTime(null);
+    }
+  };
+
+  const handleCuisineSelect = (id) => {
+    setCuisine(id);
+    setPage(1);
+  };
+
+  const activeFilters = [diet !== "all", cuisine !== "all", category !== "all", !!maxCookTime].filter(Boolean).length;
 
   const clearFilters = () => {
     setDiet("all");
     setCuisine("all");
     setCategory("all");
+    setMaxCookTime(null);
     setSearch("");
     setPage(1);
     setSearchParams({});
@@ -173,6 +221,15 @@ export default function Recipes() {
             </div>
           </div>
         )}
+
+        <RecipeCategoryMenu
+          activeCategory={category}
+          activeCuisine={cuisine}
+          activeDiet={diet}
+          sortTrending={sortTrending}
+          onSelect={handleMenuSelect}
+          onCuisineSelect={handleCuisineSelect}
+        />
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <button
@@ -238,7 +295,7 @@ export default function Recipes() {
                     onClick={() => { setCategory(category === c.id ? "all" : c.id); setPage(1); }}
                     className={`filter-chip tap-smooth ${category === c.id ? "filter-chip--active" : ""}`}
                   >
-                    {c.label}
+                    {lang === "hi" ? c.labelHi || c.label : c.label}
                   </button>
                 ))}
               </div>
@@ -253,7 +310,7 @@ export default function Recipes() {
                     onClick={() => { setCuisine(c.id); setPage(1); }}
                     className={`filter-chip tap-smooth ${cuisine === c.id ? "filter-chip--active" : ""}`}
                   >
-                    {c.label}
+                    {lang === "hi" ? c.labelHi || c.label : c.label}
                   </button>
                 ))}
               </div>

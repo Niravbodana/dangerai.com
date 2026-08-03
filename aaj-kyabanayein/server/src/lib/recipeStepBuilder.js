@@ -357,5 +357,25 @@ export function buildIngredientAwareSteps(recipe, ingredients, existingSteps = [
     stepsHi = buildHiSteps(recipe, ingredients);
   }
 
+  steps = ensureAllIngredientsListed(steps, ingredients, "en");
+  stepsHi = ensureAllIngredientsListed(stepsHi, ingredients, "hi");
+
   return { steps, stepsHi };
+}
+
+function ensureAllIngredientsListed(steps, ingredients, lang) {
+  if (!steps?.length || !ingredients?.length) return steps;
+  const coverage = ingredientCoverage(steps, ingredients);
+  if (coverage >= 0.5) return steps;
+
+  const allNames = joinNames(ingredients.slice(0, 12), lang);
+  const prepLine =
+    lang === "hi"
+      ? `सारी सामग्री तैयार करें: ${allNames}।`
+      : `Mise en place — gather all ingredients: ${allNames}.`;
+
+  if (steps[0]?.startsWith("Keep ready:") || steps[0]?.startsWith("Mise en place") || steps[0]?.startsWith("सारी सामग्री")) {
+    return [prepLine, ...steps.slice(1)].slice(0, MAX_STEPS);
+  }
+  return [prepLine, ...steps].slice(0, MAX_STEPS);
 }

@@ -6,37 +6,17 @@ import HotMakings from "../components/HotMakings";
 import CuisineExplorer from "../components/CuisineExplorer";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import MoodTonight from "../components/MoodTonight";
-import QuickMeals from "../components/QuickMeals";
 import RecentCooksStrip from "../components/RecentCooksStrip";
+import HomeTrendingGallery from "../components/HomeTrendingGallery";
 import { getStreak } from "../lib/streak";
-import { getHomeRecommendations } from "../lib/growth";
-import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry } from "../components/Icons";
-
-const GALLERY = [
-  { name: "Ghar ka Thali", img: "/home/gallery-thali.png", tag: "Comfort food" },
-  { name: "Masala Dosa", img: "/home/gallery-dosa.png", tag: "South Indian" },
-  { name: "Veg Biryani", img: "/home/gallery-biryani.png", tag: "Special" },
-  { name: "Paneer Butter Masala", img: "/home/gallery-paneer.png", tag: "Restaurant style" },
-  { name: "Poha & Chai", img: "/home/gallery-poha.png", tag: "Breakfast" },
-  { name: "Chole Bhature", img: "/home/gallery-chole.png", tag: "Weekend treat" },
-];
-
-const FEATURES = [
-  { to: "/today", icon: IconChef, title: "Aaj Kya Banaye?", desc: "Roz 4 meals — breakfast se dinner." },
-  { to: "/pantry", icon: IconPantry, title: "Ghar mein kya pada?", desc: "Jo ingredients hain, usi se recipe." },
-  { to: "/recipes", icon: IconBook, title: "Sab Recipes", desc: "Search karo, photo dekho, pakao." },
-  { to: "/collections", icon: IconCalendar, title: "Collections", desc: "Sunday lunch, sweets, budget meals." },
-  { to: "/favorites", icon: IconHeart, title: "Favourites", desc: "Pasand save karo, streak banao." },
-];
+import { IconArrowRight } from "../components/Icons";
 
 export default function Home() {
   const { openLogin, openSignup } = useAuthModal();
   const streak = getStreak();
-  const { recentRecipeIds, taste } = getHomeRecommendations();
 
   return (
     <div className="home-page min-h-screen">
-      {/* Hero: brand + line + search + CTA + small cooking woman */}
       <section className="home-hero relative overflow-hidden">
         <div className="hero-glow" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 lg:py-20">
@@ -66,7 +46,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Small cooking woman — restored */}
           <div className="home-hero__visual relative mx-auto w-full max-w-[280px] sm:max-w-[320px] lg:max-w-none">
             <div className="home-hero__glow" />
             <img
@@ -78,101 +57,25 @@ export default function Home() {
               decoding="async"
             />
             <div className="home-float-card home-float-card--stats !left-2 !bottom-4 sm:!left-0">
-              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">900+</p>
+              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">920+</p>
               <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Recipes</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Simple 3 steps — easy to understand */}
-      <section className="border-t border-white/[0.06] py-10 sm:py-14">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center font-display text-2xl text-[var(--text-primary)] sm:text-3xl">Bas 3 simple steps</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              { n: "1", title: "Search / Aaj Kya Banaye", desc: "Dish naam likho ya aaj ka plan kholo" },
-              { n: "2", title: "Ingredients check", desc: "Poori list notes jaisi — quantity ke saath" },
-              { n: "3", title: "Cook with voice", desc: "Start Cooking → 🔊 suno → Next dabao" },
-            ].map((s) => (
-              <div key={s.n} className="recipe-card p-5 text-center sm:text-left">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-bold text-[#14110e]">{s.n}</span>
-                <h3 className="mt-3 font-semibold text-[var(--text-primary)]">{s.title}</h3>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {recentRecipeIds.length > 0 && (
-        <section className="border-t border-white/[0.06] py-8">
-          <div className="mx-auto max-w-6xl px-4">
-            <h2 className="font-display text-xl text-[var(--text-primary)]">For you</h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Based on your recent cooking{taste.diet ? ` · ${taste.diet}` : ""}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {recentRecipeIds.map((id) => (
-                <Link key={id} to={`/recipe/${id}`} className="premium-btn-outline px-4 py-2 text-sm capitalize">
-                  {id.replace(/-/g, " ")}
-                </Link>
-              ))}
-              <Link to="/today" className="premium-btn px-4 py-2 text-sm">Aaj Kya Banaye</Link>
-            </div>
-          </div>
-        </section>
-      )}
-
       <MoodTonight />
-      <QuickMeals />
       <HotMakings />
       <RecentCooksStrip />
 
       <section className="home-section border-t border-white/[0.06]">
         <div className="mx-auto max-w-6xl px-4">
-          <DailyHealthyPlan deferMs={900} />
+          <DailyHealthyPlan deferMs={600} />
         </div>
       </section>
 
-      <section className="home-section border-t border-white/[0.06]">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="font-display text-2xl text-[var(--text-primary)] sm:text-3xl">Ghar ka swad</h2>
-        </div>
-        <div className="home-gallery-scroll mt-8">
-          <div className="home-gallery-track">
-            {[...GALLERY, ...GALLERY].map((food, i) => (
-              <Link key={`${food.name}-${i}`} to="/recipes" className="home-gallery-card group">
-                <img src={food.img} alt={`${food.name} — ${food.tag} Indian recipe`} loading="lazy" />
-                <div className="home-gallery-card__overlay">
-                  <span className="home-gallery-card__tag">{food.tag}</span>
-                  <p className="font-semibold text-white">{food.name}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
+      <HomeTrendingGallery />
       <CuisineExplorer />
-
-      <section className="home-section border-t border-white/[0.06]">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="font-display text-2xl text-[var(--text-primary)]">Sab ek jagah</h2>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <Link key={f.to} to={f.to} className="home-feature group">
-                  <div className="home-feature__icon"><Icon className="h-5 w-5" /></div>
-                  <h3 className="mt-3 font-semibold text-[var(--text-primary)]">{f.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{f.desc}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       <section className="home-section pb-20">
         <div className="mx-auto max-w-6xl px-4">
