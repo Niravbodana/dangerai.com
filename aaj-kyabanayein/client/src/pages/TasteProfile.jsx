@@ -13,6 +13,7 @@ import {
   saveTasteProfile,
 } from "../lib/tasteProfile";
 import { track } from "../lib/analytics";
+import { INDIAN_STATES, stateLabel } from "../data/indianStates";
 
 const CUISINES = [
   "north-indian", "south-indian", "gujarati", "maharashtrian",
@@ -94,6 +95,36 @@ export default function TasteProfilePage() {
                 }`}
               >
                 {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{/* home state */}Home state / राज्य</p>
+          <p className="mb-3 text-xs text-[var(--text-secondary)]">Aaj Kya Banaye mein aapke state ki recipes priority milegi</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => update({ homeState: "" })}
+              className={`rounded-full px-3 py-1.5 text-xs ${
+                !profile.homeState ? "bg-[var(--accent)] text-[#14110e]" : "border border-white/10 text-[var(--text-secondary)]"
+              }`}
+            >
+              Any
+            </button>
+            {INDIAN_STATES.map((st) => (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => update({ homeState: st.id })}
+                className={`rounded-full px-3 py-1.5 text-xs ${
+                  profile.homeState === st.id
+                    ? "bg-[var(--accent)]/20 text-[var(--accent-soft)]"
+                    : "border border-white/10 text-[var(--text-secondary)]"
+                }`}
+              >
+                {stateLabel(st, "hi")}
               </button>
             ))}
           </div>

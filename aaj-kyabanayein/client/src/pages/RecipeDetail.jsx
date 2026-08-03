@@ -16,7 +16,9 @@ import { track } from "../lib/analytics";
 import { canSaveOfflinePack, saveOfflinePack } from "../lib/offlinePacks";
 import usePageSeo from "../hooks/usePageSeo";
 import { breadcrumbSchema, recipeSchema } from "../lib/seo";
+import { getRecipeNutrition } from "../lib/nutrition";
 import { useHideMobileNav } from "../hooks/useHideMobileNav";
+import { trackRecipeView } from "../lib/recentRecipes";
 import NutritionSummary from "../components/NutritionSummary";
 import { copyIngredients, printRecipe } from "../lib/recipeShare";
 import { getRecipeVideoId } from "../lib/recipeVideo";
@@ -89,6 +91,7 @@ export default function RecipeDetail() {
     setLoadingMedia(true);
     setIsFav(isFavorite(id));
     track("recipe_open", { id });
+    trackRecipeView(id);
 
     // FAST: show base recipe immediately
     fetchRecipe(id)
@@ -420,18 +423,18 @@ export default function RecipeDetail() {
 
           {/* Reviews */}
           <div className="recipe-card mt-4 p-6 sm:p-8">
-            <h2 className="detail-section-title">Reviews & Ratings</h2>
+            <h2 className="detail-section-title">{t("reviewsTitle")}</h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Favoriting counts as a 5-star rating too.
+              {t("reviewsHint")}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
               <StarRating value={displayRating} interactive onRate={handleQuickRate} />
               <span className="text-sm text-[var(--text-secondary)]">
                 {userRating
-                  ? `You rated ${userRating}★`
+                  ? `${t("youRated")} ${userRating}★`
                   : rating.count > 0
-                    ? `${rating.average} / 5 · ${rating.count} ratings`
-                    : "Tap stars to rate"}
+                    ? `${rating.average} / 5 · ${rating.count} ${t("ratings")}`
+                    : t("tapToRate")}
               </span>
             </div>
             <div className="mt-6">
@@ -439,12 +442,12 @@ export default function RecipeDetail() {
                 onSubmit={handleReview}
                 loading={submitting}
                 initialScore={userRating}
-                submitLabel="Submit Review"
+                submitLabel={t("submitReview")}
               />
             </div>
             {reviews.length > 0 && (
               <div className="mt-8 space-y-4 border-t border-white/10 pt-6">
-                <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent reviews</h3>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t("recentReviews")}</h3>
                 {reviews.map((r, i) => (
                   <div key={i} className="rounded-xl bg-white/5 p-4">
                   <div className="flex items-center gap-2">

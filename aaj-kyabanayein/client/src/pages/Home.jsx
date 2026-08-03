@@ -7,6 +7,7 @@ import CuisineExplorer from "../components/CuisineExplorer";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import MoodTonight from "../components/MoodTonight";
 import QuickMeals from "../components/QuickMeals";
+import RecentCooksStrip from "../components/RecentCooksStrip";
 import { getStreak } from "../lib/streak";
 import { getHomeRecommendations } from "../lib/growth";
 import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry } from "../components/Icons";
@@ -126,6 +127,7 @@ export default function Home() {
       <MoodTonight />
       <QuickMeals />
       <HotMakings />
+      <RecentCooksStrip />
 
       <section className="home-section border-t border-white/[0.06]">
         <div className="mx-auto max-w-6xl px-4">

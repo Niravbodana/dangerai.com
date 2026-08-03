@@ -8,6 +8,7 @@ import RecipeSearch from "../components/RecipeSearch";
 import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
+import { loadRecipeFilters, saveRecipeFilters } from "../lib/recipeFilters";
 import useDebounce from "../hooks/useDebounce";
 
 export default function Recipes() {
@@ -19,9 +20,10 @@ export default function Recipes() {
   const [cuisines, setCuisines] = useState([]);
   const [categories, setCategories] = useState([]);
   const [total, setTotal] = useState(0);
-  const [diet, setDiet] = useState("all");
-  const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || "all");
-  const [category, setCategory] = useState("all");
+  const saved = loadRecipeFilters();
+  const [diet, setDiet] = useState(saved.diet || "all");
+  const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || saved.cuisine || "all");
+  const [category, setCategory] = useState(saved.category || "all");
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
@@ -40,6 +42,10 @@ export default function Recipes() {
       setTrendingSearches(data.trendingSearches || []);
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    saveRecipeFilters({ diet, cuisine, category });
+  }, [diet, cuisine, category]);
 
   useEffect(() => {
     const urlCuisine = searchParams.get("cuisine");

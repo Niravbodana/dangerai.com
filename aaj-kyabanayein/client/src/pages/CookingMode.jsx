@@ -19,6 +19,8 @@ import { getStreak } from "../lib/streak";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
 import { useTouchDevice } from "../hooks/useTouchDevice";
+import { useSwipe } from "../hooks/useSwipe";
+import { trackRecipeCooked } from "../lib/recentRecipes";
 
 function VoiceButton({ text, lang, label, onSpeak }) {
   const { speak, stop, speaking, supported } = useSpeech(lang);
@@ -120,6 +122,7 @@ export default function CookingMode() {
   const { timers, setTimers, ensureTimer, toggleTimer, resetTimer } = useStepTimers();
   const savedSession = useMemo(() => loadCookSession(id), [id]);
   const stepTextRef = useRef("");
+  const stepCardRef = useRef(null);
 
   useWakeLock(started);
 
@@ -200,6 +203,12 @@ export default function CookingMode() {
     setStepIndex((i) => Math.max(0, i - 1));
   }, [stop]);
 
+  useSwipe(stepCardRef, {
+    enabled: started && isTouch,
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrevious,
+  });
+
   const repeatStep = useCallback(() => {
     if (stepTextRef.current) {
       speak(stepTextRef.current);
@@ -230,6 +239,7 @@ export default function CookingMode() {
   const finishCook = () => {
     clearCookSession(id);
     recordCookFinish(id);
+    trackRecipeCooked(id);
     track("cook_finish", { id });
     const streak = getStreak();
     if (shouldShowAccountWall(!!user, streak.totalCooks)) {
@@ -378,7 +388,7 @@ export default function CookingMode() {
           {handsFree && <span className="text-[10px] text-[var(--accent-soft)]">🎤 Listening</span>}
         </div>
         <p className="mx-auto mt-1 max-w-2xl text-center text-[10px] text-[var(--text-secondary)]">
-          {isTouch ? ui.mobileHint : ui.keyboardHint}
+          {isTouch ? `${ui.mobileHint} · ${ui.swipeHint}` : ui.keyboardHint}
         </p>
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((Math.min(stepIndex + 1, steps.length)) / steps.length) * 100}%` }} />
@@ -387,7 +397,7 @@ export default function CookingMode() {
       </div>
 
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 pb-32">
-        <div className="glass-strong rounded-2xl p-6 text-center sm:p-10">
+        <div ref={stepCardRef} className="glass-strong rounded-2xl p-6 text-center sm:p-10">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-xl font-bold text-[#14110e]">
             {isDone ? "☺️" : stepIndex + 1}
           </div>
