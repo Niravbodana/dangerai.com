@@ -14,6 +14,8 @@ import { logger } from "./lib/logger.js";
 import { initSentry, captureException } from "./lib/sentry.js";
 import { getTrendingRecipes } from "./services/trendingService.js";
 import { warmTrendingRecipeImages } from "./services/recipeImageService.js";
+import { ensureDatabase } from "./db/ensureDatabase.js";
+import { initRecipeCatalog } from "./data/recipes.js";
 
 initSentry();
 
@@ -34,6 +36,8 @@ function loadEnv() {
 }
 
 loadEnv();
+ensureDatabase();
+initRecipeCatalog(true);
 loadCustomMealsOnStartup();
 
 const app = express();

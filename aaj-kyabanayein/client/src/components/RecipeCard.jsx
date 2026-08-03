@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
   const { t, lang } = useLanguage();
   const { user } = useAuth();
   const { openSignup } = useAuthModal();
+  const prefetched = useRef(false);
   const [fav, setFav] = useState(isFavorite(recipe.id));
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
@@ -37,9 +38,17 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
     onFavoriteChange?.();
   };
 
+  const prefetchRecipe = () => {
+    if (prefetched.current) return;
+    prefetched.current = true;
+    fetch(`/api/recipes/${recipe.id}`, { priority: "low" }).catch(() => {});
+  };
+
   return (
     <Link
       to={`/recipe/${recipe.id}`}
+      onTouchStart={prefetchRecipe}
+      onMouseEnter={prefetchRecipe}
       className={`recipe-card catalog-card group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#1a1612]">

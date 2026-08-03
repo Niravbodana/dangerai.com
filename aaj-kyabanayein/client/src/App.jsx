@@ -12,6 +12,7 @@ import GlobalSeo from './components/GlobalSeo';
 import AuthModal from './components/AuthModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import OfflineBanner from './components/OfflineBanner';
+import FirstVisitCoach from './components/FirstVisitCoach';
 import Home from './pages/Home';
 
 const Recipes = lazy(() => import('./pages/Recipes'));
@@ -92,9 +93,12 @@ function AppContent() {
           </Routes>
         </Suspense>
       </main>
-      <Footer />
+      <div className="hidden md:block">
+        <Footer />
+      </div>
       <MobileNav />
       <AuthModal />
+      <FirstVisitCoach />
     </div>
   );
 }

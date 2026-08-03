@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
+import { getDirectThumbOverride, getImageSearchOverride } from "../data/recipeImageOverrides.js";
 import { isGoogleSearchConfigured, searchGoogleImage } from "./googleSearchService.js";
 import { fetchRecipeFromAI, isAIConfigured } from "./aiRecipeService.js";
 import {
@@ -32,7 +33,26 @@ const NOISE_WORDS = new Set([
   "north", "south", "indian", "veg", "non", "style",
 ]);
 
-const WRONG_DISHES = ["dosa", "pizza", "burger", "sushi", "taco", "sandwich"];
+const WRONG_DISHES = [
+  "dosa", "pizza", "burger", "sushi", "taco", "sandwich",
+  "airplane", "aircraft", "plane", "helicopter", "car", "train",
+];
+
+const RAW_INGREDIENT_PATTERNS = [
+  /types of lentil/i,
+  /raw lentil/i,
+  /fresh cheese/i,
+  /paneer.*fresh/i,
+  /cheese_fresh/i,
+  /lentil\.png/i,
+  /uncooked/i,
+  /ingredient/i,
+  /flattened rice$/i,
+];
+
+const GENERIC_TITLES = new Set([
+  "dal", "paneer", "rice", "curry", "lentil", "cheese", "bread", "food", "indian cuisine",
+]);
 
 const inFlight = new Map();
 const aiHints = new Map();
@@ -88,8 +108,10 @@ function cleanSearchTerms(name = "") {
   return words.join(" ") || name.trim();
 }
 
-function extractCoreDishName(name = "") {
-  const curated = getCuratedWikiTitle({ name });
+function extractCoreDishName(name = "", recipe = null) {
+  const override = recipe ? getImageSearchOverride(recipe) : null;
+  if (override) return override;
+  const curated = getCuratedWikiTitle(recipe || { name });
   if (curated) return curated;
   const clean = cleanSearchTerms(name);
   const words = clean.split(/\s+/).filter(Boolean);
@@ -101,14 +123,28 @@ function recipeWantsDish(name = "", dish) {
   return new RegExp(`\\b${dish}\\b`, "i").test(name);
 }
 
-function scoreTitle(title, name) {
+function isRawOrWrongImage(title = "", url = "", recipeName = "") {
+  const blob = `${title} ${url}`.toLowerCase();
+  if (RAW_INGREDIENT_PATTERNS.some((re) => re.test(blob))) return true;
+  const nameWords = (recipeName || "").toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+  const t = (title || "").trim().toLowerCase();
+  if (GENERIC_TITLES.has(t) && nameWords.length >= 2) return true;
+  for (const dish of WRONG_DISHES) {
+    if (blob.includes(dish) && !recipeWantsDish(recipeName, dish)) return true;
+  }
+  return false;
+}
+
+function scoreTitle(title, name, recipe = null) {
   const t = (title || "").toLowerCase();
-  const core = extractCoreDishName(name).toLowerCase();
+  const core = extractCoreDishName(name, recipe).toLowerCase();
   const words = core.split(/\s+/).filter((w) => w.length > 2);
   if (!words.length) return 0.3;
+  if (isRawOrWrongImage(title, "", name)) return 0;
   const hits = words.filter((w) => t.includes(w)).length;
   let score = hits / words.length;
   if (t.includes(core)) score += 0.4;
+  if (GENERIC_TITLES.has(t.trim()) && words.length >= 2) score -= 0.8;
   for (const dish of WRONG_DISHES) {
     if (t.includes(dish) && !recipeWantsDish(name, dish)) score -= 0.9;
   }
@@ -146,14 +182,19 @@ function withTimeout(promise, ms) {
  */
 async function findImageUrl(recipe) {
   const name = recipe.name || recipe.id || "food";
-  const core = extractCoreDishName(name) || cleanSearchTerms(name) || name;
+  const core = extractCoreDishName(name, recipe) || cleanSearchTerms(name) || name;
+
+  const directThumb = getDirectThumbOverride(recipe);
+  if (directThumb) {
+    return { title: name, imageUrl: directThumb, score: 0.98, source: "curated-thumb" };
+  }
 
   // Instant: baked-in thumb from TheMealDB build
   if (recipe.thumbUrl) {
     return { title: name, imageUrl: recipe.thumbUrl, score: 0.95, source: "thumb-embedded" };
   }
 
-  const curatedTitle = getCuratedWikiTitle(recipe);
+  const curatedTitle = getImageSearchOverride(recipe) ? null : getCuratedWikiTitle(recipe);
 
   // Kick Groq hints in parallel (don't block other sources)
   const hintsPromise = getAIImageHints(recipe).catch(() => null);
@@ -182,9 +223,18 @@ async function findImageUrl(recipe) {
     .filter((c) => c?.imageUrl)
     .map((c) => ({
       ...c,
-      score: (c.score || 0.5) + scoreTitle(c.title || "", name) * 0.3,
+      score: (c.score || 0.5) + scoreTitle(c.title || "", name, recipe) * 0.3,
     }))
-    .filter((c) => scoreTitle(c.title || "", name) >= 0.25 || c.source === "thumb-embedded");
+    .filter((c) => {
+      const titleScore = scoreTitle(c.title || "", name, recipe);
+      if (c.source === "thumb-embedded" || c.source === "curated-thumb") return true;
+      if (titleScore < 0.45) return false;
+      if (isRawOrWrongImage(c.title || "", c.imageUrl || "", name)) return false;
+      for (const dish of WRONG_DISHES) {
+        if ((c.title || "").toLowerCase().includes(dish) && !recipeWantsDish(name, dish)) return false;
+      }
+      return true;
+    });
 
   candidates.sort((a, b) => (b.score || 0) - (a.score || 0));
   if (candidates[0]) return candidates[0];
@@ -220,13 +270,18 @@ async function downloadImage(url, dest) {
   return buf;
 }
 
-export async function ensureRecipeImage(recipe) {
+export async function ensureRecipeImage(recipe, { force = false } = {}) {
   ensureDirs();
   const id = recipe.id;
   if (!id) throw new Error("Recipe id required");
 
   const cached = cachePath(id);
-  if (fs.existsSync(cached)) return cached;
+  if (!force && fs.existsSync(cached)) return cached;
+
+  if (force && fs.existsSync(cached)) {
+    fs.unlinkSync(cached);
+    if (fs.existsSync(metaPath(id))) fs.unlinkSync(metaPath(id));
+  }
 
   if (inFlight.has(id)) return inFlight.get(id);
 
@@ -262,6 +317,35 @@ export async function ensureRecipeImage(recipe) {
 export function readCachedImage(recipeId) {
   const file = cachePath(recipeId);
   return fs.existsSync(file) ? file : null;
+}
+
+export function invalidateCachedImage(recipeId) {
+  const file = cachePath(recipeId);
+  const meta = metaPath(recipeId);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+  if (fs.existsSync(meta)) fs.unlinkSync(meta);
+}
+
+export function readImageMeta(recipeId) {
+  const meta = metaPath(recipeId);
+  if (!fs.existsSync(meta)) return null;
+  return JSON.parse(fs.readFileSync(meta, "utf-8"));
+}
+
+export function auditCachedImage(recipe) {
+  const meta = readImageMeta(recipe.id);
+  if (!meta) return { ok: false, issue: "missing-cache" };
+  const titleScore = scoreTitle(meta.title || "", recipe.name || "");
+  if (isRawOrWrongImage(meta.title || "", meta.originalUrl || "", recipe.name || "")) {
+    return { ok: false, issue: "raw-or-wrong", meta, titleScore };
+  }
+  if (titleScore < 0.45) return { ok: false, issue: "low-score", meta, titleScore };
+  const diet = recipe.diet || [];
+  const isVeg = diet.includes("veg") && !diet.includes("non-veg");
+  if (isVeg && /chicken|mutton|fish|meat|egg|prawn/i.test(`${meta.title} ${meta.originalUrl}`)) {
+    return { ok: false, issue: "veg-nonveg-mismatch", meta, titleScore };
+  }
+  return { ok: true, meta, titleScore };
 }
 
 export function warmRecipeImage(recipe) {
