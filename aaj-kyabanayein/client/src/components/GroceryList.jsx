@@ -10,6 +10,7 @@ import {
   getDeliveryProviders,
   openProviderSearch,
   fetchProviderCompare,
+  isProviderComingSoon,
 } from "../lib/groceryProviders";
 import { track } from "../lib/analytics";
 
@@ -31,9 +32,26 @@ export default function GroceryList({ items, persist = true }) {
   const providers = getGroceryProviders();
   const deliveryProviders = getDeliveryProviders();
 
+  const [shopMsg, setShopMsg] = useState("");
+
+  const handleProvider = (p, query) => {
+    const res = openProviderSearch(p.id, query);
+    if (res?.comingSoon) {
+      setShopMsg(`${p.name} — Coming Soon!`);
+      setTimeout(() => setShopMsg(""), 3500);
+      return;
+    }
+    track(p.type === "delivery" ? "delivery_provider" : "grocery_provider", { provider: p.id });
+  };
+
   const compareItem = async (itemName) => {
     const links = await fetchProviderCompare(itemName);
-    if (links[0]?.url) window.open(links[0].url, "_blank", "noopener,noreferrer");
+    const open = links.find((l) => !l.comingSoon && !isProviderComingSoon(l.id));
+    if (open?.url) window.open(open.url, "_blank", "noopener,noreferrer");
+    else {
+      setShopMsg("Grocery apps — Coming Soon! WhatsApp list use karein.");
+      setTimeout(() => setShopMsg(""), 3500);
+    }
   };
 
   const itemKey = (item) => item.id || item.name;
@@ -59,6 +77,10 @@ export default function GroceryList({ items, persist = true }) {
         <span className="text-sm text-[var(--text-secondary)]">{done}/{total}</span>
       </div>
 
+      {shopMsg && (
+        <p className="mb-3 text-xs text-[var(--accent-soft)]">{shopMsg}</p>
+      )}
+
       {items.length === 0 ? (
         <p className="text-sm text-[var(--text-secondary)]">Pehle meal plan generate karein.</p>
       ) : (
@@ -71,20 +93,20 @@ export default function GroceryList({ items, persist = true }) {
               <button
                 key={p.id}
                 type="button"
-                onClick={() => { openProviderSearch(p.id, items[0]?.name || "groceries"); track("grocery_provider", { provider: p.id }); }}
+                onClick={() => handleProvider(p, items[0]?.name || "groceries")}
                 className="premium-btn-outline px-3 py-1.5 text-xs"
               >
-                {p.name}
+                {p.name}{p.comingSoon || isProviderComingSoon(p.id) ? " · Soon" : ""}
               </button>
             ))}
             {deliveryProviders.map((p) => (
               <button
                 key={p.id}
                 type="button"
-                onClick={() => { openProviderSearch(p.id, "indian food delivery"); track("delivery_provider", { provider: p.id }); }}
+                onClick={() => handleProvider(p, "indian food delivery")}
                 className="premium-btn-outline px-3 py-1.5 text-xs"
               >
-                {p.name}
+                {p.name}{p.comingSoon ? " · Soon" : ""}
               </button>
             ))}
           </div>

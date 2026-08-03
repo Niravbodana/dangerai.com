@@ -166,7 +166,7 @@ export default function CookingMode() {
 
   const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
     ? recipe.stepsHi
-    : recipe?.steps || [];
+    : (recipe?.steps?.length ? recipe.steps : recipe?.stepsHi || []);
   const steps = recipe?.cookingFlow?.length ? recipe.cookingFlow : instructionSteps.map((text, i) => ({
     id: i + 1,
     type: i === instructionSteps.length - 1 ? "done" : "cook",

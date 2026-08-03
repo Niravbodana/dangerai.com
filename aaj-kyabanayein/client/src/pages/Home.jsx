@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuthModal } from "../context/AuthModalContext";
+import { useAuth } from "../context/AuthContext";
 import BrandLogo from "../components/BrandLogo";
 import RecipeSearch from "../components/RecipeSearch";
 import HotMakings from "../components/HotMakings";
@@ -13,6 +14,7 @@ import { IconArrowRight } from "../components/Icons";
 
 export default function Home() {
   const { openLogin, openSignup } = useAuthModal();
+  const { user } = useAuth();
   const streak = getStreak();
 
   return (
@@ -49,16 +51,20 @@ export default function Home() {
           <div className="home-hero__visual relative mx-auto w-full max-w-[280px] sm:max-w-[320px] lg:max-w-none">
             <div className="home-hero__glow" />
             <img
-              src="/home/hero-homemaker.png"
-              alt="Indian homemaker cooking with Rasoira"
-              className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-auto rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
+              src="/api/recipes/image/shahi-paneer"
+              alt="Indian thali — Rasoira recipes"
+              className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-full max-w-sm rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
               loading="eager"
               fetchPriority="high"
               decoding="async"
+              onError={(e) => {
+                e.currentTarget.src = "/brand/rasoira-logo.png";
+                e.currentTarget.className = "relative z-[1] mx-auto max-h-[200px] w-auto opacity-90";
+              }}
             />
             <div className="home-float-card home-float-card--stats !left-2 !bottom-4 sm:!left-0">
-              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">920+</p>
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Recipes</p>
+              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">1000+</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Verified Recipes</p>
             </div>
           </div>
         </div>
@@ -85,8 +91,17 @@ export default function Home() {
               Free recipes + cooking. Plus se unlimited daily plans.
             </p>
             <div className="relative mt-6 flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={openSignup} className="premium-btn px-8 py-3 text-sm">Join free</button>
-              <button type="button" onClick={openLogin} className="premium-btn-outline px-8 py-3 text-sm">Login</button>
+              {user ? (
+                <>
+                  <Link to="/today" className="premium-btn px-8 py-3 text-sm">Aaj Kya Banaye</Link>
+                  <Link to="/planner" className="premium-btn-outline px-8 py-3 text-sm">Meal Plan</Link>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={openSignup} className="premium-btn px-8 py-3 text-sm">Join free</button>
+                  <button type="button" onClick={openLogin} className="premium-btn-outline px-8 py-3 text-sm">Login</button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -20,6 +20,8 @@ export const DIRECT_THUMB_OVERRIDES = {
   "tamil-pongal-venn": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Ven_pongal_with_sambar_and_chutney.jpg/330px-Ven_pongal_with_sambar_and_chutney.jpg",
   "sooji-halwa": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Orient_sweets_%28special_halva%29_Samarkand%2C_Siyab.jpg/330px-Orient_sweets_%28special_halva%29_Samarkand%2C_Siyab.jpg",
   "sindhi-kadhi": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Kadhi_Pakora.jpg/330px-Kadhi_Pakora.jpg",
+  "avial": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Aviyal%2CKerala_cuisine.jpg/330px-Aviyal%2CKerala_cuisine.jpg",
+  "kerala-avial": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Aviyal%2CKerala_cuisine.jpg/330px-Aviyal%2CKerala_cuisine.jpg",
 };
 
 export const IMAGE_SEARCH_OVERRIDES = {

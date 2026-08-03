@@ -1,12 +1,16 @@
 /**
  * Grocery & food delivery provider deep-links.
+ * Instamart, Blinkit, Zepto are coming soon — no external redirect yet.
  */
+
+export const COMING_SOON_PROVIDER_IDS = new Set(["instamart", "blinkit", "zepto"]);
 
 export const GROCERY_PROVIDERS = [
   {
     id: "instamart",
     name: "Instamart",
     type: "grocery",
+    comingSoon: true,
     searchUrl: (query) =>
       `https://www.swiggy.com/instamart/search?custom_back=true&query=${encodeURIComponent(query)}`,
   },
@@ -14,12 +18,14 @@ export const GROCERY_PROVIDERS = [
     id: "blinkit",
     name: "Blinkit",
     type: "grocery",
+    comingSoon: true,
     searchUrl: (query) => `https://blinkit.com/s/?q=${encodeURIComponent(query)}`,
   },
   {
     id: "zepto",
     name: "Zepto",
     type: "grocery",
+    comingSoon: true,
     searchUrl: (query) => `https://www.zeptonow.com/search?query=${encodeURIComponent(query)}`,
   },
   {
@@ -32,15 +38,22 @@ export const GROCERY_PROVIDERS = [
     id: "zomato",
     name: "Zomato",
     type: "delivery",
+    comingSoon: true,
     searchUrl: (query) => `https://www.zomato.com/search?q=${encodeURIComponent(query)}`,
   },
   {
     id: "swiggy",
     name: "Swiggy",
     type: "delivery",
+    comingSoon: true,
     searchUrl: (query) => `https://www.swiggy.com/search?query=${encodeURIComponent(query)}`,
   },
 ];
+
+export function isProviderComingSoon(providerId) {
+  const p = GROCERY_PROVIDERS.find((x) => x.id === providerId);
+  return Boolean(p?.comingSoon || COMING_SOON_PROVIDER_IDS.has(providerId));
+}
 
 export function getGroceryProviders() {
   return GROCERY_PROVIDERS;
@@ -60,8 +73,12 @@ export function getProviderSearchUrl(providerId, query = "groceries") {
 }
 
 export function openProviderSearch(providerId, query) {
+  if (isProviderComingSoon(providerId)) {
+    return { ok: false, comingSoon: true, providerId };
+  }
   const url = getProviderSearchUrl(providerId, query);
   if (url) window.open(url, "_blank", "noopener,noreferrer");
+  return { ok: true };
 }
 
 export async function fetchProviderCompare(itemName) {
@@ -72,7 +89,10 @@ export async function fetchProviderCompare(itemName) {
   });
   if (!res.ok) return [];
   const data = await res.json();
-  return data.providers || [];
+  return (data.providers || []).map((p) => ({
+    ...p,
+    comingSoon: isProviderComingSoon(p.id),
+  }));
 }
 
 export async function fetchRestockSuggestions(pantryItems) {
@@ -83,5 +103,8 @@ export async function fetchRestockSuggestions(pantryItems) {
   });
   if (!res.ok) return [];
   const data = await res.json();
-  return data.suggestions || [];
+  return (data.suggestions || []).map((s) => ({
+    ...s,
+    providers: (s.providers || []).map((p) => ({ ...p, comingSoon: isProviderComingSoon(p.id) })),
+  }));
 }

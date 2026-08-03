@@ -65,7 +65,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
         <div className="absolute inset-0 bg-gradient-to-t from-[#14110e]/90 via-[#14110e]/20 to-transparent" />
 
         {pantryPct > 0 && (
-          <span className="absolute left-3 top-3 rounded-lg bg-black/60 px-2 py-1 text-[10px] font-bold text-[#4ade80] backdrop-blur-md">
+          <span className="absolute bottom-12 right-3 rounded-lg bg-black/60 px-2 py-1 text-[10px] font-bold text-[#4ade80] backdrop-blur-md">
             {pantryPct}% pantry
           </span>
         )}

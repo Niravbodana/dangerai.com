@@ -12,12 +12,12 @@ import {
   getLowStock,
   getPantryPayload,
   loadPantry,
-  openInstamartSearch,
   openWhatsAppShare,
   removePantryItem,
   upsertPantryItem,
 } from "../lib/pantryStore";
-import { fetchRestockSuggestions } from "../lib/groceryProviders";
+import { fetchRestockSuggestions, isProviderComingSoon } from "../lib/groceryProviders";
+import { track } from "../lib/analytics";
 
 function Chip({ active, onClick, children }) {
   return (
@@ -52,6 +52,12 @@ export default function Pantry() {
   const [expiryDraft, setExpiryDraft] = useState({});
 
   const [restock, setRestock] = useState([]);
+  const [groceryMsg, setGroceryMsg] = useState("");
+
+  const showComingSoon = (name) => {
+    setGroceryMsg(`${name} — Coming Soon! Abhi WhatsApp list use karein.`);
+    setTimeout(() => setGroceryMsg(""), 4000);
+  };
 
   useEffect(() => {
     fetchPantryItems().then((data) => setCatalog(data.items || []));
@@ -134,6 +140,11 @@ export default function Pantry() {
         <p className="mb-2 text-[var(--text-secondary)]">
           Quantity + expiry ke saath smart pantry — jo pada hai usi se recipes.
         </p>
+        {groceryMsg && (
+          <p className="mb-3 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-sm text-[var(--accent-soft)]">
+            {groceryMsg}
+          </p>
+        )}
 
         {restock.length > 0 && (
           <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
@@ -144,15 +155,25 @@ export default function Pantry() {
                   <span>{s.nameHi || s.name} — {s.reason === "missing" ? "missing" : "low stock"}</span>
                   <div className="flex gap-1">
                     {s.providers?.slice(0, 3).map((p) => (
-                      <a
-                        key={p.id}
-                        href={p.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded bg-white/10 px-2 py-0.5 text-[10px] text-[var(--accent-soft)]"
-                      >
-                        {p.name}
-                      </a>
+                      p.comingSoon || isProviderComingSoon(p.id) ? (
+                        <span
+                          key={p.id}
+                          className="rounded bg-white/10 px-2 py-0.5 text-[10px] text-[var(--text-secondary)]"
+                          title="Coming soon"
+                        >
+                          {p.name} · Soon
+                        </span>
+                      ) : (
+                        <a
+                          key={p.id}
+                          href={p.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded bg-white/10 px-2 py-0.5 text-[10px] text-[var(--accent-soft)]"
+                        >
+                          {p.name}
+                        </a>
+                      )
                     ))}
                   </div>
                 </li>
@@ -264,11 +285,11 @@ export default function Pantry() {
             </button>
             <button
               type="button"
-              onClick={() => { openInstamartSearch(items[0]?.label || "vegetables"); track("instamart_open"); }}
+              onClick={() => { showComingSoon("Instamart"); track("instamart_coming_soon"); }}
               disabled={items.length === 0}
               className="premium-btn-outline px-4 py-3 text-sm disabled:opacity-40"
             >
-              Open Instamart
+              Instamart · Soon
             </button>
             <button type="button" onClick={() => { clearPantry(); refresh(); }} className="px-3 py-3 text-xs text-[var(--text-secondary)]">
               Clear all
@@ -331,10 +352,10 @@ export default function Pantry() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => { openInstamartSearch(g.ingredient); track("instamart_open", { item: g.ingredient }); }}
-                        className="text-xs text-[var(--accent-soft)]"
+                        onClick={() => showComingSoon("Instamart")}
+                        className="text-xs text-[var(--text-secondary)]"
                       >
-                        Buy →
+                        Buy · Soon
                       </button>
                     </li>
                   ))}
