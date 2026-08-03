@@ -195,8 +195,14 @@ export default function Planner() {
 
             {data?.smart && data?.summary && (
               <p className="text-xs text-[var(--text-secondary)]">
-                Smart plan · {data.summary.proteinDays} protein-balanced days · {data.summary.pantryAwareMeals} pantry meals · {data.summary.leftoverOptimized} leftover-friendly lunches · {data.summary.groceryItems} grocery items to buy
+                Smart plan · {data.summary.proteinDays} protein days · {data.summary.pantryAwareMeals} pantry meals · {data.summary.leftoverOptimized} leftover lunches · {data.summary.festivalDays || 0} festival days · {data.summary.groceryItems} grocery items
               </p>
+            )}
+
+            {data?.planningHints?.upcomingFestivals?.length > 0 && (
+              <div className="glass rounded-xl p-3 text-xs text-[var(--text-secondary)]">
+                Upcoming: {data.planningHints.upcomingFestivals.slice(0, 3).map((f) => f.nameHi || f.name).join(" · ")}
+              </div>
             )}
 
             {planNutrition && (
@@ -214,6 +220,9 @@ export default function Planner() {
                 <h2 className="mb-2 font-display text-xl text-[var(--text-primary)]">
                   {day.dayLabel}
                   <span className="ml-2 text-sm font-normal text-[var(--text-secondary)]">{day.date}</span>
+                  {day.festival && (
+                    <span className="ml-2 text-xs text-[var(--accent-soft)]">🪔 {day.festival.nameHi || day.festival.name}</span>
+                  )}
                 </h2>
                 {dayNutrition && (
                   <div className="mb-4">
@@ -222,7 +231,12 @@ export default function Planner() {
                 )}
                 <div className="space-y-4">
                   {day.meals.map((meal) => (
-                    <MealCard key={`${day.date}-${meal.mealType}`} mealType={meal.mealType} recipe={meal.recipe} />
+                    <MealCard
+                      key={`${day.date}-${meal.mealType}`}
+                      mealType={meal.mealType}
+                      recipe={meal.recipe}
+                      variations={meal.variations}
+                    />
                   ))}
                 </div>
               </div>
