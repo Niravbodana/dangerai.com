@@ -1,6 +1,7 @@
 /**
  * Grocery engine — aggregation, dedup, pantry deduction, provider-ready.
  */
+import { getPartnerList, buildPartnerSearchUrl, isPartnerComingSoon } from "./siteConfigService.js";
 
 const INGREDIENT_ALIASES = {
   pyaz: "onion",
@@ -36,35 +37,19 @@ const CATEGORY_ORDER = [
   "Other",
 ];
 
-export const GROCERY_PROVIDERS = {
-  instamart: {
-    id: "instamart",
-    name: "Instamart",
-    searchUrl: (query) =>
-      `https://www.swiggy.com/instamart/search?custom_back=true&query=${encodeURIComponent(query)}`,
-  },
-  blinkit: {
-    id: "blinkit",
-    name: "Blinkit",
-    searchUrl: (query) =>
-      `https://blinkit.com/s/?q=${encodeURIComponent(query)}`,
-  },
-  zepto: {
-    id: "zepto",
-    name: "Zepto",
-    searchUrl: (query) =>
-      `https://www.zeptonow.com/search?query=${encodeURIComponent(query)}`,
-  },
-};
-
 export function getGroceryProviders() {
-  return Object.values(GROCERY_PROVIDERS);
+  return getPartnerList().map((p) => ({
+    id: p.id,
+    name: p.name,
+    type: p.type || "grocery",
+    comingSoon: Boolean(p.comingSoon),
+    enabled: p.enabled !== false,
+    searchUrl: buildPartnerSearchUrl(p.id, "groceries"),
+  }));
 }
 
 export function getProviderSearchUrl(providerId, query) {
-  const provider = GROCERY_PROVIDERS[providerId];
-  if (!provider) return null;
-  return provider.searchUrl(query || "groceries");
+  return buildPartnerSearchUrl(providerId, query || "groceries");
 }
 
 function normalizeKey(name = "") {
@@ -173,4 +158,66 @@ export function buildGroceryList(plans = [], options = {}) {
 /** Backward-compatible export */
 export function generateGroceryList(plans, options) {
   return buildGroceryList(plans, options);
+}
+
+const ESSENTIAL_STAPLES = [
+  { key: "onion", label: "Onion", labelHi: "प्याज", minQty: 2 },
+  { key: "tomato", label: "Tomato", labelHi: "टमाटर", minQty: 3 },
+  { key: "potato", label: "Potato", labelHi: "आलू", minQty: 2 },
+  { key: "milk", label: "Milk", labelHi: "दूध", minQty: 1 },
+  { key: "atta", label: "Flour", labelHi: "आटा", minQty: 1 },
+  { key: "rice", label: "Rice", labelHi: "चावल", minQty: 1 },
+  { key: "oil", label: "Oil", labelHi: "तेल", minQty: 1 },
+];
+
+/** Compare provider deep-links for one item (no fake prices — links only). */
+export function compareProvidersForItem(itemName) {
+  const query = itemName || "groceries";
+  return getPartnerList().map((p) => ({
+    id: p.id,
+    name: p.name,
+    type: p.type || "grocery",
+    comingSoon: isPartnerComingSoon(p.id),
+    url: buildPartnerSearchUrl(p.id, query),
+  }));
+}
+
+/** Auto-restock: essentials missing or low in pantry payload. */
+export function getRestockSuggestions(pantryItems = []) {
+  const byKey = new Map();
+  for (const item of pantryItems) {
+    const key = normalizeKey(item.key || item.label || item.name || "");
+    if (key) byKey.set(key, item);
+  }
+
+  const suggestions = [];
+  for (const staple of ESSENTIAL_STAPLES) {
+    const found = byKey.get(staple.key);
+    const qty = found ? parseQuantity(found.quantity || found.qty || "1").value : 0;
+    if (!found || qty < staple.minQty) {
+      suggestions.push({
+        id: staple.key,
+        name: staple.label,
+        nameHi: staple.labelHi,
+        reason: !found ? "missing" : "low-stock",
+        suggestedQty: staple.minQty,
+        providers: compareProvidersForItem(staple.label),
+      });
+    }
+  }
+  return suggestions;
+}
+
+export function computePantryMatchPercent(recipe, pantryKeys = []) {
+  const ingredients = recipe?.ingredients || [];
+  if (!ingredients.length || !pantryKeys.length) return 0;
+  let hits = 0;
+  for (const ing of ingredients) {
+    const key = normalizeKey(ing.name);
+    if (pantryKeys.some((p) => {
+      const pk = normalizeKey(p);
+      return key.includes(pk) || pk.includes(key);
+    })) hits++;
+  }
+  return Math.round((hits / ingredients.length) * 100);
 }

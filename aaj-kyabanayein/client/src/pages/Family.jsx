@@ -72,6 +72,7 @@ export default function Family() {
               <p className="font-medium text-[var(--text-primary)]">{m.name}</p>
               <p className="text-xs capitalize text-[var(--text-secondary)]">
                 {m.diet} · {m.spice || "medium"} spice
+                {m.diabetic ? " · diabetes" : ""}{m.lowSalt ? " · low salt" : ""}
                 {data.activeId === m.id ? " · Active" : ""}
               </p>
             </button>
@@ -84,6 +85,16 @@ export default function Family() {
               <option value="non-veg">Non-veg</option>
               <option value="jain">Jain</option>
             </select>
+            <div className="flex flex-col gap-1 text-[10px]">
+              <label className="flex items-center gap-1">
+                <input type="checkbox" checked={!!m.diabetic} onChange={(e) => { updateFamilyMember(m.id, { diabetic: e.target.checked }); refresh(); }} />
+                Diabetes
+              </label>
+              <label className="flex items-center gap-1">
+                <input type="checkbox" checked={!!m.lowSalt} onChange={(e) => { updateFamilyMember(m.id, { lowSalt: e.target.checked }); refresh(); }} />
+                Low salt
+              </label>
+            </div>
             {data.members.length > 1 && (
               <button
                 type="button"

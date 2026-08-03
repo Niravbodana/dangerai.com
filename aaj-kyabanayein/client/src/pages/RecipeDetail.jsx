@@ -17,6 +17,8 @@ import { canSaveOfflinePack, saveOfflinePack } from "../lib/offlinePacks";
 import usePageSeo from "../hooks/usePageSeo";
 import { breadcrumbSchema, recipeSchema } from "../lib/seo";
 import { getRecipeNutrition } from "../lib/nutrition";
+import { useHideMobileNav } from "../hooks/useHideMobileNav";
+import { trackRecipeView } from "../lib/recentRecipes";
 import NutritionSummary from "../components/NutritionSummary";
 import { copyIngredients, printRecipe } from "../lib/recipeShare";
 import { getRecipeVideoId } from "../lib/recipeVideo";
@@ -75,6 +77,13 @@ export default function RecipeDetail() {
   const [imageVersion, setImageVersion] = useState(0);
   const [loadingMedia, setLoadingMedia] = useState(true);
   const [offlineSaved, setOfflineSaved] = useState(false);
+
+  useHideMobileNav(true);
+
+  useEffect(() => {
+    document.body.classList.add("recipe-detail-active");
+    return () => document.body.classList.remove("recipe-detail-active");
+  }, []);
   const [copiedIngredients, setCopiedIngredients] = useState(false);
 
   const load = () => {
@@ -82,6 +91,7 @@ export default function RecipeDetail() {
     setLoadingMedia(true);
     setIsFav(isFavorite(id));
     track("recipe_open", { id });
+    trackRecipeView(id);
 
     // FAST: show base recipe immediately
     fetchRecipe(id)
@@ -256,16 +266,16 @@ export default function RecipeDetail() {
         {/* Hero */}
         <div className="relative h-72 overflow-hidden sm:h-80">
           <RecipeImage
-            src={recipe.thumbUrl || `/api/recipes/image/${recipe.id}`}
+            src={recipe.imageUrl || `/api/recipes/image/${recipe.id}`}
             alt={displayName}
-            recipeId={recipe.thumbUrl ? "" : recipe.id}
+            recipeId={recipe.id}
             eager
-            version={imageVersion}
+            version={recipe.imageVersion || imageVersion || 0}
             className="h-full w-full object-cover"
           />
-          {loadingMedia && !recipe.thumbUrl && (
+          {loadingMedia && (
             <div className="absolute bottom-4 right-4 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80 backdrop-blur-sm">
-              Better photo…
+              {t("betterPhoto")}
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#14110e] via-[#14110e]/40 to-transparent" />
@@ -273,7 +283,7 @@ export default function RecipeDetail() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
+            className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
             aria-label={t("back")}
           >
             <IconArrowLeft className="h-5 w-5" />
@@ -282,7 +292,7 @@ export default function RecipeDetail() {
           <button
             type="button"
             onClick={handleFav}
-            className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${
+            className={`absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition ${
               isFav
                 ? "border-[var(--accent)]/40 bg-[var(--accent)]/20 text-[var(--accent-soft)]"
                 : "border-white/15 bg-black/40 text-white hover:bg-black/60"
@@ -365,14 +375,14 @@ export default function RecipeDetail() {
                   onClick={handleCopyIngredients}
                   className="premium-btn-outline tap-smooth px-3 py-2 text-xs"
                 >
-                  {copiedIngredients ? "Copied!" : "Copy list"}
+                  {copiedIngredients ? t("copied") : t("copyList")}
                 </button>
                 <button
                   type="button"
                   onClick={handlePrint}
                   className="premium-btn-outline tap-smooth px-3 py-2 text-xs"
                 >
-                  Print
+                  {t("print")}
                 </button>
               </div>
             </div>
@@ -413,18 +423,18 @@ export default function RecipeDetail() {
 
           {/* Reviews */}
           <div className="recipe-card mt-4 p-6 sm:p-8">
-            <h2 className="detail-section-title">Reviews & Ratings</h2>
+            <h2 className="detail-section-title">{t("reviewsTitle")}</h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Favoriting counts as a 5-star rating too.
+              {t("reviewsHint")}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
               <StarRating value={displayRating} interactive onRate={handleQuickRate} />
               <span className="text-sm text-[var(--text-secondary)]">
                 {userRating
-                  ? `You rated ${userRating}★`
+                  ? `${t("youRated")} ${userRating}★`
                   : rating.count > 0
-                    ? `${rating.average} / 5 · ${rating.count} ratings`
-                    : "Tap stars to rate"}
+                    ? `${rating.average} / 5 · ${rating.count} ${t("ratings")}`
+                    : t("tapToRate")}
               </span>
             </div>
             <div className="mt-6">
@@ -432,12 +442,12 @@ export default function RecipeDetail() {
                 onSubmit={handleReview}
                 loading={submitting}
                 initialScore={userRating}
-                submitLabel="Submit Review"
+                submitLabel={t("submitReview")}
               />
             </div>
             {reviews.length > 0 && (
               <div className="mt-8 space-y-4 border-t border-white/10 pt-6">
-                <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent reviews</h3>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t("recentReviews")}</h3>
                 {reviews.map((r, i) => (
                   <div key={i} className="rounded-xl bg-white/5 p-4">
                   <div className="flex items-center gap-2">
@@ -488,7 +498,7 @@ export default function RecipeDetail() {
             className="premium-btn-outline tap-smooth shrink-0 px-3 py-4 text-xs"
             title="Offline pack (Plus)"
           >
-            {offlineSaved ? "Saved" : "Offline"}
+            {offlineSaved ? t("offlineSaved") : t("offline")}
           </button>
           <button
             type="button"

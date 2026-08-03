@@ -14,8 +14,8 @@ export default defineConfig({
   },
   server: {
     host: true, // 0.0.0.0 — phone on same Wi‑Fi can open Mac IP:3000
-    port: 3000,
-    strictPort: true,
+    port: Number(process.env.VITE_PORT) || 3000,
+    strictPort: false,
     proxy: {
       "/api": {
         target: apiTarget,

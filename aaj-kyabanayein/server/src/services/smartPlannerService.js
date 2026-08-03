@@ -5,6 +5,9 @@
 import { filterRecipeIndex, getRecipeById } from "../data/recipes.js";
 import { generateGroceryList, getDefaultPreferences } from "./mealPlanner.js";
 import { scoreRecipeForTaste } from "./tasteScore.js";
+import { getDayPlanningHints, getUpcomingFestivals } from "../data/festivalCalendar.js";
+import { collectFamilyHealthConditions, scoreHealthFit } from "./healthPlanningService.js";
+import { attachVariationsToPlan } from "./mealVariationService.js";
 
 const MEAL_ORDER = ["breakfast", "lunch", "snack", "dinner"];
 const DAY_LABELS = ["Aaj", "Kal", "Parso", "Agle din", "Agle din", "Agle din", "Agle din"];
@@ -96,7 +99,20 @@ function expiringBoost(recipe, expiringKeys = []) {
   return boost;
 }
 
-function scoreForPlan(recipe, { prefs, context, mealType, dayOffset, prevDinner }) {
+function festivalScore(recipe, dateStr) {
+  const hints = getDayPlanningHints(dateStr);
+  let score = 0;
+  const blob = `${recipe.name} ${(recipe.tags || []).join(" ")}`.toLowerCase();
+  if (hints.preferSweet && /sweet|halwa|kheer|ladoo|mithai|barfi/i.test(blob)) score += 18;
+  if (hints.preferFestive && /festive|special|biryani|pulao|thali/i.test(blob)) score += 10;
+  if (hints.noOnionGarlic && /onion|garlic|pyaz|lahsun|प्याज|लहसुन/i.test(JSON.stringify(recipe.ingredients || []))) {
+    score -= 45;
+  }
+  if (hints.festival) score += 5;
+  return score;
+}
+
+function scoreForPlan(recipe, { prefs, context, mealType, dayOffset, prevDinner, dateStr }) {
   if (!matchesBudget(recipe, prefs.budget)) return -1;
   if (recipe.cookTime > prefs.maxCookTime) return -1;
 
@@ -114,6 +130,8 @@ function scoreForPlan(recipe, { prefs, context, mealType, dayOffset, prevDinner 
   if (mealType === "lunch") score += leftoverScore(recipe, prevDinner);
   if (recipe.mealType === mealType) score += 20;
   score += calorieBalance(recipe, mealType);
+  score += festivalScore(recipe, dateStr);
+  score += scoreHealthFit(recipe, context.healthConditions || []);
 
   if (prefs.budget === "low" && recipe.budget === "low") score += 8;
 
@@ -140,6 +158,8 @@ function pickSmart(pool, usedIds, scoreFn) {
 function generateSmartDayPlan(prefs, context, dayOffset, usedIds, prevDinner) {
   const date = new Date();
   date.setDate(date.getDate() + dayOffset);
+  const dateStr = date.toISOString().split("T")[0];
+  const dayHints = getDayPlanningHints(dateStr);
   const meals = [];
   let proteinMeals = 0;
   let pantryHits = 0;
@@ -148,7 +168,7 @@ function generateSmartDayPlan(prefs, context, dayOffset, usedIds, prevDinner) {
   for (const mealType of MEAL_ORDER) {
     const pool = filterRecipeIndex({ mealType, diet: prefs.diet });
     const pick = pickSmart(pool, usedIds, (recipe) =>
-      scoreForPlan(recipe, { prefs, context, mealType, dayOffset, prevDinner })
+      scoreForPlan(recipe, { prefs, context, mealType, dayOffset, prevDinner, dateStr })
     );
     if (!pick) continue;
 
@@ -168,8 +188,10 @@ function generateSmartDayPlan(prefs, context, dayOffset, usedIds, prevDinner) {
   }
 
   return {
-    date: date.toISOString().split("T")[0],
+    date: dateStr,
     dayLabel: DAY_LABELS[dayOffset] ?? date.toLocaleDateString("hi-IN", { weekday: "long" }),
+    festival: dayHints.festival,
+    weekdayFast: dayHints.weekdayFast,
     meals,
     dayMeta: { proteinMeals, pantryHits, leftoverMeals },
   };
@@ -196,31 +218,51 @@ export function generateSmartGroceryList(plans, pantryKeys = [], familySize = 4)
 
 export function generateSmartWeeklyPlan(prefs = {}, context = {}) {
   const merged = { ...getDefaultPreferences(), ...prefs };
+  const enrichedContext = {
+    ...context,
+    healthConditions: context.healthConditions?.length
+      ? context.healthConditions
+      : collectFamilyHealthConditions(context.family),
+  };
+  const leftoverMode = merged.leftoverFrequency || "alternating";
   const usedIds = new Set();
   const plans = [];
   let prevDinner = null;
 
   for (let i = 0; i < 7; i++) {
-    const day = generateSmartDayPlan(merged, context, i, usedIds, prevDinner);
+    const day = generateSmartDayPlan(merged, enrichedContext, i, usedIds, prevDinner);
+    if (leftoverMode === "minimal") {
+      day.dayMeta.leftoverMeals = 0;
+    }
     prevDinner = day.meals.find((m) => m.mealType === "dinner")?.recipe || null;
     plans.push(day);
   }
 
+  const withVariations = merged.includeVariations !== false
+    ? attachVariationsToPlan(plans, { diet: merged.diet })
+    : plans;
+
   const groceryList = generateSmartGroceryList(
-    plans,
-    context.pantry || [],
+    withVariations,
+    enrichedContext.pantry || [],
     merged.familySize || 4
   );
 
   return {
-    plans,
+    plans: withVariations,
     groceryList,
     smart: true,
+    planningHints: {
+      leftoverFrequency: leftoverMode,
+      healthConditions: enrichedContext.healthConditions,
+      upcomingFestivals: getUpcomingFestivals(21),
+    },
     summary: {
-      proteinDays: plans.filter((d) => d.dayMeta.proteinMeals >= 2).length,
-      pantryAwareMeals: plans.reduce((n, d) => n + d.dayMeta.pantryHits, 0),
-      leftoverOptimized: plans.reduce((n, d) => n + d.dayMeta.leftoverMeals, 0),
+      proteinDays: withVariations.filter((d) => d.dayMeta.proteinMeals >= 2).length,
+      pantryAwareMeals: withVariations.reduce((n, d) => n + d.dayMeta.pantryHits, 0),
+      leftoverOptimized: withVariations.reduce((n, d) => n + d.dayMeta.leftoverMeals, 0),
       groceryItems: groceryList.length,
+      festivalDays: withVariations.filter((d) => d.festival).length,
     },
   };
 }

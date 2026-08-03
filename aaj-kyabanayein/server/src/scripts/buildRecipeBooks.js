@@ -12,6 +12,8 @@ import { INDIAN_BOOK_RECIPES } from "../data/recipeBookIndian.js";
 import { MORE_INDIAN_RECIPES } from "../data/recipeBookMoreIndian.js";
 import { EVEN_MORE_INDIAN_RECIPES } from "../data/recipeBookExtra.js";
 import { POPULAR_INDIAN_RECIPES } from "../data/recipeBookPopular.js";
+import { NEW_2026_RECIPES } from "../data/recipeBookNew2026.js";
+import { verifyDatasetLicense } from "../pipeline/license/licenseVerifier.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "../data/curated");
@@ -428,32 +430,45 @@ async function main() {
     ...MORE_INDIAN_RECIPES,
     ...EVEN_MORE_INDIAN_RECIPES,
     ...POPULAR_INDIAN_RECIPES,
+    ...NEW_2026_RECIPES,
   ];
   console.log(`Hand-crafted: ${handCrafted.length}`);
 
   let external = [];
-  try {
-    console.log("Fetching TheMealDB (real recipes)...");
-    const byLetter = await fetchTheMealDbRecipes();
-    console.log(`TheMealDB letters: ${byLetter.length}`);
-    console.log("Fetching TheMealDB categories...");
-    const byCat = await fetchTheMealDbByCategories();
-    console.log(`TheMealDB categories: ${byCat.length}`);
-    console.log("Fetching TheMealDB areas...");
-    const byArea = await fetchTheMealDbByAreas();
-    console.log(`TheMealDB areas: ${byArea.length}`);
-    external = [...byLetter, ...byCat, ...byArea];
-  } catch (e) {
-    console.warn("TheMealDB fetch failed:", e.message);
+
+  const mealDbLicense = verifyDatasetLicense({ id: "themealdb" });
+  const dummyLicense = verifyDatasetLicense({ id: "dummyjson" });
+
+  if (mealDbLicense.allowed) {
+    try {
+      console.log("Fetching TheMealDB (real recipes)...");
+      const byLetter = await fetchTheMealDbRecipes();
+      console.log(`TheMealDB letters: ${byLetter.length}`);
+      console.log("Fetching TheMealDB categories...");
+      const byCat = await fetchTheMealDbByCategories();
+      console.log(`TheMealDB categories: ${byCat.length}`);
+      console.log("Fetching TheMealDB areas...");
+      const byArea = await fetchTheMealDbByAreas();
+      console.log(`TheMealDB areas: ${byArea.length}`);
+      external = [...byLetter, ...byCat, ...byArea];
+    } catch (e) {
+      console.warn("TheMealDB fetch failed:", e.message);
+    }
+  } else {
+    console.warn(`[SKIP] TheMealDB: ${mealDbLicense.reason}`);
   }
 
-  try {
-    console.log("Fetching DummyJSON recipes (free + photos)...");
-    const dummy = await fetchDummyJsonRecipes();
-    console.log(`DummyJSON: ${dummy.length} recipes`);
-    external = [...external, ...dummy];
-  } catch (e) {
-    console.warn("DummyJSON fetch failed:", e.message);
+  if (dummyLicense.allowed) {
+    try {
+      console.log("Fetching DummyJSON recipes (free + photos)...");
+      const dummy = await fetchDummyJsonRecipes();
+      console.log(`DummyJSON: ${dummy.length} recipes`);
+      external = [...external, ...dummy];
+    } catch (e) {
+      console.warn("DummyJSON fetch failed:", e.message);
+    }
+  } else {
+    console.warn(`[SKIP] DummyJSON: ${dummyLicense.reason}`);
   }
 
   const merged = deduplicateRecipes([...handCrafted, ...external]);

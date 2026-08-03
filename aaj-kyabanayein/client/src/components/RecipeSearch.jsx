@@ -198,6 +198,7 @@ export default function RecipeSearch({ className = "", large = false }) {
                         <RecipeImage
                           src={r.imageUrl || `/api/recipes/image/${r.id}`}
                           recipeId={r.id}
+                          version={r.imageVersion || 0}
                           alt={r.name}
                           className="h-12 w-12 shrink-0 rounded-lg object-cover bg-[#242018]"
                         />
@@ -266,6 +267,7 @@ export default function RecipeSearch({ className = "", large = false }) {
                         <RecipeImage
                           src={r.imageUrl || `/api/recipes/image/${r.id}`}
                           recipeId={r.id}
+                          version={r.imageVersion || 0}
                           alt={r.name}
                           className="h-12 w-12 shrink-0 rounded-lg object-cover bg-[#242018]"
                         />
