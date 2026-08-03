@@ -135,16 +135,35 @@ function toIndexEntry(recipe) {
   };
 }
 
+function mergeThumbUrlsFromIndex(entries) {
+  if (!fs.existsSync(INDEX_FILE)) return entries;
+  try {
+    const fileIndex = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
+    const thumbById = new Map(
+      fileIndex.filter((e) => e.thumbUrl).map((e) => [e.id, e.thumbUrl])
+    );
+    return entries.map((entry) => {
+      if (entry.thumbUrl) return entry;
+      const thumb = thumbById.get(entry.id);
+      return thumb ? { ...entry, thumbUrl: thumb } : entry;
+    });
+  } catch {
+    return entries;
+  }
+}
+
 function loadCuratedData() {
   enrichedCache.clear();
   if (isDatabaseReady()) {
     try {
-      recipeIndex = recipeRepo.getRecipeIndex();
+      recipeIndex = mergeThumbUrlsFromIndex(recipeRepo.getRecipeIndex());
       getRecipeByIdImpl = (id) => {
         if (customRecipes.has(id)) return customRecipes.get(id);
         const raw = recipeRepo.getRecipeById(id);
         if (!raw) return null;
-        if (!enrichedCache.has(id)) enrichedCache.set(id, enrichRecipe(raw));
+        const indexThumb = recipeIndex.find((r) => r.id === id)?.thumbUrl;
+        const merged = indexThumb && !raw.thumbUrl ? { ...raw, thumbUrl: indexThumb } : raw;
+        if (!enrichedCache.has(id)) enrichedCache.set(id, enrichRecipe(merged));
         return enrichedCache.get(id);
       };
       logger.info(`SQLite: ${recipeIndex.length} recipes loaded`);
@@ -373,7 +392,8 @@ export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const thumb = meta.thumbUrl || full?.thumbUrl;
   const imageVersion = getImageCacheVersion(meta.id);
-  const imageUrl = recipeImageUrl(meta.id, imageVersion);
+  const apiImageUrl = recipeImageUrl(meta.id, imageVersion);
+  const displayUrl = thumb && /^https?:\/\//i.test(thumb) ? thumb : apiImageUrl;
   return {
     id: meta.id,
     name: meta.name,
@@ -386,8 +406,8 @@ export function toListItem(meta) {
     spice: meta.spice,
     tags: meta.tags,
     thumbUrl: thumb || null,
-    imageUrl,
+    imageUrl: apiImageUrl,
     imageVersion,
-    cdnImageUrl: imageUrl,
+    cdnImageUrl: displayUrl,
   };
 }

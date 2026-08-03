@@ -29,7 +29,7 @@ export default function HomeTrendingGallery() {
               <Link key={recipe.id} to={`/recipe/${recipe.id}`} className="home-gallery-card group">
                 <RecipeImage
                   recipeId={recipe.id}
-                  src={recipe.imageUrl || recipe.thumbUrl}
+                  src={recipe.thumbUrl || recipe.cdnImageUrl || recipe.imageUrl}
                   alt={recipe.name}
                   className="h-full w-full object-cover"
                 />

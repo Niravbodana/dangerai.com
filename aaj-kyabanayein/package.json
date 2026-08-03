@@ -24,6 +24,7 @@
     "db:init": "npm run db:init --prefix server",
     "sync-images": "npm run sync-images --prefix server",
     "dev:kill": "node scripts/kill-dev-ports.mjs",
+    "fix-photos": "node scripts/fix-premium-photos.mjs",
     "generate-sitemap": "node scripts/generate-sitemap.mjs"
   }
 }

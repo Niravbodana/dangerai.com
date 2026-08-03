@@ -248,13 +248,22 @@ async function findImageUrl(recipe) {
   const diet = recipe.diet || [];
   const isVeg = diet.includes("veg") && !diet.includes("non-veg");
 
+  // Premium path: wiki catalog + curated titles (accurate dish photos)
+  const wikiTitles = getWikiTitlesForRecipe(recipe);
+  if (wikiTitles.length) {
+    const wiki = await resolveWikiThumbnailFirst(wikiTitles);
+    if (wiki) return { ...wiki, score: 0.92 };
+  }
+  if (curatedTitle) {
+    const wiki = await searchWikipediaSummary(curatedTitle);
+    if (wiki) return { ...wiki, score: 0.9 };
+  }
+
   // Kick Groq hints in parallel (don't block other sources)
   const hintsPromise = getAIImageHints(recipe).catch(() => null);
 
   const searches = [
     searchMealDbThumb(core),
-    searchOpenverseImage(core),
-    curatedTitle ? searchWikipediaSummary(curatedTitle) : Promise.resolve(null),
     searchWikipediaSummary(core),
   ];
 
@@ -294,6 +303,12 @@ async function findImageUrl(recipe) {
   candidates.sort((a, b) => (b.score || 0) - (a.score || 0));
   if (candidates[0]) return candidates[0];
 
+  // Last resort: Openverse (often generic/low quality)
+  const openverse = await searchOpenverseImage(core);
+  if (openverse && scoreTitle(openverse.title || "", name, recipe) >= 0.45) {
+    return openverse;
+  }
+
   // Last try: Groq wiki title
   const hints = await hintsPromise;
   if (hints?.wikiImageTitle) {
@@ -301,17 +316,10 @@ async function findImageUrl(recipe) {
     if (wiki) return wiki;
   }
   if (hints?.imageSearchQuery) {
-    const open = await searchOpenverseImage(hints.imageSearchQuery);
-    if (open) return open;
     const meal = await searchMealDbThumb(hints.imageSearchQuery);
     if (meal) return meal;
-  }
-
-  // Wikipedia REST by catalog titles (reliable thumb URLs)
-  const wikiTitles = getWikiTitlesForRecipe(recipe);
-  if (wikiTitles.length) {
-    const wiki = await resolveWikiThumbnailFirst(wikiTitles);
-    if (wiki) return { ...wiki, score: 0.88 };
+    const open = await searchOpenverseImage(hints.imageSearchQuery);
+    if (open) return open;
   }
 
   return null;
