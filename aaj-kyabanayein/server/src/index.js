@@ -8,12 +8,16 @@ import authRouter from "./routes/auth.js";
 import mealsRouter from "./routes/meals.js";
 import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js";
 import socialRouter from "./routes/social.js";
+import adminRouter from "./routes/admin.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
 import { initSentry, captureException } from "./lib/sentry.js";
 import { getTrendingRecipes } from "./services/trendingService.js";
 import { warmTrendingRecipeImages } from "./services/recipeImageService.js";
+import { ensureDatabase } from "./db/ensureDatabase.js";
+import { initRecipeCatalog } from "./data/recipes.js";
+import { startQualityGuardianOnBoot } from "./services/qualityGuardian.js";
 
 initSentry();
 
@@ -34,6 +38,8 @@ function loadEnv() {
 }
 
 loadEnv();
+ensureDatabase();
+initRecipeCatalog(true);
 loadCustomMealsOnStartup();
 
 const app = express();
@@ -47,6 +53,7 @@ app.use(securityHeaders);
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api", socialRouter);
 app.use("/api", mealsUserRouter);
 app.use("/api", mealsRouter);
@@ -107,4 +114,5 @@ app.listen(PORT, HOST, () => {
     logger.warn("JWT_SECRET is not set — set it before production deploy");
   }
   warmTrendingRecipeImages(getTrendingRecipes, 20);
+  startQualityGuardianOnBoot();
 });

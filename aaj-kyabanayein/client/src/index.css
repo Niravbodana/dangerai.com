@@ -431,8 +431,18 @@ body {
 
 @media (max-width: 639px) {
   body { padding-bottom: 4.5rem; overflow-x: hidden; }
-  body.cooking-active { padding-bottom: 0; }
-  body.cooking-active .mobile-nav { display: none; }
+  body.cooking-active,
+  body.recipe-detail-active { padding-bottom: 0; }
+  body.cooking-active .mobile-nav,
+  body.recipe-detail-active .mobile-nav { display: none; }
+
+  .recipe-detail-page {
+    padding-bottom: 6.5rem;
+  }
+
+  .recipe-detail-cta {
+    z-index: 55;
+  }
 
   .app-shell { overflow-x: hidden; }
 
@@ -609,6 +619,42 @@ body {
 
 .filter-chip--active:hover {
   color: #14110e;
+}
+
+.recipe-menu-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.recipe-menu-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.recipe-menu-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
+}
+
+.recipe-menu-chip:hover {
+  color: var(--text-primary);
+  border-color: rgba(212, 168, 75, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.recipe-menu-chip--active {
+  color: #14110e;
+  font-weight: 600;
+  background: linear-gradient(180deg, #f5e6b8 0%, #d4a84b 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 12px rgba(212, 168, 75, 0.25);
 }
 
 /* Recipe detail page */

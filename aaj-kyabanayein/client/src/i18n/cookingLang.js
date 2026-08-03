@@ -30,6 +30,9 @@ const UI = {
     min: "min",
     steps: "steps",
     chooseLang: "Cooking language",
+    keyboardHint: "Space = next · ← → navigate · R = repeat",
+    mobileHint: "Tap Next — use 🔊 to hear each step",
+    swipeHint: "Swipe ← → between steps",
   },
   hi: {
     checkIngredients: "सामग्री चेक करें",
@@ -54,6 +57,9 @@ const UI = {
     min: "मिनट",
     steps: "कदम",
     chooseLang: "भाषा चुनें",
+    keyboardHint: "Space = अगला · ← → पीछे/आगे · R = दोहराएं",
+    mobileHint: "अगला कदम दबाएं — 🔊 से सुनें",
+    swipeHint: "Swipe करें ← →",
   },
   gu: {
     checkIngredients: "સામગ્રી તપાસો",
@@ -78,6 +84,9 @@ const UI = {
     min: "મિનિટ",
     steps: "પગલા",
     chooseLang: "ભાષા પસંદ કરો",
+    keyboardHint: "Space = આગળ · ← → નેવિગેટ",
+    mobileHint: "આગળ દબાવો — 🔊 સાંભળો",
+    swipeHint: "Swipe ← →",
   },
   mr: {
     checkIngredients: "साहित्य तपासा",
@@ -102,6 +111,9 @@ const UI = {
     min: "मिनिटे",
     steps: "पाऊले",
     chooseLang: "भाषा निवडा",
+    keyboardHint: "Space = पुढे · ← → नेव्हिगेट",
+    mobileHint: "पुढे दाबा — 🔊 ऐका",
+    swipeHint: "Swipe ← →",
   },
   hinglish: {
     checkIngredients: "Ingredients check karo",
@@ -126,6 +138,9 @@ const UI = {
     min: "min",
     steps: "steps",
     chooseLang: "Language choose karo",
+    keyboardHint: "Space = next · ← → navigate · R = repeat",
+    mobileHint: "Next dabao — 🔊 se suno",
+    swipeHint: "Swipe ← → steps",
   },
 };
 
