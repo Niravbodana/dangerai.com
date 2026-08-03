@@ -11,6 +11,12 @@ function cleanQuery(name = "") {
     .trim();
 }
 
+/** Openverse thumb URLs are API routes (404); prefer direct image URLs. */
+function pickOpenverseImageUrl(item) {
+  const candidates = [item?.url, item?.thumbnail].filter(Boolean);
+  return candidates.find((u) => !/api\.openverse\.org/i.test(u)) || null;
+}
+
 /** Openverse — free CC image search (Google-like speed without CSE key) */
 export async function searchOpenverseImage(recipeName) {
   const q = cleanQuery(recipeName);
@@ -34,7 +40,7 @@ export async function searchOpenverseImage(recipeName) {
       const title = `${item.title || ""} ${item.foreign_landing_url || ""}`.toLowerCase();
       const hits = words.filter((w) => title.includes(w)).length;
       if (words.length && hits < Math.ceil(words.length / 2)) continue;
-      const imageUrl = item.thumbnail || item.url;
+      const imageUrl = pickOpenverseImageUrl(item);
       if (!imageUrl || /logo|icon|avatar|svg/i.test(imageUrl)) continue;
       return {
         source: "openverse",
@@ -44,13 +50,21 @@ export async function searchOpenverseImage(recipeName) {
       };
     }
 
-    const fallback = results.find((r) => r.thumbnail || r.url);
+    const fallback = results.find((r) => {
+      const imageUrl = pickOpenverseImageUrl(r);
+      if (!imageUrl || /logo|icon|avatar|svg/i.test(imageUrl)) return false;
+      const title = `${r.title || ""} ${r.foreign_landing_url || ""}`.toLowerCase();
+      const hits = words.filter((w) => title.includes(w)).length;
+      return words.length && hits >= Math.ceil(words.length / 2);
+    });
     if (!fallback) return null;
+    const title = `${fallback.title || ""} ${fallback.foreign_landing_url || ""}`.toLowerCase();
+    const hits = words.filter((w) => title.includes(w)).length;
     return {
       source: "openverse",
-      imageUrl: fallback.thumbnail || fallback.url,
+      imageUrl: pickOpenverseImageUrl(fallback),
       title: fallback.title || q,
-      score: 0.5,
+      score: 0.55 + hits * 0.05,
     };
   } catch {
     return null;
@@ -92,14 +106,22 @@ export async function searchMealDbThumb(name) {
     );
     if (!res.ok) return null;
     const data = await res.json();
-    const meal = data.meals?.[0];
-    if (!meal?.strMealThumb) return null;
-    return {
-      source: "themealdb",
-      imageUrl: meal.strMealThumb,
-      title: meal.strMeal,
-      score: 0.8,
-    };
+    const meals = data.meals || [];
+    const words = q.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+
+    for (const meal of meals) {
+      if (!meal?.strMealThumb) continue;
+      const title = (meal.strMeal || "").toLowerCase();
+      const hits = words.filter((w) => title.includes(w)).length;
+      if (words.length && hits < Math.ceil(words.length / 2)) continue;
+      return {
+        source: "themealdb",
+        imageUrl: meal.strMealThumb,
+        title: meal.strMeal,
+        score: 0.8,
+      };
+    }
+    return null;
   } catch {
     return null;
   }

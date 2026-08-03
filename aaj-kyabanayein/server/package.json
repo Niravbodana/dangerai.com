@@ -9,7 +9,9 @@
     "dev": "node --watch src/index.js",
     "generate-recipes": "node src/scripts/generateRecipes.js",
     "build-recipe-books": "node src/scripts/buildRecipeBooks.js",
-    "prefetch-images": "node src/scripts/prefetchRecipeImages.js"
+    "prefetch-images": "node src/scripts/prefetchRecipeImages.js",
+    "db:init": "node src/scripts/initDatabase.js",
+    "sync-images": "node src/scripts/syncLocalImages.js"
   },
   "dependencies": {
     "@sentry/node": "^9.47.1",
@@ -17,6 +19,7 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "google-auth-library": "^11.0.0",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "better-sqlite3": "^11.9.1"
   }
 }

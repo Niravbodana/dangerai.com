@@ -2,10 +2,13 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { recipeMatchesSearch, scoreRecipeSearch } from "../lib/searchUtils.js";
-import { ENGLISH_STEPS, HINDI_STEPS, buildIngredients, buildStepsEn, buildStepsHi } from "./recipeTemplates.js";
+import { ENGLISH_STEPS, HINDI_STEPS } from "./recipeTemplates.js";
 import { logger } from "../lib/logger.js";
 import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
-import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
+import { buildIngredientAwareSteps, expandIngredients } from "../lib/recipeStepBuilder.js";
+import { getImageCacheVersion, recipeImageUrl } from "../services/recipeImageService.js";
+import { isDatabaseReady } from "../db/migrate.js";
+import * as recipeRepo from "../db/recipeRepository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED_DIR = path.join(__dirname, "curated");
@@ -15,6 +18,17 @@ const INDEX_FILE = path.join(CURATED_DIR, "index.json");
 let recipeIndex = [];
 let recipeById = new Map();
 const customRecipes = new Map();
+const enrichedCache = new Map();
+
+export function invalidateRecipeCache(id) {
+  if (id) enrichedCache.delete(id);
+  else enrichedCache.clear();
+}
+
+export function refreshRecipeInCache(id) {
+  invalidateRecipeCache(id);
+  return getRecipeById(id);
+}
 
 function inferCuisine(recipe) {
   const name = (recipe.name || "").toLowerCase();
@@ -63,18 +77,6 @@ function inferHealthy(recipe) {
   return false;
 }
 
-function expandThinIngredients(recipe) {
-  const ings = recipe.ingredients || [];
-  if (ings.length >= 3) return ings;
-  const isNonVeg = recipe.diet?.includes("non-veg");
-  const main = ings[0] || { name: "Vegetable", nameHi: "सब्जी", quantity: "2 cups" };
-  const styleMatch = (recipe.name || "").match(
-    /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
-  );
-  const style = styleMatch ? styleMatch[1].charAt(0).toUpperCase() + styleMatch[1].slice(1).toLowerCase() : "Curry";
-  return buildIngredients(main, style, isNonVeg);
-}
-
 export function enrichRecipe(recipe) {
   const cuisine = inferCuisine(recipe);
   const isHealthy = inferHealthy(recipe);
@@ -87,28 +89,20 @@ export function enrichRecipe(recipe) {
           ? `nonveg-${recipe.mealType}`
           : `veg-${recipe.mealType}`;
 
-  const ingredients = expandThinIngredients(recipe);
+  const ingredients = expandIngredients(recipe, recipe.ingredients || []);
 
-  let steps = !isGenericSteps(recipe.steps) ? recipe.steps : ENGLISH_STEPS[recipe.id];
-  let stepsHi = recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" ")) ? recipe.stepsHi : HINDI_STEPS[recipe.id];
+  let baseSteps = !isGenericSteps(recipe.steps) ? recipe.steps : ENGLISH_STEPS[recipe.id];
+  let baseStepsHi =
+    recipe.stepsHi?.length && hasDevanagari(recipe.stepsHi.join(" "))
+      ? recipe.stepsHi
+      : HINDI_STEPS[recipe.id];
 
-  if (!steps?.length && ingredients[0]) {
-    const isNonVeg = recipe.diet?.includes("non-veg");
-    const styleMatch = (recipe.name || "").match(
-      /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
-    );
-    const style = styleMatch ? styleMatch[1] : "Curry";
-    steps = buildStepsEn(ingredients[0].name, style, isNonVeg);
-    stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
+  if (isGenericSteps(baseSteps)) baseSteps = ENGLISH_STEPS[recipe.id] || [];
+  if (!baseStepsHi?.length || !hasDevanagari(baseStepsHi.join(" "))) {
+    baseStepsHi = HINDI_STEPS[recipe.id] || [];
   }
 
-  if (!stepsHi?.length && steps?.length && ingredients[0]) {
-    const styleMatch = (recipe.name || "").match(
-      /(Curry|Fry|Sabzi|Pulao|Masala|Tikka|Korma|Bharta|Soup|Paratha|Khichdi|Raita)/i
-    );
-    const style = styleMatch ? styleMatch[1] : "Curry";
-    stepsHi = buildStepsHi(ingredients[0].nameHi || ingredients[0].name, style);
-  }
+  const { steps, stepsHi } = buildIngredientAwareSteps(recipe, ingredients, baseSteps, baseStepsHi);
 
   return {
     ...recipe,
@@ -142,6 +136,24 @@ function toIndexEntry(recipe) {
 }
 
 function loadCuratedData() {
+  enrichedCache.clear();
+  if (isDatabaseReady()) {
+    try {
+      recipeIndex = recipeRepo.getRecipeIndex();
+      getRecipeByIdImpl = (id) => {
+        if (customRecipes.has(id)) return customRecipes.get(id);
+        const raw = recipeRepo.getRecipeById(id);
+        if (!raw) return null;
+        if (!enrichedCache.has(id)) enrichedCache.set(id, enrichRecipe(raw));
+        return enrichedCache.get(id);
+      };
+      logger.info(`SQLite: ${recipeIndex.length} recipes loaded`);
+      return;
+    } catch (err) {
+      logger.warn(`SQLite load failed, falling back to JSON: ${err.message}`);
+    }
+  }
+
   if (!fs.existsSync(INDEX_FILE) || !fs.existsSync(RECIPES_FILE)) {
     logger.warn("Curated recipes not found — run: npm run build-recipe-books");
     return;
@@ -161,7 +173,6 @@ function loadCuratedData() {
       || [];
     return pantryKeys.length ? { ...entry, pantryKeys } : entry;
   });
-  const enrichedCache = new Map();
 
   // Patch getRecipeById to enrich lazily on first access
   getRecipeByIdImpl = (id) => {
@@ -180,12 +191,20 @@ let getRecipeByIdImpl = (id) => {
   return recipeById.get(id) || null;
 };
 
+let catalogLoaded = false;
+
+export function initRecipeCatalog(force = false) {
+  if (catalogLoaded && !force) return;
+  loadCuratedData();
+  catalogLoaded = true;
+}
+
 if (process.env.NODE_ENV !== "production") {
   console.time("recipes-load");
-  loadCuratedData();
+  initRecipeCatalog();
   console.timeEnd("recipes-load");
 } else {
-  loadCuratedData();
+  initRecipeCatalog();
 }
 
 export const RECIPE_COUNT = recipeIndex.length;
@@ -249,12 +268,23 @@ function buildCuisinesList() {
     indian: { en: "Indian", hi: "भारतीय" },
     "north-indian": { en: "North Indian", hi: "उत्तर भारतीय" },
     "south-indian": { en: "South Indian", hi: "दक्षिण भारतीय" },
+    gujarati: { en: "Gujarati", hi: "गुजराती" },
+    maharashtrian: { en: "Maharashtrian", hi: "महाराष्ट्रियन" },
+    punjabi: { en: "Punjabi", hi: "पंजाबी" },
+    bengali: { en: "Bengali", hi: "बंगाली" },
+    kerala: { en: "Kerala", hi: "केरल" },
+    hyderabadi: { en: "Hyderabadi", hi: "हैदराबादी" },
+    mughlai: { en: "Mughlai", hi: "मुग़लई" },
     chinese: { en: "Chinese", hi: "चाइनीज़" },
     italian: { en: "Italian", hi: "इटालियन" },
     thai: { en: "Thai", hi: "थाई" },
     mexican: { en: "Mexican", hi: "मेक्सिकन" },
+    afghani: { en: "Afghani", hi: "अफ़गानी" },
+    indonesian: { en: "Indonesian", hi: "इंडोनेशियाई" },
+    turkish: { en: "Turkish", hi: "तुर्की" },
     continental: { en: "Continental", hi: "कॉन्टिनेंटल" },
     healthy: { en: "Healthy", hi: "स्वस्थ" },
+    japanese: { en: "Japanese", hi: "जापानी" },
   };
 
   const list = [{ id: "all", label: "All", labelHi: "सभी" }];
@@ -342,7 +372,8 @@ export function isNonVegRecipe(r) {
 export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const thumb = meta.thumbUrl || full?.thumbUrl;
-  const imageUrl = resolveRecipeImageUrl({ id: meta.id, thumbUrl: thumb });
+  const imageVersion = getImageCacheVersion(meta.id);
+  const imageUrl = recipeImageUrl(meta.id, imageVersion);
   return {
     id: meta.id,
     name: meta.name,
@@ -356,6 +387,7 @@ export function toListItem(meta) {
     tags: meta.tags,
     thumbUrl: thumb || null,
     imageUrl,
+    imageVersion,
     cdnImageUrl: imageUrl,
   };
 }
