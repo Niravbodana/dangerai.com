@@ -6,7 +6,7 @@ import { ENGLISH_STEPS, HINDI_STEPS } from "./recipeTemplates.js";
 import { logger } from "../lib/logger.js";
 import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
 import { buildIngredientAwareSteps, expandIngredients } from "../lib/recipeStepBuilder.js";
-import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
+import { getImageCacheVersion, recipeImageUrl } from "../services/recipeImageService.js";
 import { isDatabaseReady } from "../db/migrate.js";
 import * as recipeRepo from "../db/recipeRepository.js";
 
@@ -372,10 +372,8 @@ export function isNonVegRecipe(r) {
 export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const thumb = meta.thumbUrl || full?.thumbUrl;
-  const localImage = meta.localImage || full?.localImage;
-  const imageUrl = localImage
-    ? `/api/recipes/image/${meta.id}`
-    : resolveRecipeImageUrl({ id: meta.id, thumbUrl: thumb });
+  const imageVersion = getImageCacheVersion(meta.id);
+  const imageUrl = recipeImageUrl(meta.id, imageVersion);
   return {
     id: meta.id,
     name: meta.name,
@@ -389,6 +387,7 @@ export function toListItem(meta) {
     tags: meta.tags,
     thumbUrl: thumb || null,
     imageUrl,
+    imageVersion,
     cdnImageUrl: imageUrl,
   };
 }

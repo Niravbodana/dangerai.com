@@ -46,6 +46,7 @@ import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBri
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
 import { attachRecipeVideo } from "../data/recipeVideos.js";
 import path from "path";
+import fs from "fs";
 
 const router = Router();
 
@@ -54,25 +55,33 @@ const DEFAULT_IMAGE_ID = "_default";
 router.get("/recipes/image/:id", async (req, res) => {
   const { id } = req.params;
   const wait = req.query.wait !== "0";
-  res.setHeader("Cache-Control", "public, max-age=604800");
-
   const recipe = id === DEFAULT_IMAGE_ID
     ? { id: DEFAULT_IMAGE_ID, name: "Indian thali platter" }
     : getRecipeById(id);
 
+  const sendCached = (file) => {
+    const stat = fs.statSync(file);
+    const etag = `"${id}-${stat.mtimeMs}-${stat.size}"`;
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
+    res.type("image/jpeg");
+    return res.sendFile(path.resolve(file));
+  };
+
   const cached = readCachedImage(id);
   if (cached && recipe && id !== DEFAULT_IMAGE_ID) {
-    const audit = auditCachedImage(recipe);
     const override = getDirectThumbOverride(recipe);
-    const metaOk = !override || audit.meta?.source === "curated-thumb" || audit.meta?.originalUrl === override;
+    const audit = auditCachedImage(recipe);
+    const metaOk = !override || (audit.meta?.source === "curated-thumb" && audit.meta?.originalUrl === override);
     if (audit.ok && metaOk) {
-      res.type("image/jpeg");
-      return res.sendFile(path.resolve(cached));
+      return sendCached(cached);
     }
     invalidateCachedImage(id);
   } else if (cached && id === DEFAULT_IMAGE_ID) {
-    res.type("image/jpeg");
-    return res.sendFile(path.resolve(cached));
+    return sendCached(cached);
   }
 
   if (!recipe && id !== DEFAULT_IMAGE_ID) {
@@ -97,8 +106,7 @@ router.get("/recipes/image/:id", async (req, res) => {
 
   try {
     const file = await ensureRecipeImage(recipe);
-    res.type("image/jpeg");
-    return res.sendFile(path.resolve(file));
+    return sendCached(file);
   } catch {
     if (recipe?.thumbUrl) {
       return res.redirect(302, recipe.thumbUrl);

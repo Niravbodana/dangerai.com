@@ -59,7 +59,7 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
           src={imageUrl}
           alt={displayName}
           recipeId={useRemote ? "" : recipe.id}
-          version={recipe._imageVersion || 0}
+          version={recipe.imageVersion || recipe._imageVersion || 0}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#14110e]/90 via-[#14110e]/20 to-transparent" />

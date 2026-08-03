@@ -59,15 +59,7 @@ export function getFeaturedCookAgainRecipes(limit = 6) {
 
 /** Pre-warm verified photos for homepage strip */
 export function warmFeaturedCookAgainImages() {
-  for (const id of FEATURED_COOK_AGAIN_IDS) {
-    const recipe = getRecipeById(id);
-    if (!recipe) continue;
-    import("./recipeImageService.js").then(({ ensureRecipeImage, hasCachedImage, auditCachedImage, invalidateCachedImage }) => {
-      const audit = hasCachedImage(id) ? auditCachedImage(recipe) : { ok: false };
-      if (!audit.ok) {
-        invalidateCachedImage(id);
-        ensureRecipeImage(recipe, { force: true }).catch(() => {});
-      }
-    });
-  }
+  import("./recipeImageService.js").then(({ syncDirectThumbOverrides }) => {
+    syncDirectThumbOverrides().catch(() => {});
+  });
 }

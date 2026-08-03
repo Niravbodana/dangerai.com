@@ -17,6 +17,7 @@ import {
 } from "./fastImageSearch.js";
 import { resolveWikiThumbnailFirst } from "./wikiImageResolver.js";
 import { getWikiTitlesForRecipe, getSimilarRecipeId } from "../data/recipeImageCatalog.js";
+import { logger } from "../lib/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -362,7 +363,7 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
     const meta = readImageMeta(id);
     if (directThumb) {
       const usesOverride =
-        meta?.source === "curated-thumb" ||
+        meta?.source === "curated-thumb" &&
         meta?.originalUrl === directThumb;
       if (audit.ok && usesOverride) return cached;
       invalidateCachedImage(id);
@@ -461,16 +462,65 @@ export function warmRecipeImage(recipe) {
   ensureRecipeImage(recipe).catch(() => {});
 }
 
-export async function cacheImageFromUrl(recipeId, imageUrl, source = "external") {
-  if (!recipeId || !imageUrl || hasCachedImage(recipeId)) return cachePath(recipeId);
+export async function cacheImageFromUrl(recipeId, imageUrl, source = "external", { force = false, title = null } = {}) {
+  if (!recipeId || !imageUrl) throw new Error("recipeId and imageUrl required");
+  if (force) invalidateCachedImage(recipeId);
+  if (!force && hasCachedImage(recipeId)) return cachePath(recipeId);
   ensureDirs();
   const dest = cachePath(recipeId);
   await downloadImage(imageUrl, dest);
   fs.writeFileSync(
     metaPath(recipeId),
-    JSON.stringify({ recipeId, source, originalUrl: imageUrl, fetchedAt: new Date().toISOString() })
+    JSON.stringify({
+      recipeId,
+      source,
+      title: title || recipeId,
+      originalUrl: imageUrl,
+      score: source === "curated-thumb" ? 0.98 : null,
+      fetchedAt: new Date().toISOString(),
+    }, null, 2)
   );
   return dest;
+}
+
+export function getImageCacheVersion(recipeId) {
+  const meta = readImageMeta(recipeId);
+  if (meta?.fetchedAt) return new Date(meta.fetchedAt).getTime() || 0;
+  const file = cachePath(recipeId);
+  if (fs.existsSync(file)) {
+    try {
+      return Math.floor(fs.statSync(file).mtimeMs);
+    } catch {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+export function recipeImageUrl(recipeId, version = null) {
+  const v = version ?? getImageCacheVersion(recipeId);
+  const base = `/api/recipes/image/${recipeId}`;
+  return v ? `${base}?v=${v}` : base;
+}
+
+/** Force-download all curated override thumbnails (fixes stale airplane/wrong local cache). */
+export async function syncDirectThumbOverrides() {
+  const { DIRECT_THUMB_OVERRIDES } = await import("../data/recipeImageOverrides.js");
+  const { getRecipeById } = await import("../data/recipes.js");
+  let synced = 0;
+  for (const [id, url] of Object.entries(DIRECT_THUMB_OVERRIDES)) {
+    const recipe = getRecipeById(id);
+    try {
+      await cacheImageFromUrl(id, url, "curated-thumb", {
+        force: true,
+        title: recipe?.name || id,
+      });
+      synced++;
+    } catch (err) {
+      logger.warn(`Override sync failed ${id}: ${err.message}`);
+    }
+  }
+  return synced;
 }
 
 /** Prefer CDN, then external thumb, then API route */
