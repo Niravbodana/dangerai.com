@@ -82,7 +82,7 @@ export default function KitchenHub() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="font-display text-3xl text-[var(--text-primary)]">Kitchen Hub</h1>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Maid instructions, recipe import, multi-device sync — Namak-style features, Rasoira quality.
+        Maid instructions, recipe import, multi-device sync — sab ek jagah, Rasoira quality.
       </p>
 
       {msg && <p className="mt-4 text-sm text-[var(--accent-soft)]">{msg}</p>}
@@ -125,7 +125,7 @@ export default function KitchenHub() {
 
       <section className="recipe-card mt-6 p-5">
         <h2 className="font-display text-lg">🔗 Recipe Import</h2>
-        <p className="mt-1 text-xs text-[var(--text-secondary)]">YouTube, Hebbars, blog — link paste karein (AMIYAA style).</p>
+        <p className="mt-1 text-xs text-[var(--text-secondary)]">YouTube, blog ya koi bhi recipe link paste karein.</p>
         <div className="mt-3 flex gap-2">
           <input
             value={importUrl}

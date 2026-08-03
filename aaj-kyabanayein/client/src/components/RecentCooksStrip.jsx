@@ -43,9 +43,9 @@ export default function RecentCooksStrip() {
               >
                 <div className="relative aspect-[4/3] bg-[#1a1612]">
                   <RecipeImage
-                    src={recipe.thumbUrl || recipe.imageUrl}
+                    src=""
                     alt={name}
-                    recipeId={recipe.thumbUrl ? "" : recipe.id}
+                    recipeId={recipe.id}
                     className="h-full w-full object-cover"
                   />
                 </div>

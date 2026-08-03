@@ -14,6 +14,7 @@ import AuthModal from './components/AuthModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import OfflineBanner from './components/OfflineBanner';
 import FirstVisitCoach from './components/FirstVisitCoach';
+import PlusBenefitsPopup from './components/PlusBenefitsPopup';
 import Home from './pages/Home';
 
 const Recipes = lazy(() => import('./pages/Recipes'));
@@ -106,6 +107,7 @@ function AppContent() {
       <MobileNav />
       <AuthModal />
       <FirstVisitCoach />
+      <PlusBenefitsPopup />
     </div>
   );
 }

@@ -51,8 +51,8 @@ export default function Home() {
           <div className="home-hero__visual relative mx-auto w-full max-w-[280px] sm:max-w-[320px] lg:max-w-none">
             <div className="home-hero__glow" />
             <img
-              src="/api/recipes/image/shahi-paneer"
-              alt="Indian thali — Rasoira recipes"
+              src="/home/hero-homemaker.png"
+              alt="Indian home cook — Rasoira"
               className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-full max-w-sm rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
               loading="eager"
               fetchPriority="high"
