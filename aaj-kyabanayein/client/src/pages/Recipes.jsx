@@ -10,7 +10,7 @@ import RecipeFilterDrawer from "../components/RecipeFilterDrawer";
 import DietToggle from "../components/DietToggle";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
-import { loadRecipeFilters, saveRecipeFilters } from "../lib/recipeFilters";
+import { loadRecipeFilters, saveRecipeFilters, normalizeCategoryForDiet } from "../lib/recipeFilters";
 import useDebounce from "../hooks/useDebounce";
 import { getTasteProfile } from "../lib/tasteProfile";
 import { getStateById, stateLabel } from "../data/indianStates";
@@ -33,14 +33,16 @@ export default function Recipes() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sortTrending = searchParams.get("sort") === "trending";
 
+  const saved = loadRecipeFilters();
+  const initialDiet = saved.diet || "all";
   const [recipes, setRecipes] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [total, setTotal] = useState(0);
-  const saved = loadRecipeFilters();
-  const [diet, setDiet] = useState(saved.diet || "all");
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [resultTotal, setResultTotal] = useState(0);
+  const [diet, setDiet] = useState(initialDiet);
   const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || saved.cuisine || "all");
-  const [category, setCategory] = useState(saved.category || "all");
+  const [category, setCategory] = useState(normalizeCategoryForDiet(saved.category || "all", initialDiet));
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
@@ -52,15 +54,23 @@ export default function Recipes() {
   const [maxCookTime, setMaxCookTime] = useState(null);
 
   useEffect(() => {
-    fetchCategories().then((data) => {
-      setCuisines(data.cuisines || []);
-      setCategories(data.categories || []);
-      setTotal(data.totalRecipes || 0);
-    });
+    fetchCategories()
+      .then((data) => {
+        setCuisines(data.cuisines || []);
+        setCategories(data.categories || []);
+        setCatalogTotal(data.totalRecipes || 0);
+      })
+      .catch(() => setCatalogTotal(1013));
     fetchRecipeSuggestions("").then((data) => {
       setTrendingSearches(data.trendingSearches || []);
     }).catch(() => {});
   }, []);
+
+  const handleDietChange = (id) => {
+    setDiet(id);
+    setCategory((c) => normalizeCategoryForDiet(c, id));
+    setPage(1);
+  };
 
   useEffect(() => {
     saveRecipeFilters({ diet, cuisine, category });
@@ -88,7 +98,12 @@ export default function Recipes() {
             list = list.filter((r) => r.name.toLowerCase().includes(q) || r.nameHi?.toLowerCase().includes(q));
           }
           setRecipes(list);
-          setTotal(list.length);
+          setResultTotal(list.length);
+          setTotalPages(1);
+        })
+        .catch(() => {
+          setRecipes([]);
+          setResultTotal(0);
           setTotalPages(1);
         })
         .finally(() => setLoading(false));
@@ -104,9 +119,14 @@ export default function Recipes() {
 
     fetchRecipes(params)
       .then((data) => {
-        setRecipes(data.recipes);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
+        setRecipes(data.recipes || []);
+        setResultTotal(data.total ?? 0);
+        setTotalPages(data.totalPages || 1);
+      })
+      .catch(() => {
+        setRecipes([]);
+        setResultTotal(0);
+        setTotalPages(1);
       })
       .finally(() => setLoading(false));
   }, [diet, cuisine, category, page, debouncedSearch, sortTrending, maxCookTime]);
@@ -197,7 +217,10 @@ export default function Recipes() {
             {sortTrending ? t("hotMakings") : t("recipes")}
           </h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {total.toLocaleString()} hand-picked recipes with real ingredients
+            {catalogTotal.toLocaleString()} hand-picked recipes with real ingredients
+            {resultTotal !== catalogTotal && resultTotal > 0 && (
+              <span className="text-[var(--accent-soft)]"> · {resultTotal.toLocaleString()} showing</span>
+            )}
           </p>
         </div>
 
@@ -224,7 +247,7 @@ export default function Recipes() {
             </button>
             <DietToggle
               value={diet}
-              onChange={(id) => { setDiet(id); setPage(1); }}
+              onChange={handleDietChange}
               lang={lang}
             />
           </div>
@@ -308,7 +331,7 @@ export default function Recipes() {
           </button>
           <DietToggle
             value={diet}
-            onChange={(id) => { setDiet(id); setPage(1); }}
+            onChange={handleDietChange}
             lang={lang}
           />
           <button
