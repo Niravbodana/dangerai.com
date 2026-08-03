@@ -62,7 +62,7 @@ export default function Home() {
                 e.currentTarget.className = "relative z-[1] mx-auto max-h-[200px] w-auto opacity-90";
               }}
             />
-            <div className="home-float-card home-float-card--stats !left-2 !bottom-4 sm:!left-0">
+            <div className="home-float-card home-float-card--stats z-10 !left-2 !bottom-4 sm:!left-0">
               <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">1000+</p>
               <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Verified Recipes</p>
             </div>

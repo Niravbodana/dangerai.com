@@ -815,6 +815,7 @@ body {
 
 .home-float-card {
   position: absolute;
+  z-index: 10;
   border-radius: 1rem;
   background: rgba(12, 10, 8, 0.85);
   backdrop-filter: blur(20px);
@@ -824,8 +825,8 @@ body {
 }
 
 .home-float-card--stats {
-  bottom: -1rem;
-  left: -0.5rem;
+  bottom: 1rem;
+  left: -0.75rem;
 }
 
 .home-float-card--rating {

@@ -36,6 +36,7 @@ export async function runQualityGuardian({ fix = true } = {}) {
   };
 
   for (const meta of RECIPE_INDEX) {
+    if (meta.id?.startsWith("tmdb-")) continue;
     const raw = getRecipeById(meta.id);
     if (!raw) continue;
 
@@ -77,6 +78,7 @@ export async function runQualityGuardian({ fix = true } = {}) {
       .slice(0, MAX_PHOTO_FIXES);
 
     for (const item of toFix) {
+      if (item.id?.startsWith("tmdb-")) continue;
       try {
         const recipe = getRecipeById(item.id);
         if (!recipe) continue;
@@ -93,6 +95,7 @@ export async function runQualityGuardian({ fix = true } = {}) {
     // Fetch missing images (limited)
     const missing = report.photoIssues.filter((p) => p.issue === "missing").slice(0, 20);
     for (const item of missing) {
+      if (item.id?.startsWith("tmdb-")) continue;
       if (report.photosFixed + report.photosFailed >= MAX_PHOTO_FIXES) break;
       try {
         const recipe = getRecipeById(item.id);
