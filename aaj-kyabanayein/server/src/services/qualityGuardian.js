@@ -3,12 +3,12 @@
  * Only re-fetches photos that fail audit (not all images).
  */
 import { logger } from "../lib/logger.js";
-import { RECIPE_INDEX, getRecipeById, initRecipeCatalog, enrichRecipe } from "../data/recipes.js";
+import { RECIPE_INDEX, getRecipeById, initRecipeCatalog, enrichRecipe, invalidateRecipeCache } from "../data/recipes.js";
 import { validateIngredientSemantics } from "../lib/ingredientProfiles.js";
 import {
   auditCachedImage,
   ensureRecipeImage,
-  invalidateCachedImage,
+  forceFixRecipePhoto,
   hasCachedImage,
 } from "./recipeImageService.js";
 import { setLocalImage, upsertRecipe } from "../db/recipeRepository.js";
@@ -82,10 +82,24 @@ export async function runQualityGuardian({ fix = true } = {}) {
       try {
         const recipe = getRecipeById(item.id);
         if (!recipe) continue;
-        invalidateCachedImage(item.id);
-        const file = await ensureRecipeImage(recipe, { force: true });
-        setLocalImage(item.id, file, { source: "guardian-fix", fetchedAt: new Date().toISOString() });
-        report.photosFixed++;
+        const result = await forceFixRecipePhoto(recipe);
+        if (!result.ok || !result.file) {
+          report.photosFailed++;
+          logger.warn(`Guardian photo fix failed ${item.id}: ${result.error || "unknown"}`);
+          continue;
+        }
+        setLocalImage(item.id, result.file, {
+          source: result.source || "guardian-fix",
+          fetchedAt: new Date().toISOString(),
+        });
+        invalidateRecipeCache(item.id);
+        const audit = auditCachedImage(getRecipeById(item.id) || recipe);
+        if (audit.ok) {
+          report.photosFixed++;
+        } else {
+          report.photosFailed++;
+          logger.warn(`Guardian photo fix audit failed ${item.id}: ${audit.issue}`);
+        }
       } catch (err) {
         report.photosFailed++;
         logger.warn(`Guardian photo fix failed ${item.id}: ${err.message}`);

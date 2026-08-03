@@ -490,3 +490,68 @@ export function warmTrendingRecipeImages(getTrendingFn, limit = 16) {
     /* ignore warm failures */
   }
 }
+
+/**
+ * Aggressive admin/guardian photo fix — tries overrides, wiki, search, then similar recipe.
+ * Returns { ok, file?, source?, error? } after auditCachedImage verification.
+ */
+export async function forceFixRecipePhoto(recipe) {
+  const id = recipe?.id;
+  if (!id) return { ok: false, error: "Recipe id required" };
+
+  ensureDirs();
+  invalidateCachedImage(id);
+
+  const verify = () => {
+    const audit = auditCachedImage(recipe);
+    if (!audit.ok) return null;
+    return cachePath(id);
+  };
+
+  const directThumb = getDirectThumbOverride(recipe);
+  if (directThumb) {
+    try {
+      await cacheImageFromUrl(id, directThumb, "curated-thumb");
+      const meta = readImageMeta(id);
+      if (meta) {
+        meta.title = recipe.name;
+        meta.score = 0.98;
+        fs.writeFileSync(metaPath(id), JSON.stringify(meta, null, 2));
+      }
+      const file = verify();
+      if (file) return { ok: true, file, source: "curated-thumb" };
+    } catch {
+      /* try next strategy */
+    }
+    invalidateCachedImage(id);
+  }
+
+  const wikiMatch = await tryWikiCatalogMatch(recipe);
+  if (wikiMatch?.imageUrl) {
+    try {
+      await saveCachedMatch(id, recipe, wikiMatch, cachePath(id));
+      const file = verify();
+      if (file) return { ok: true, file, source: wikiMatch.source || "wiki-catalog" };
+    } catch {
+      /* try next strategy */
+    }
+    invalidateCachedImage(id);
+  }
+
+  try {
+    const file = await ensureRecipeImage(recipe, { force: true });
+    const verified = verify();
+    if (verified) return { ok: true, file: verified, source: "search" };
+  } catch {
+    /* try similar fallback */
+  }
+  invalidateCachedImage(id);
+
+  const similar = copyFromSimilarRecipe(recipe);
+  if (similar) {
+    const file = verify();
+    if (file) return { ok: true, file, source: "similar-fallback" };
+  }
+
+  return { ok: false, error: `No valid image found for ${recipe.name || id}` };
+}

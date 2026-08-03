@@ -18,6 +18,17 @@ const INDEX_FILE = path.join(CURATED_DIR, "index.json");
 let recipeIndex = [];
 let recipeById = new Map();
 const customRecipes = new Map();
+const enrichedCache = new Map();
+
+export function invalidateRecipeCache(id) {
+  if (id) enrichedCache.delete(id);
+  else enrichedCache.clear();
+}
+
+export function refreshRecipeInCache(id) {
+  invalidateRecipeCache(id);
+  return getRecipeById(id);
+}
 
 function inferCuisine(recipe) {
   const name = (recipe.name || "").toLowerCase();
@@ -125,10 +136,10 @@ function toIndexEntry(recipe) {
 }
 
 function loadCuratedData() {
+  enrichedCache.clear();
   if (isDatabaseReady()) {
     try {
       recipeIndex = recipeRepo.getRecipeIndex();
-      const enrichedCache = new Map();
       getRecipeByIdImpl = (id) => {
         if (customRecipes.has(id)) return customRecipes.get(id);
         const raw = recipeRepo.getRecipeById(id);
@@ -162,7 +173,6 @@ function loadCuratedData() {
       || [];
     return pantryKeys.length ? { ...entry, pantryKeys } : entry;
   });
-  const enrichedCache = new Map();
 
   // Patch getRecipeById to enrich lazily on first access
   getRecipeByIdImpl = (id) => {

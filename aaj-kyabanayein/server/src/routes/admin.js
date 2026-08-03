@@ -5,10 +5,10 @@ import { validateAdminLogin, signAdminToken } from "../services/adminSessionServ
 import { getGuardianReport, runQualityGuardian } from "../services/qualityGuardian.js";
 import { getBugGuardianReport, runBugGuardian } from "../services/bugGuardian.js";
 import { getAdminConfig, updateAdminConfig, getPublicConfig } from "../services/siteConfigService.js";
-import { RECIPE_INDEX, getRecipeById, enrichRecipe } from "../data/recipes.js";
+import { RECIPE_INDEX, getRecipeById, enrichRecipe, invalidateRecipeCache, refreshRecipeInCache } from "../data/recipes.js";
 import { upsertRecipe, getRecipeCount } from "../db/recipeRepository.js";
 import { validateIngredientSemantics } from "../lib/ingredientProfiles.js";
-import { auditCachedImage, hasCachedImage } from "../services/recipeImageService.js";
+import { auditCachedImage, forceFixRecipePhoto, hasCachedImage } from "../services/recipeImageService.js";
 
 const router = Router();
 
@@ -93,25 +93,38 @@ router.post("/recipes/:id/fix", async (req, res) => {
 
   const enriched = enrichRecipe(raw);
   upsertRecipe(enriched);
+  invalidateRecipeCache(req.params.id);
 
-  const { invalidateCachedImage, ensureRecipeImage } = await import("../services/recipeImageService.js");
-  const { setLocalImage } = await import("../db/recipeRepository.js");
-
+  const photoResult = await forceFixRecipePhoto(enriched);
   let photoFixed = false;
-  try {
-    invalidateCachedImage(req.params.id);
-    const file = await ensureRecipeImage(enriched, { force: true });
-    setLocalImage(req.params.id, file, { source: "admin-fix" });
+  let photoError = null;
+
+  if (photoResult.ok && photoResult.file) {
+    const { setLocalImage } = await import("../db/recipeRepository.js");
+    setLocalImage(req.params.id, photoResult.file, {
+      source: photoResult.source || "admin-fix",
+      fetchedAt: new Date().toISOString(),
+    });
     photoFixed = true;
-  } catch {
+  } else {
+    photoError = photoResult.error || "Photo fix failed";
+  }
+
+  const refreshed = refreshRecipeInCache(req.params.id) || enriched;
+  const semantic = validateIngredientSemantics(refreshed);
+  const photoAudit = hasCachedImage(req.params.id) ? auditCachedImage(refreshed) : { ok: false, issue: "missing" };
+  if (photoFixed && !photoAudit.ok) {
     photoFixed = false;
+    photoError = `Cached image still fails audit: ${photoAudit.issue}`;
   }
 
   res.json({
-    success: true,
-    recipe: enriched,
+    success: photoFixed || semantic.ok,
+    recipe: refreshed,
     photoFixed,
-    semantic: validateIngredientSemantics(enriched),
+    photoError,
+    photoAudit,
+    semantic,
   });
 });
 

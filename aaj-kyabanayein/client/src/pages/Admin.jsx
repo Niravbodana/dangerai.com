@@ -155,12 +155,21 @@ export default function Admin() {
   };
 
   const fixRecipe = async (id) => {
+    setLoading(true);
     try {
-      await adminFetch(`/recipes/${id}/fix`, { method: "POST" });
-      setMessage(`Fixed ${id}`);
+      const res = await adminFetch(`/recipes/${id}/fix`, { method: "POST" });
+      if (res.photoFixed) {
+        setMessage(`Photo fixed: ${id}`);
+      } else if (res.semantic?.ok) {
+        setMessage(`Ingredients OK for ${id}, but photo fix failed${res.photoError ? `: ${res.photoError}` : ""}`);
+      } else {
+        setMessage(`Fix incomplete for ${id}${res.photoError ? ` — ${res.photoError}` : ""}`);
+      }
       await load();
     } catch (err) {
       setMessage(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
