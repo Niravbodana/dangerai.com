@@ -24,7 +24,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
-import { resolveRecipeImageUrl } from "../lib/cdnImage.js";
+import { isPremiumThumbUrl } from "../lib/cdnImage.js";
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com)";
 const IMAGE_FETCH_TIMEOUT_MS = 7000;
@@ -239,8 +239,8 @@ async function findImageUrl(recipe) {
     return { title: name, imageUrl: directThumb, score: 0.98, source: "curated-thumb" };
   }
 
-  // Instant: baked-in thumb from TheMealDB build
-  if (recipe.thumbUrl) {
+  // Instant: baked-in thumb from TheMealDB build (skip dummyjson placeholders)
+  if (recipe.thumbUrl && isPremiumThumbUrl(recipe.thumbUrl)) {
     return { title: name, imageUrl: recipe.thumbUrl, score: 0.95, source: "thumb-embedded" };
   }
 

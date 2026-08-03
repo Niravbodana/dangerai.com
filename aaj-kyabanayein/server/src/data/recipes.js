@@ -7,6 +7,8 @@ import { logger } from "../lib/logger.js";
 import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
 import { buildIngredientAwareSteps, expandIngredients } from "../lib/recipeStepBuilder.js";
 import { getImageCacheVersion, recipeImageUrl } from "../services/recipeImageService.js";
+import { isPremiumThumbUrl } from "../lib/cdnImage.js";
+import { getDirectThumbOverride } from "./recipeImageOverrides.js";
 import { isDatabaseReady } from "../db/migrate.js";
 import * as recipeRepo from "../db/recipeRepository.js";
 
@@ -140,10 +142,12 @@ function mergeThumbUrlsFromIndex(entries) {
   try {
     const fileIndex = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
     const thumbById = new Map(
-      fileIndex.filter((e) => e.thumbUrl).map((e) => [e.id, e.thumbUrl])
+      fileIndex
+        .filter((e) => isPremiumThumbUrl(e.thumbUrl))
+        .map((e) => [e.id, e.thumbUrl])
     );
     return entries.map((entry) => {
-      if (entry.thumbUrl) return entry;
+      if (isPremiumThumbUrl(entry.thumbUrl)) return entry;
       const thumb = thumbById.get(entry.id);
       return thumb ? { ...entry, thumbUrl: thumb } : entry;
     });
@@ -162,7 +166,9 @@ function loadCuratedData() {
         const raw = recipeRepo.getRecipeById(id);
         if (!raw) return null;
         const indexThumb = recipeIndex.find((r) => r.id === id)?.thumbUrl;
-        const merged = indexThumb && !raw.thumbUrl ? { ...raw, thumbUrl: indexThumb } : raw;
+        const merged = isPremiumThumbUrl(indexThumb) && !isPremiumThumbUrl(raw.thumbUrl)
+          ? { ...raw, thumbUrl: indexThumb }
+          : raw;
         if (!enrichedCache.has(id)) enrichedCache.set(id, enrichRecipe(merged));
         return enrichedCache.get(id);
       };
@@ -390,10 +396,11 @@ export function isNonVegRecipe(r) {
 
 export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
-  const thumb = meta.thumbUrl || full?.thumbUrl;
+  const override = getDirectThumbOverride(meta);
+  const thumb = override || meta.thumbUrl || full?.thumbUrl;
   const imageVersion = getImageCacheVersion(meta.id);
   const apiImageUrl = recipeImageUrl(meta.id, imageVersion);
-  const displayUrl = thumb && /^https?:\/\//i.test(thumb) ? thumb : apiImageUrl;
+  const displayUrl = isPremiumThumbUrl(thumb) ? thumb : apiImageUrl;
   return {
     id: meta.id,
     name: meta.name,

@@ -31,12 +31,7 @@ if (fs.existsSync(dbPath)) {
 }
 
 console.log("\nRebuilding recipe database...");
-execSync(`node --input-type=module -e "
-import { ensureDatabase } from './src/db/ensureDatabase.js';
-import { initRecipeCatalog } from './src/data/recipes.js';
-ensureDatabase();
-initRecipeCatalog(true);
-"`, { cwd: server, stdio: "inherit" });
+execSync("npm run db:init", { cwd: root, stdio: "inherit" });
 
 console.log("\nSyncing curated override images...");
 execSync("node src/scripts/syncLocalImages.js --overrides-only", {

@@ -25,7 +25,9 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
   const displayName = lang === 'hi' ? (recipe.nameHi || recipe.name) : recipe.name;
-  const imageUrl = recipe.thumbUrl || recipe.cdnImageUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
+  const imageUrl = (recipe.thumbUrl && /^https?:\/\//i.test(recipe.thumbUrl) && !/dummyjson\.com/i.test(recipe.thumbUrl))
+    ? recipe.thumbUrl
+    : (recipe.cdnImageUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`);
   const useRemote = /^https?:\/\//i.test(imageUrl);
   const pantryPct = showPantryMatch ? (recipe.pantryMatchPercent ?? pantryMatchForRecipe(recipe)) : 0;
 
