@@ -9,37 +9,44 @@ const LANG_MAP = {
 };
 
 const SPEECH_RATES = {
-  en: 0.9,
-  hi: 0.68,
-  hinglish: 0.72,
-  gu: 0.68,
-  mr: 0.68,
+  en: 0.88,
+  hi: 0.72,
+  hinglish: 0.75,
+  gu: 0.72,
+  mr: 0.72,
 };
+
+const SPEECH_PITCH = {
+  en: 1.05,
+  hi: 1.02,
+  hinglish: 1.02,
+  gu: 1.02,
+  mr: 1.02,
+};
+
+const WARM_VOICE_PATTERNS = [
+  /samantha|karen|veena|lekha|heera|kalpana|priya|neha|female|woman|natural|neural|premium|enhanced|google.*hindi|hindi.*female|com\.apple.*compact/i,
+];
+
+function scoreVoice(voice, langCode) {
+  const target = LANG_MAP[langCode] || "en-IN";
+  const prefix = target.split("-")[0];
+  let score = 0;
+  if (voice.lang.startsWith(target)) score += 10;
+  else if (voice.lang.startsWith(prefix)) score += 5;
+  if (WARM_VOICE_PATTERNS.some((re) => re.test(voice.name))) score += 8;
+  if (/google|apple|microsoft/i.test(voice.name)) score += 2;
+  if (voice.localService) score += 1;
+  return score;
+}
 
 function pickVoice(langCode) {
   if (typeof window === "undefined" || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
-  const target = LANG_MAP[langCode] || "en-IN";
-  const prefix = target.split("-")[0];
+  if (!voices.length) return null;
 
-  const femaleIndian = voices.find(
-    (v) =>
-      v.lang.startsWith(target) &&
-      /female|lekha|heera|kalpana|priya|neural|natural|google.*hindi|hindi.*female/i.test(v.name)
-  );
-  if (femaleIndian) return femaleIndian;
-
-  const hindiFemale = voices.find(
-    (v) =>
-      (v.lang.startsWith("hi") || v.lang.startsWith(target)) &&
-      /female|lekha|heera|kalpana|priya/i.test(v.name)
-  );
-  if (hindiFemale && langCode !== "en") return hindiFemale;
-
-  const exact = voices.find((v) => v.lang.startsWith(target));
-  if (exact) return exact;
-
-  return voices.find((v) => v.lang.startsWith(prefix)) || null;
+  const ranked = [...voices].sort((a, b) => scoreVoice(b, langCode) - scoreVoice(a, langCode));
+  return ranked[0] || null;
 }
 
 export function useSpeech(lang = "en") {
@@ -72,7 +79,7 @@ export function useSpeech(lang = "en") {
       utter.lang = voice?.lang || LANG_MAP[lang] || "en-IN";
       if (voice) utter.voice = voice;
       utter.rate = SPEECH_RATES[lang] ?? 0.85;
-      utter.pitch = lang === "en" ? 1 : 0.95;
+      utter.pitch = SPEECH_PITCH[lang] ?? 1.02;
       utter.onend = () => setSpeaking(false);
       utter.onerror = () => setSpeaking(false);
       utterRef.current = utter;
