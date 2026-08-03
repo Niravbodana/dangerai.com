@@ -5,41 +5,76 @@ import { useLanguage } from "../context/LanguageContext";
 import RecipeCard from "../components/RecipeCard";
 import RecipeGridSkeleton from "../components/RecipeGridSkeleton";
 import RecipeSearch from "../components/RecipeSearch";
-import { VegSymbol, NonVegSymbol } from "../components/DietSymbols";
+import RecipeCategoryMenu from "../components/RecipeCategoryMenu";
+import RecipeFilterDrawer from "../components/RecipeFilterDrawer";
+import DietToggle from "../components/DietToggle";
 import { IconArrowLeft, IconArrowRight, IconFilter } from "../components/Icons";
 import { getEmptySearchMessage, getSearchTips, QUICK_SEARCH_SUGGESTIONS } from "../lib/searchUtils";
+import { loadRecipeFilters, saveRecipeFilters, normalizeCategoryForDiet } from "../lib/recipeFilters";
 import useDebounce from "../hooks/useDebounce";
+import { getTasteProfile } from "../lib/tasteProfile";
+import { getStateById, stateLabel } from "../data/indianStates";
+
+const STATE_COLLECTION = {
+  gujarat: "gujarati-thali",
+  punjab: "punjabi-weekend",
+  maharashtra: "maharashtrian-favs",
+  "west-bengal": "bengali-comfort",
+  rajasthan: "rajasthani-plate",
+  telangana: "hyderabadi-special",
+  kerala: "kerala-home",
+  "tamil-nadu": "tamil-tiffin",
+};
 
 export default function Recipes() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const homeState = getTasteProfile().homeState;
+  const stateInfo = getStateById(homeState);
   const [searchParams, setSearchParams] = useSearchParams();
   const sortTrending = searchParams.get("sort") === "trending";
 
+  const saved = loadRecipeFilters();
+  const initialDiet = saved.diet || "all";
   const [recipes, setRecipes] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [diet, setDiet] = useState("all");
-  const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || "all");
-  const [category, setCategory] = useState("all");
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [resultTotal, setResultTotal] = useState(0);
+  const [diet, setDiet] = useState(initialDiet);
+  const [cuisine, setCuisine] = useState(searchParams.get("cuisine") || saved.cuisine || "all");
+  const [category, setCategory] = useState(normalizeCategoryForDiet(saved.category || "all", initialDiet));
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [trendingSearches, setTrendingSearches] = useState([]);
+  const [maxCookTime, setMaxCookTime] = useState(null);
 
   useEffect(() => {
-    fetchCategories().then((data) => {
-      setCuisines(data.cuisines || []);
-      setCategories(data.categories || []);
-      setTotal(data.totalRecipes || 0);
-    });
+    fetchCategories()
+      .then((data) => {
+        setCuisines(data.cuisines || []);
+        setCategories(data.categories || []);
+        setCatalogTotal(data.totalRecipes || 0);
+      })
+      .catch(() => setCatalogTotal(1013));
     fetchRecipeSuggestions("").then((data) => {
       setTrendingSearches(data.trendingSearches || []);
     }).catch(() => {});
   }, []);
+
+  const handleDietChange = (id) => {
+    setDiet(id);
+    setCategory((c) => normalizeCategoryForDiet(c, id));
+    setPage(1);
+  };
+
+  useEffect(() => {
+    saveRecipeFilters({ diet, cuisine, category });
+  }, [diet, cuisine, category]);
 
   useEffect(() => {
     const urlCuisine = searchParams.get("cuisine");
@@ -63,7 +98,12 @@ export default function Recipes() {
             list = list.filter((r) => r.name.toLowerCase().includes(q) || r.nameHi?.toLowerCase().includes(q));
           }
           setRecipes(list);
-          setTotal(list.length);
+          setResultTotal(list.length);
+          setTotalPages(1);
+        })
+        .catch(() => {
+          setRecipes([]);
+          setResultTotal(0);
           setTotalPages(1);
         })
         .finally(() => setLoading(false));
@@ -75,27 +115,89 @@ export default function Recipes() {
     if (cuisine !== "all") params.cuisine = cuisine;
     if (category !== "all") params.category = category;
     if (debouncedSearch) params.search = debouncedSearch;
+    if (maxCookTime) params.maxCookTime = maxCookTime;
 
     fetchRecipes(params)
       .then((data) => {
-        setRecipes(data.recipes);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
+        setRecipes(data.recipes || []);
+        setResultTotal(data.total ?? 0);
+        setTotalPages(data.totalPages || 1);
+      })
+      .catch(() => {
+        setRecipes([]);
+        setResultTotal(0);
+        setTotalPages(1);
       })
       .finally(() => setLoading(false));
-  }, [diet, cuisine, category, page, debouncedSearch, sortTrending]);
+  }, [diet, cuisine, category, page, debouncedSearch, sortTrending, maxCookTime]);
 
   const setSort = (trending) => {
     setSearchParams(trending ? { sort: "trending" } : {});
     setPage(1);
+    if (trending) {
+      setCategory("all");
+      setMaxCookTime(null);
+    }
   };
 
-  const activeFilters = [diet !== "all", cuisine !== "all", category !== "all"].filter(Boolean).length;
+  const handleMenuSelect = (id) => {
+    setPage(1);
+    if (id === "trending") {
+      setSort(true);
+      return;
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("sort");
+      return next;
+    });
+    if (id === "all") {
+      setDiet("all");
+      setCategory("all");
+      setMaxCookTime(null);
+      return;
+    }
+    if (id === "veg" || id === "non-veg") {
+      setDiet(id);
+      setMaxCookTime(null);
+      if (category.startsWith("veg-") && id === "non-veg") {
+        setCategory(category.replace("veg-", "nonveg-"));
+      } else if (category.startsWith("nonveg-") && id === "veg") {
+        setCategory(category.replace("nonveg-", "veg-"));
+      } else if (category === "all") {
+        setCategory("all");
+      }
+      return;
+    }
+    if (id === "quick") {
+      setDiet("all");
+      setCategory("all");
+      setMaxCookTime(20);
+      return;
+    }
+    setDiet("all");
+    setMaxCookTime(null);
+    setCategory(id);
+  };
+
+  const handleCuisineSelect = (id) => {
+    setCuisine(id);
+    setPage(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === "all") next.delete("cuisine");
+      else next.set("cuisine", id);
+      return next;
+    });
+  };
+
+  const activeFilters = [cuisine !== "all", category !== "all", !!maxCookTime, sortTrending].filter(Boolean).length;
 
   const clearFilters = () => {
     setDiet("all");
     setCuisine("all");
     setCategory("all");
+    setMaxCookTime(null);
     setSearch("");
     setPage(1);
     setSearchParams({});
@@ -115,15 +217,100 @@ export default function Recipes() {
             {sortTrending ? t("hotMakings") : t("recipes")}
           </h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {total.toLocaleString()} hand-picked recipes with real ingredients
+            {catalogTotal.toLocaleString()} hand-picked recipes with real ingredients
+            {resultTotal !== catalogTotal && resultTotal > 0 && (
+              <span className="text-[var(--accent-soft)]"> · {resultTotal.toLocaleString()} showing</span>
+            )}
           </p>
         </div>
 
-        <div className="mx-auto mt-6 max-w-2xl">
+        {/* Mobile: sticky bar under logo — filter menu left + veg toggle */}
+        <div className="sticky top-[57px] z-40 -mx-4 mt-4 border-b border-white/[0.06] bg-[#0c0a08]/92 px-4 py-3 backdrop-blur-xl lg:hidden">
+          <div className="recipes-toolbar mx-auto max-w-2xl">
+            <button
+              type="button"
+              onClick={() => setFilterDrawerOpen(true)}
+              className="recipes-toolbar__menu tap-smooth"
+            >
+              <span className="recipes-toolbar__menu-icon">☰</span>
+              <span className="text-left">
+                <span className="block text-xs font-semibold text-[var(--text-primary)]">
+                  {lang === "hi" ? "फ़िल्टर & मेनू" : "Filters & Menu"}
+                </span>
+                <span className="block text-[10px] text-[var(--text-secondary)]">
+                  {lang === "hi" ? "Step by step" : "Step-by-step"}
+                </span>
+              </span>
+              {activeFilters > 0 && (
+                <span className="recipes-toolbar__badge">{activeFilters}</span>
+              )}
+            </button>
+            <DietToggle
+              value={diet}
+              onChange={handleDietChange}
+              lang={lang}
+            />
+          </div>
+        </div>
+
+        <div className="mx-auto mt-5 max-w-2xl">
           <RecipeSearch />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <RecipeFilterDrawer
+          open={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
+          sortTrending={sortTrending}
+          activeCategory={category}
+          activeCuisine={cuisine}
+          maxCookTime={maxCookTime}
+          onSelect={handleMenuSelect}
+          onCuisineSelect={handleCuisineSelect}
+          activeFilterCount={activeFilters}
+          onClear={clearFilters}
+        />
+
+        {stateInfo && (
+          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 p-4">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              {lang === "hi"
+                ? `${stateLabel(stateInfo, "hi")} — aapke state ki recipes`
+                : `${stateLabel(stateInfo, "en")} — recipes from your home state`}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(stateInfo.tags || []).slice(0, 4).map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => applyTrendingSearch(tag)}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent-soft)]"
+                >
+                  {tag}
+                </button>
+              ))}
+              {STATE_COLLECTION[homeState] && (
+                <a
+                  href={`/collections/${STATE_COLLECTION[homeState]}`}
+                  className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[#14110e]"
+                >
+                  {lang === "hi" ? "Poori collection dekho" : "View full collection"}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        <RecipeCategoryMenu
+          activeCategory={category}
+          activeCuisine={cuisine}
+          activeDiet={diet}
+          sortTrending={sortTrending}
+          maxCookTime={maxCookTime}
+          onSelect={handleMenuSelect}
+          onCuisineSelect={handleCuisineSelect}
+        />
+
+        <div className="mt-5 hidden flex-wrap items-center justify-center gap-2 lg:flex">
           <button
             type="button"
             onClick={() => setSort(false)}
@@ -142,6 +329,11 @@ export default function Recipes() {
           >
             {t("hotMakings")}
           </button>
+          <DietToggle
+            value={diet}
+            onChange={handleDietChange}
+            lang={lang}
+          />
           <button
             type="button"
             onClick={() => setFiltersOpen((o) => !o)}
@@ -152,31 +344,12 @@ export default function Recipes() {
             }`}
           >
             <IconFilter className="h-3.5 w-3.5" />
-            Filters{activeFilters > 0 ? ` (${activeFilters})` : ""}
+            {t("filters")}{activeFilters > 0 ? ` (${activeFilters})` : ""}
           </button>
         </div>
 
         {filtersOpen && (
-          <div className="mx-auto mt-4 max-w-3xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                { id: "all", label: "All" },
-                { id: "veg", label: t("veg"), icon: <VegSymbol className="h-3 w-3" /> },
-                { id: "non-veg", label: t("nonVeg"), icon: <NonVegSymbol className="h-3 w-3" /> },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => { setDiet(opt.id); setPage(1); }}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                    diet === opt.id ? "bg-white/15 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-white/8"
-                  }`}
-                >
-                  {opt.icon}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+          <div className="mx-auto mt-4 hidden max-w-3xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 lg:block">
             <div className="filter-row">
               <span className="filter-row__label">Meal</span>
               <div className="filter-row__chips">
@@ -187,7 +360,7 @@ export default function Recipes() {
                     onClick={() => { setCategory(category === c.id ? "all" : c.id); setPage(1); }}
                     className={`filter-chip tap-smooth ${category === c.id ? "filter-chip--active" : ""}`}
                   >
-                    {c.label}
+                    {lang === "hi" ? c.labelHi || c.label : c.label}
                   </button>
                 ))}
               </div>
@@ -202,7 +375,7 @@ export default function Recipes() {
                     onClick={() => { setCuisine(c.id); setPage(1); }}
                     className={`filter-chip tap-smooth ${cuisine === c.id ? "filter-chip--active" : ""}`}
                   >
-                    {c.label}
+                    {lang === "hi" ? c.labelHi || c.label : c.label}
                   </button>
                 ))}
               </div>
