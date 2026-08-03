@@ -52,10 +52,19 @@ Restart both server and client after setting env vars. Login/signup modal will s
 
 ```bash
 cd aaj-kyabanayein
-npm run install:all   # fast — no API fetch (recipes already in repo)
-npm run dev:server    # http://localhost:5000
-npm run dev:client    # http://localhost:3000 (separate terminal)
+npm run install:all   # first time only
+npm run dev           # starts API (5000) + app (3000) together — recommended
 ```
+
+**Or two terminals:**
+
+```bash
+npm run dev:server    # Terminal 1 → http://localhost:5000
+npm run dev:client    # Terminal 2 → http://localhost:3000
+```
+
+> **Vite proxy error `ECONNREFUSED 127.0.0.1:5000`?**  
+> Sirf `dev:client` chalaya hai — backend band hai. `npm run dev` use karo, ya alag terminal mein `npm run dev:server` chalao. Check: `curl http://localhost:5000/api/health`
 
 > **Note:** `npm install` no longer downloads recipes from the internet. Curated ~900 recipes ship with the repo. To rebuild from APIs (slow): `npm run build-recipe-books -- --force`
 
