@@ -14,10 +14,11 @@ function run(cmd, label) {
   execSync(cmd, { cwd: root, stdio: "inherit" });
 }
 
-run("npm run fix-ingredients", "1/5 Re-sanitize & save all recipe ingredients");
-run("node scripts/cache-premium-thumbs.mjs", "2/5 Cache premium MealDB photos locally");
-run("npm run sync-images -- --force-bad", "3/5 Refetch bad/missing photos");
-run("npm run guardian", "4/5 Quality guardian (auto-fix remaining issues)");
-run("npm run audit-recipes", "5/5 Final ingredient/step audit");
+run("npm run fix-ingredients", "1/6 Re-sanitize & save all recipe ingredients");
+run("node scripts/cache-premium-thumbs.mjs", "2/6 Cache premium MealDB photos locally");
+run("node -e \"import('./server/src/services/recipeImageService.js').then(m=>m.syncDirectThumbOverrides().then(n=>console.log('Synced',n,'curated overrides')))\"", "3/6 Sync curated photo overrides");
+run("npm run sync-images -- --force-bad", "4/6 Refetch bad/missing photos");
+run("npm run guardian", "5/6 Quality guardian (auto-fix remaining issues)");
+run("npm run audit-recipes", "6/6 Final ingredient/step audit");
 
 console.log("\n✅ audit-fix-all complete. Run: npm run audit-images to verify photos.\n");

@@ -173,16 +173,35 @@ function recipeWantsDish(name = "", dish) {
   return new RegExp(`\\b${escaped}s?\\b`, "i").test(name);
 }
 
+const MEAT_WORDS_RE = /chicken|mutton|fish|meat|egg|prawn|shrimp|beef|pork|lamb|saltfish|chorizo|trout|camaro|poulet/i;
+
+/** Word-boundary check — avoids false hits like "car" inside "carrots" / "carbonara". */
+function blobContainsUnwantedDish(blob, recipeName) {
+  const text = (blob || "").toLowerCase();
+  for (const dish of WRONG_DISHES) {
+    if (recipeWantsDish(recipeName, dish)) continue;
+    const escaped = dish.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${escaped}s?\\b`, "i").test(text)) return true;
+  }
+  return false;
+}
+
+function recipeMentionsMeat(name = "") {
+  return MEAT_WORDS_RE.test(name);
+}
+
+function imageBlobMismatchesVegDiet(blob, recipeName) {
+  if (recipeMentionsMeat(recipeName)) return false;
+  return MEAT_WORDS_RE.test(blob);
+}
+
 function isRawOrWrongImage(title = "", url = "", recipeName = "") {
   const blob = `${title} ${url}`.toLowerCase();
   if (RAW_INGREDIENT_PATTERNS.some((re) => re.test(blob))) return true;
   const nameWords = (recipeName || "").toLowerCase().split(/\s+/).filter((w) => w.length > 2);
   const t = (title || "").trim().toLowerCase();
   if (GENERIC_TITLES.has(t) && nameWords.length >= 2) return true;
-  for (const dish of WRONG_DISHES) {
-    if (blob.includes(dish) && !recipeWantsDish(recipeName, dish)) return true;
-  }
-  return false;
+  return blobContainsUnwantedDish(blob, recipeName);
 }
 
 function scoreTitle(title, name, recipe = null) {
@@ -195,9 +214,7 @@ function scoreTitle(title, name, recipe = null) {
   let score = hits / words.length;
   if (t.includes(core)) score += 0.4;
   if (GENERIC_TITLES.has(t.trim()) && words.length >= 2) score -= 0.8;
-  for (const dish of WRONG_DISHES) {
-    if (t.includes(dish) && !recipeWantsDish(name, dish)) score -= 0.9;
-  }
+  if (blobContainsUnwantedDish(t, name)) score -= 0.9;
   return score;
 }
 
@@ -294,9 +311,7 @@ async function findImageUrl(recipe) {
       if (isVeg && /chicken|mutton|fish|meat|egg|prawn|shrimp|beef|pork|lamb/i.test(`${c.title || ""} ${c.imageUrl || ""}`)) {
         return false;
       }
-      for (const dish of WRONG_DISHES) {
-        if ((c.title || "").toLowerCase().includes(dish) && !recipeWantsDish(name, dish)) return false;
-      }
+      if (blobContainsUnwantedDish(`${c.title || ""} ${c.imageUrl || ""}`, name)) return false;
       return true;
     });
 
@@ -504,7 +519,7 @@ export function auditCachedImage(recipe) {
   if (titleScore < 0.45) return { ok: false, issue: "low-score", meta, titleScore };
   const diet = recipe.diet || [];
   const isVeg = diet.includes("veg") && !diet.includes("non-veg");
-  if (isVeg && /chicken|mutton|fish|meat|egg|prawn/i.test(`${meta.title} ${meta.originalUrl}`)) {
+  if (isVeg && imageBlobMismatchesVegDiet(`${meta.title} ${meta.originalUrl}`, recipe.name || "")) {
     return { ok: false, issue: "veg-nonveg-mismatch", meta, titleScore };
   }
   return { ok: true, meta, titleScore };
