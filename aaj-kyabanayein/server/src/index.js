@@ -22,6 +22,7 @@ import { ensureDatabase } from "./db/ensureDatabase.js";
 import { initRecipeCatalog } from "./data/recipes.js";
 import { startQualityGuardianOnBoot } from "./services/qualityGuardian.js";
 import { getFullConfig } from "./services/siteConfigService.js";
+import { warmFeaturedCookAgainImages } from "./services/featuredCookAgainService.js";
 
 initSentry();
 
@@ -136,5 +137,6 @@ app.listen(PORT, HOST, () => {
     logger.warn("JWT_SECRET is not set — set it before production deploy");
   }
   warmTrendingRecipeImages(getTrendingRecipes, 20);
+  warmFeaturedCookAgainImages();
   startQualityGuardianOnBoot();
 });

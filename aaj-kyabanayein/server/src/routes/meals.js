@@ -35,7 +35,11 @@ import {
   ensureRecipeImage,
   readCachedImage,
   warmRecipeImage,
+  auditCachedImage,
+  invalidateCachedImage,
 } from "../services/recipeImageService.js";
+import { getDirectThumbOverride } from "../data/recipeImageOverrides.js";
+import { getFeaturedCookAgainRecipes } from "../services/featuredCookAgainService.js";
 import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
@@ -52,15 +56,24 @@ router.get("/recipes/image/:id", async (req, res) => {
   const wait = req.query.wait !== "0";
   res.setHeader("Cache-Control", "public, max-age=604800");
 
-  const cached = readCachedImage(id);
-  if (cached) {
-    res.type("image/jpeg");
-    return res.sendFile(path.resolve(cached));
-  }
-
   const recipe = id === DEFAULT_IMAGE_ID
     ? { id: DEFAULT_IMAGE_ID, name: "Indian thali platter" }
     : getRecipeById(id);
+
+  const cached = readCachedImage(id);
+  if (cached && recipe && id !== DEFAULT_IMAGE_ID) {
+    const audit = auditCachedImage(recipe);
+    const override = getDirectThumbOverride(recipe);
+    const metaOk = !override || audit.meta?.source === "curated-thumb" || audit.meta?.originalUrl === override;
+    if (audit.ok && metaOk) {
+      res.type("image/jpeg");
+      return res.sendFile(path.resolve(cached));
+    }
+    invalidateCachedImage(id);
+  } else if (cached && id === DEFAULT_IMAGE_ID) {
+    res.type("image/jpeg");
+    return res.sendFile(path.resolve(cached));
+  }
 
   if (!recipe && id !== DEFAULT_IMAGE_ID) {
     return res.status(404).json({ success: false, message: "Recipe not found" });
@@ -126,6 +139,12 @@ router.get("/recipes/trending", (req, res) => {
   const recipes = getTrendingRecipes(limit).map(toListItem).map(attachRating);
   const trendingDate = recipes[0]?.trendingDate || null;
   res.json({ success: true, recipes, total: recipes.length, trendingDate });
+});
+
+router.get("/recipes/featured-strip", (req, res) => {
+  const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 6));
+  const recipes = getFeaturedCookAgainRecipes(limit);
+  res.json({ success: true, recipes, total: recipes.length });
 });
 
 router.get("/recipes/suggest", (req, res) => {

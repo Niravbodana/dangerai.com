@@ -53,7 +53,7 @@ export default function Home() {
             <img
               src="/home/hero-homemaker.png"
               alt="Indian home cook — Rasoira"
-              className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-full max-w-sm rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
+              className="home-hero__img relative z-0 mx-auto max-h-[340px] w-full max-w-sm rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
               loading="eager"
               fetchPriority="high"
               decoding="async"

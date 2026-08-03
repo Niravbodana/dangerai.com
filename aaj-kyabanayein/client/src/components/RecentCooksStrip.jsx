@@ -1,57 +1,38 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchRecipe, fetchTrendingRecipes } from "../api";
 import { useLanguage } from "../context/LanguageContext";
-import {
-  getRecentRecipeIds,
-  isEligibleForCookAgain,
-  sanitizeRecentRecipes,
-} from "../lib/recentRecipes";
 import RecipeImage from "./RecipeImage";
 
+/** Verified trending Indian recipes — high-quality photos only (no recent history junk) */
 export default function RecentCooksStrip() {
   const { t, lang } = useLanguage();
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    sanitizeRecentRecipes();
-    const ids = getRecentRecipeIds(12);
-
-    async function load() {
-      const fromRecent = ids.length
-        ? await Promise.all(
-            ids.map((id) =>
-              fetchRecipe(id)
-                .then((d) => d?.recipe)
-                .catch(() => null)
-            )
-          )
-        : [];
-
-      let recipes = fromRecent.filter((r) => r && isEligibleForCookAgain(r));
-
-      if (recipes.length < 4) {
-        try {
-          const trending = await fetchTrendingRecipes(8);
-          const extra = (trending.recipes || []).filter(isEligibleForCookAgain);
-          const seen = new Set(recipes.map((r) => r.id));
-          for (const r of extra) {
-            if (!seen.has(r.id)) {
-              recipes.push(r);
-              seen.add(r.id);
-            }
-            if (recipes.length >= 6) break;
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-
-      setItems(recipes.slice(0, 6));
-    }
-
-    load();
+    fetch("/api/recipes/featured-strip?limit=6")
+      .then((r) => r.json())
+      .then((data) => {
+        setItems(data.recipes || []);
+      })
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return (
+      <section className="border-t border-white/[0.06] py-8">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="h-7 w-40 animate-pulse rounded bg-white/10" />
+          <div className="mt-4 flex gap-3 overflow-x-auto">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-36 w-[9.5rem] shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!items.length) return null;
 
@@ -78,7 +59,7 @@ export default function RecentCooksStrip() {
                     src=""
                     alt={name}
                     recipeId={recipe.id}
-                    eager={false}
+                    eager
                     className="h-full w-full object-cover"
                   />
                 </div>

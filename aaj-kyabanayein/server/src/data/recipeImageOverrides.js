@@ -24,6 +24,9 @@ export const DIRECT_THUMB_OVERRIDES = {
   "kerala-avial": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Aviyal%2CKerala_cuisine.jpg/330px-Aviyal%2CKerala_cuisine.jpg",
   "aamras-puri": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Fluffy_Poori_%28cropped%29.JPG/330px-Fluffy_Poori_%28cropped%29.JPG",
   "aloo-tikki": "https://www.themealdb.com/images/media/meals/uttupv1511815050.jpg",
+  "shahi-paneer": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Naan_shahi_paneer.jpg/330px-Naan_shahi_paneer.jpg",
+  "paneer-butter-masala": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Shahi_Paneer_%26_Butter_Naan.jpg/330px-Shahi_Paneer_%26_Butter_Naan.jpg",
+  "palak-paneer": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Shahi_Paneer_%26_Butter_Naan.jpg/330px-Shahi_Paneer_%26_Butter_Naan.jpg",
 };
 
 export const IMAGE_SEARCH_OVERRIDES = {

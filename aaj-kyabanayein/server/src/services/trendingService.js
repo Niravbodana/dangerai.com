@@ -35,7 +35,7 @@ function dailyRecipeScore(recipeId, rating, dateKey) {
 
 export function getTrendingRecipes(limit = 12, date = new Date()) {
   const dateKey = getTrendingDateKey(date);
-  const pool = filterRecipeIndex({});
+  const pool = filterRecipeIndex({}).filter((r) => !r.id?.startsWith("tmdb-"));
 
   const scored = pool.map((recipe) => {
     const rating = getRating(recipe.id);
