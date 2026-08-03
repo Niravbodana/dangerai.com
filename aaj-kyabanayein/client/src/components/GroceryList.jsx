@@ -3,10 +3,14 @@ import { buildGroceryWhatsAppText, openWhatsAppShare } from "../lib/pantryStore"
 import {
   getCheckedState,
   getGroceryCompletion,
-  openProviderSearch,
   toggleGroceryChecked,
 } from "../lib/groceryStore";
-import { getGroceryProviders } from "../lib/groceryProviders";
+import {
+  getGroceryProviders,
+  getDeliveryProviders,
+  openProviderSearch,
+  fetchProviderCompare,
+} from "../lib/groceryProviders";
 import { track } from "../lib/analytics";
 
 export default function GroceryList({ items, persist = true }) {
@@ -25,6 +29,12 @@ export default function GroceryList({ items, persist = true }) {
 
   const { done, total } = getGroceryCompletion(items);
   const providers = getGroceryProviders();
+  const deliveryProviders = getDeliveryProviders();
+
+  const compareItem = async (itemName) => {
+    const links = await fetchProviderCompare(itemName);
+    if (links[0]?.url) window.open(links[0].url, "_blank", "noopener,noreferrer");
+  };
 
   const itemKey = (item) => item.id || item.name;
 
@@ -57,11 +67,21 @@ export default function GroceryList({ items, persist = true }) {
             <button type="button" onClick={shareWa} className="premium-btn-outline px-3 py-1.5 text-xs">
               WhatsApp share
             </button>
-            {providers.map((p) => (
+            {providers.filter((p) => p.type !== "delivery").map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => { openProviderSearch(p.id, items[0]?.name || "groceries"); track("grocery_provider", { provider: p.id }); }}
+                className="premium-btn-outline px-3 py-1.5 text-xs"
+              >
+                {p.name}
+              </button>
+            ))}
+            {deliveryProviders.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => { openProviderSearch(p.id, "indian food delivery"); track("delivery_provider", { provider: p.id }); }}
                 className="premium-btn-outline px-3 py-1.5 text-xs"
               >
                 {p.name}
@@ -85,9 +105,16 @@ export default function GroceryList({ items, persist = true }) {
                             onChange={() => handleToggle(id)}
                             className="h-4 w-4 rounded accent-[var(--accent-green)]"
                           />
-                          <span className={isChecked ? "text-sm text-[var(--text-secondary)] line-through" : "text-sm text-[var(--text-primary)]"}>
+                          <span className={`flex-1 ${isChecked ? "text-sm text-[var(--text-secondary)] line-through" : "text-sm text-[var(--text-primary)]"}`}>
                             {item.nameHi} ({item.name}) — {item.quantity}
                           </span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); compareItem(item.name); }}
+                            className="text-[10px] text-[var(--accent-soft)] hover:underline"
+                          >
+                            Compare
+                          </button>
                         </label>
                       </li>
                     );

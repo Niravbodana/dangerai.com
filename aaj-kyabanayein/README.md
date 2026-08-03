@@ -52,10 +52,43 @@ Restart both server and client after setting env vars. Login/signup modal will s
 
 ```bash
 cd aaj-kyabanayein
-npm run install:all   # fast — no API fetch (recipes already in repo)
-npm run dev:server    # http://localhost:5000
-npm run dev:client    # http://localhost:3000 (separate terminal)
+npm run install:all   # first time only
+npm run db:init       # SQLite database + 941 recipes (first time)
+npm run sync-images   # download photos locally (optional, ~10 min)
+npm run dev           # starts API (5000) + app (3000) together — recommended
 ```
+
+**Database:** SQLite (`server/data/rasoira.db`) — recipes, users, favorites, ratings, saved meals. Photos cache in `server/data/image-cache/` so bar-bar fetch nahi hota.
+
+**Photo quality audit:**
+```bash
+npm run audit-images          # check matching (shahi paneer, dal tadka, etc.)
+npm run audit-images -- --fix # auto-refetch bad photos + save to DB
+npm run sync-images -- --force-bad   # re-sync only mismatched photos
+npm run fix-ingredients       # sanitize all recipe ingredients in SQLite
+```
+
+**Admin panel:** `http://localhost:3000/admin` — set `ADMIN_SECRET` in `server/.env`, enter key in UI. Run Quality Guardian, fix individual recipes, view ingredient/photo issues.
+
+On server start, **Quality Guardian** auto-fixes only bad/missing photos (not full re-sync). Disable: `GUARDIAN_DISABLED=1`.
+
+**Or two terminals:**
+
+```bash
+npm run dev:server    # Terminal 1 → http://localhost:5000
+npm run dev:client    # Terminal 2 → http://localhost:3000
+```
+
+> **Vite proxy error `ECONNREFUSED 127.0.0.1:5000`?**  
+> Sirf `dev:client` chalaya hai — backend band hai. `npm run dev` use karo, ya alag terminal mein `npm run dev:server` chalao. Check: `curl http://localhost:5000/api/health`
+
+> **Port 3000 already in use / server crash?**  
+> Purana dev server band nahi hua. Pehle ports free karo, phir dubara start karo:
+> ```bash
+> npm run dev:kill
+> npm run dev
+> ```
+> Agar 3000 busy ho to Vite automatically 3001 try karega — terminal mein jo URL dikhe wahi kholo.
 
 > **Note:** `npm install` no longer downloads recipes from the internet. Curated ~900 recipes ship with the repo. To rebuild from APIs (slow): `npm run build-recipe-books -- --force`
 

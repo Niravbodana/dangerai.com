@@ -17,7 +17,7 @@ import {
   removePantryItem,
   upsertPantryItem,
 } from "../lib/pantryStore";
-import { track } from "../lib/analytics";
+import { fetchRestockSuggestions } from "../lib/groceryProviders";
 
 function Chip({ active, onClick, children }) {
   return (
@@ -51,9 +51,16 @@ export default function Pantry() {
   const [qtyDraft, setQtyDraft] = useState({});
   const [expiryDraft, setExpiryDraft] = useState({});
 
+  const [restock, setRestock] = useState([]);
+
   useEffect(() => {
     fetchPantryItems().then((data) => setCatalog(data.items || []));
+    fetchRestockSuggestions(loadPantry()).then(setRestock);
   }, []);
+
+  useEffect(() => {
+    fetchRestockSuggestions(items).then(setRestock);
+  }, [items]);
 
   const refresh = () => setItems(loadPantry());
 
@@ -127,6 +134,32 @@ export default function Pantry() {
         <p className="mb-2 text-[var(--text-secondary)]">
           Quantity + expiry ke saath smart pantry — jo pada hai usi se recipes.
         </p>
+
+        {restock.length > 0 && (
+          <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <p className="text-sm font-medium text-[var(--text-primary)]">Auto-restock suggestions</p>
+            <ul className="mt-2 space-y-2 text-sm">
+              {restock.map((s) => (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>{s.nameHi || s.name} — {s.reason === "missing" ? "missing" : "low stock"}</span>
+                  <div className="flex gap-1">
+                    {s.providers?.slice(0, 3).map((p) => (
+                      <a
+                        key={p.id}
+                        href={p.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded bg-white/10 px-2 py-0.5 text-[10px] text-[var(--accent-soft)]"
+                      >
+                        {p.name}
+                      </a>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {(expiring.length > 0 || expired.length > 0 || lowStock.length > 0) && (
           <div className="mb-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-3 text-sm text-[var(--accent-soft)]">

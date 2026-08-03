@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -9,21 +9,25 @@ import RecipeImage from './RecipeImage';
 import { VegSymbol, NonVegSymbol } from './DietSymbols';
 import { IconClock, IconFlame, IconHeart, IconStar } from './Icons';
 
+import { pantryMatchForRecipe } from '../lib/pantryMatch';
+
 function isVeg(diet) {
   if (Array.isArray(diet)) return diet.includes('veg') && !diet.includes('non-veg');
   return diet === 'veg';
 }
 
-export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank }) {
+export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank, showPantryMatch = true }) {
   const { t, lang } = useLanguage();
   const { user } = useAuth();
   const { openSignup } = useAuthModal();
+  const prefetched = useRef(false);
   const [fav, setFav] = useState(isFavorite(recipe.id));
   const veg = isVeg(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
   const displayName = lang === 'hi' ? (recipe.nameHi || recipe.name) : recipe.name;
   const imageUrl = recipe.cdnImageUrl || recipe.thumbUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
   const useRemote = /^https?:\/\//i.test(imageUrl);
+  const pantryPct = showPantryMatch ? (recipe.pantryMatchPercent ?? pantryMatchForRecipe(recipe)) : 0;
 
   const handleFav = async (e) => {
     e.preventDefault();
@@ -37,9 +41,17 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
     onFavoriteChange?.();
   };
 
+  const prefetchRecipe = () => {
+    if (prefetched.current) return;
+    prefetched.current = true;
+    fetch(`/api/recipes/${recipe.id}`, { priority: "low" }).catch(() => {});
+  };
+
   return (
     <Link
       to={`/recipe/${recipe.id}`}
+      onTouchStart={prefetchRecipe}
+      onMouseEnter={prefetchRecipe}
       className={`recipe-card catalog-card group block overflow-hidden ${trending ? 'recipe-card--trending' : ''}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#1a1612]">
@@ -51,6 +63,12 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#14110e]/90 via-[#14110e]/20 to-transparent" />
+
+        {pantryPct > 0 && (
+          <span className="absolute left-3 top-3 rounded-lg bg-black/60 px-2 py-1 text-[10px] font-bold text-[#4ade80] backdrop-blur-md">
+            {pantryPct}% pantry
+          </span>
+        )}
 
         {trending && (
           <span className="trending-badge absolute left-3 top-3">
