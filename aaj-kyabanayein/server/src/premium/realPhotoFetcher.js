@@ -1,8 +1,10 @@
 /**
  * Fetch REAL high-quality food photos with commercial-safe licenses.
- * Fast-first: Wikimedia Commons → Wikipedia → Openverse (short timeouts).
+ * Fast-first: curated Wikipedia → Wikimedia Commons → Wikipedia → Openverse → MealDB.
  */
 import { normalizeToJpeg } from "./imageEncode.js";
+import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
+import { searchMealDbThumb } from "../services/fastImageSearch.js";
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com; premium-photos)";
 
@@ -11,7 +13,8 @@ const NOISE = new Set([
   "royal", "grand", "lite", "authentic", "street", "festive", "comfort",
   "punjabi", "gujarati", "bengali", "maharashtrian", "hyderabadi", "kashmiri",
   "north", "south", "indian", "veg", "non", "style", "recipe", "homemade",
-  "lib", "bulk", "phase",
+  "lib", "bulk", "phase", "minute", "minutes", "hour", "easy", "simple",
+  "best", "perfect", "ultimate", "famous", "popular", "healthy", "spicy",
 ]);
 
 const WRONG = [
@@ -22,11 +25,30 @@ const WRONG = [
 
 function cleanQuery(name = "") {
   return String(name)
+    .replace(/\d+\s*-?\s*minute(s)?/gi, " ")
     .replace(/[^\w\s-]/g, " ")
     .split(/\s+/)
     .filter((w) => w.length > 1 && !NOISE.has(w.toLowerCase()))
     .join(" ")
     .trim();
+}
+
+/** Core dish name from long generated titles — e.g. "15-minute chicken halloumi burgers" → "chicken halloumi burgers" */
+function extractCoreDishName(name = "") {
+  const clean = cleanQuery(name);
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length <= 4) return clean;
+  return words.slice(-4).join(" ");
+}
+
+function searchNamesFor(recipeOrName) {
+  const recipe = typeof recipeOrName === "object" ? recipeOrName : { name: recipeOrName };
+  const name = recipe.name || recipe.title || String(recipeOrName || "");
+  const curated = getCuratedWikiTitle(recipe);
+  const core = extractCoreDishName(name);
+  const clean = cleanQuery(name);
+  const names = [...new Set([curated, clean, core, name].filter(Boolean))];
+  return names;
 }
 
 function titleScore(title = "", recipeName = "") {
@@ -173,36 +195,54 @@ async function searchWikipedia(recipeName) {
 }
 
 /**
- * Find best real photo — Commons first (best for Indian food), then Wiki, then Openverse.
+ * Find best real photo — try multiple dish name variants before studio fallback.
+ * @param {string|object} recipeOrName — recipe row or dish name
  */
-export async function findRealFoodPhoto(recipeName) {
-  const q = cleanQuery(recipeName);
-  // Skip network for very invented / long catalog names — use studio art
-  if (!q || q.length < 3) return null;
-  if (q.split(/\s+/).length > 6) return null;
+export async function findRealFoodPhoto(recipeOrName) {
+  const names = searchNamesFor(recipeOrName);
+  if (!names.length) return null;
 
-  try {
-    const commons = await searchCommons(recipeName);
-    if (commons?.score >= 0.55) return commons;
-  } catch {
-    /* continue */
+  let best = null;
+
+  for (const name of names) {
+    const q = cleanQuery(name);
+    if (!q || q.length < 2) continue;
+
+    try {
+      const commons = await searchCommons(name);
+      if (commons && (!best || commons.score > best.score)) best = commons;
+      if (best?.score >= 0.7) return best;
+    } catch {
+      /* continue */
+    }
+
+    try {
+      const wiki = await searchWikipedia(name);
+      if (wiki && (!best || wiki.score > best.score)) best = wiki;
+      if (best?.score >= 0.65) return best;
+    } catch {
+      /* continue */
+    }
+
+    try {
+      const ov = await searchOpenverse(name);
+      if (ov && (!best || ov.score > best.score)) best = ov;
+    } catch {
+      /* continue */
+    }
+
+    try {
+      const meal = await searchMealDbThumb(name);
+      if (meal?.imageUrl) {
+        const scored = { ...meal, score: Math.max(meal.score || 0.75, titleScore(meal.title, names[0])) };
+        if (!best || scored.score > best.score) best = scored;
+      }
+    } catch {
+      /* continue */
+    }
   }
 
-  try {
-    const wiki = await searchWikipedia(recipeName);
-    if (wiki?.score >= 0.5) return wiki;
-  } catch {
-    /* continue */
-  }
-
-  try {
-    const ov = await searchOpenverse(recipeName);
-    if (ov?.score >= 0.55) return ov;
-  } catch {
-    /* continue */
-  }
-
-  return null;
+  return best?.score >= 0.45 ? best : null;
 }
 
 export async function fetchAndNormalizePhoto(match) {
