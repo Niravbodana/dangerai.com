@@ -143,6 +143,18 @@ export const REGISTERED_DATASETS = {
     apiCommercialUse: true,
     notes: "Curated popular Indian recipes — researched for demand, written as original content.",
   },
+  "rasoira-phase3-bulk": {
+    id: "rasoira-phase3-bulk",
+    name: "Rasoira Phase 3 Bulk Unique Recipe Library",
+    sourceUrl: "internal://rasoira/phase3-bulk",
+    licenseSpdx: "RASOIRA-AI",
+    commercialUseAllowed: true,
+    attributionRequired: false,
+    allowedFields: ["recipe_full"],
+    robotsTxtRespected: true,
+    apiCommercialUse: true,
+    notes: "Bulk unique dish identities with original content — quality gated and admin approved.",
+  },
   "rasoira-user-submitted": {
     id: "rasoira-user-submitted",
     name: "User-submitted recipes",

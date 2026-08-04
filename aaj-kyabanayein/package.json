@@ -42,6 +42,9 @@
     "enterprise:agents": "node scripts/run-enterprise-research.mjs agents",
     "phase3:plan": "node scripts/run-phase3-import.mjs plan",
     "phase3:count": "node scripts/run-phase3-import.mjs count",
-    "phase3:import": "node scripts/run-phase3-import.mjs import"
+    "phase3:import": "node scripts/run-phase3-import.mjs import",
+    "library:status": "node scripts/run-bulk-library.mjs status",
+    "library:build": "node scripts/run-bulk-library.mjs build",
+    "library:approve": "node scripts/run-bulk-library.mjs approve-pending"
   }
 }
