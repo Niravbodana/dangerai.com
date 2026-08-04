@@ -305,8 +305,8 @@ export async function buildPremiumRecipe(seed, options = {}) {
     );
     recipe.localImage = hero.filePath;
     recipe.imageUrl = `/api/recipes/image/${id}`;
-    recipe.imageLicense = "RASOIRA-AI";
-    recipe.imageSource = "premium-hero";
+    recipe.imageLicense = hero.meta?.license || "RASOIRA-AI";
+    recipe.imageSource = hero.meta?.source || "premium-hero";
     imageMeta = hero.meta;
   }
 

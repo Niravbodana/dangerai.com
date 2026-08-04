@@ -39,12 +39,14 @@ function parseFlags(argv) {
     onlyBelowScore: null,
     syncToLiveCatalog: true,
     autoApprove: true,
+    concurrency: 6,
   };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--limit" && argv[i + 1]) flags.limit = parseInt(argv[++i], 10);
     if (argv[i] === "--offset" && argv[i + 1]) flags.offset = parseInt(argv[++i], 10);
     if (argv[i] === "--min-score" && argv[i + 1]) flags.minScore = parseInt(argv[++i], 10);
     if (argv[i] === "--only-below" && argv[i + 1]) flags.onlyBelowScore = parseInt(argv[++i], 10);
+    if (argv[i] === "--concurrency" && argv[i + 1]) flags.concurrency = parseInt(argv[++i], 10);
     if (argv[i] === "--dry-run") flags.dryRun = true;
     if (argv[i] === "--no-force-image") flags.forceImage = false;
     if (argv[i] === "--force-image") flags.forceImage = true;

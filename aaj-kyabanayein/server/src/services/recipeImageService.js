@@ -428,6 +428,7 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
   const metaExisting = readImageMeta(id);
   const isPremium =
     metaExisting?.source === "premium-hero" ||
+    metaExisting?.source === "premium-hero-real" ||
     metaExisting?.source === "rasoira-ai-original";
 
   // Never overwrite premium original heroes unless explicitly regenerating premium
@@ -523,7 +524,7 @@ export function auditCachedImage(recipe) {
   const meta = readImageMeta(recipe.id);
   if (!meta) return { ok: false, issue: "missing-cache" };
   // Premium original heroes always pass (RASOIRA-AI licensed, dish-specific)
-  if (meta.source === "premium-hero" || meta.source === "rasoira-ai-original") {
+  if (meta.source === "premium-hero" || meta.source === "premium-hero-real" || meta.source === "rasoira-ai-original") {
     return { ok: true, meta, titleScore: meta.score || 0.99 };
   }
   if (meta.source === "similar-fallback") {

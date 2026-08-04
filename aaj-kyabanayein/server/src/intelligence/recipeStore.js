@@ -21,21 +21,41 @@ export function saveIntelligenceRecipe(recipe) {
   };
 
   db.prepare(`
-    INSERT OR REPLACE INTO recipe_intelligence (
+    INSERT INTO recipe_intelligence (
       id, slug, title, payload_json,
       source_name, source_url, license_name, license_url,
       commercial_use_allowed, attribution_required, verified_on, imported_on,
       review_status, duplicate_score, similarity_score, content_hash,
       cuisine, region, meal_type, diet, calories, protein_g, difficulty,
-      cook_time_min, image_url, image_license, seo_title, updated_at
+      cook_time_min, image_url, image_license, seo_title, updated_at,
+      quality_score, nutrition_status, verification_status
     ) VALUES (
       @id, @slug, @title, @payload_json,
       @source_name, @source_url, @license_name, @license_url,
       @commercial_use_allowed, @attribution_required, @verified_on, @imported_on,
       @review_status, @duplicate_score, @similarity_score, @content_hash,
       @cuisine, @region, @meal_type, @diet, @calories, @protein_g, @difficulty,
-      @cook_time_min, @image_url, @image_license, @seo_title, @updated_at
+      @cook_time_min, @image_url, @image_license, @seo_title, @updated_at,
+      @quality_score, @nutrition_status, @verification_status
     )
+    ON CONFLICT(id) DO UPDATE SET
+      slug=excluded.slug, title=excluded.title, payload_json=excluded.payload_json,
+      source_name=excluded.source_name, source_url=excluded.source_url,
+      license_name=excluded.license_name, license_url=excluded.license_url,
+      commercial_use_allowed=excluded.commercial_use_allowed,
+      attribution_required=excluded.attribution_required,
+      verified_on=excluded.verified_on,
+      review_status=excluded.review_status,
+      duplicate_score=excluded.duplicate_score, similarity_score=excluded.similarity_score,
+      content_hash=excluded.content_hash, cuisine=excluded.cuisine, region=excluded.region,
+      meal_type=excluded.meal_type, diet=excluded.diet, calories=excluded.calories,
+      protein_g=excluded.protein_g, difficulty=excluded.difficulty,
+      cook_time_min=excluded.cook_time_min, image_url=excluded.image_url,
+      image_license=excluded.image_license, seo_title=excluded.seo_title,
+      updated_at=excluded.updated_at,
+      quality_score=COALESCE(excluded.quality_score, recipe_intelligence.quality_score),
+      nutrition_status=COALESCE(excluded.nutrition_status, recipe_intelligence.nutrition_status),
+      verification_status=COALESCE(excluded.verification_status, recipe_intelligence.verification_status)
   `).run({
     id: recipe.id,
     slug: recipe.slug,
@@ -58,6 +78,9 @@ export function saveIntelligenceRecipe(recipe) {
     image_license: recipe.imageLicense,
     seo_title: recipe.seoTitle,
     updated_at: now,
+    quality_score: recipe.qualityScore ?? null,
+    nutrition_status: recipe.nutritionStatus || recipe.nutrition?.status || null,
+    verification_status: recipe.verificationStatus || null,
   });
 
   writeAuditLog({

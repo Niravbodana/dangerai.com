@@ -54,7 +54,7 @@ describe("premium recipe builder", () => {
     expect(quality.score).toBeGreaterThanOrEqual(MIN_SCORE);
     expect(recipe.nutrition.verified).toBe(true);
     expect(recipe.ingredients.length).toBeGreaterThanOrEqual(6);
-    expect(recipe.imageSource).toBe("premium-hero");
+    expect(["premium-hero", "premium-hero-real"]).toContain(recipe.imageSource);
     expect(recipe.steps.length).toBeGreaterThanOrEqual(5);
   }, 30000);
 

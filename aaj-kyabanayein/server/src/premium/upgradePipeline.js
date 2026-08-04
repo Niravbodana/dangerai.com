@@ -33,6 +33,7 @@ export async function runPremiumUpgrade(options = {}) {
     onlyBelowScore = null,
     syncToLiveCatalog = true,
     autoApprove = true,
+    concurrency = 6,
     runId = `premium-upgrade-${Date.now()}`,
   } = options;
 
@@ -60,39 +61,41 @@ export async function runPremiumUpgrade(options = {}) {
     minAchieved: 100,
     maxAchieved: 0,
     imagesWritten: 0,
+    realPhotos: 0,
+    studioArt: 0,
     errors: [],
     finishedAt: null,
   };
 
-  writeAuditLog({ runId, action: "premium_upgrade_started", details: { limit, offset, minScore } });
+  writeAuditLog({ runId, action: "premium_upgrade_started", details: { limit, offset, minScore, concurrency } });
 
-  for (const row of rows) {
-    report.processed++;
-    try {
-      if (onlyBelowScore != null) {
-        const existing = intelDb
-          .prepare("SELECT quality_score FROM recipe_intelligence WHERE id = ?")
-          .get(row.id);
-        if (existing && Number(existing.quality_score) >= onlyBelowScore) {
-          report.skipped++;
-          continue;
-        }
+  async function processOne(row) {
+    if (onlyBelowScore != null) {
+      const existing = intelDb
+        .prepare("SELECT quality_score FROM recipe_intelligence WHERE id = ?")
+        .get(row.id);
+      if (existing && Number(existing.quality_score) >= onlyBelowScore) {
+        report.skipped++;
+        report.processed++;
+        return;
       }
+    }
 
-      const diet = safeJson(row.diet, []);
-      const seed = {
-        id: row.id,
-        name: row.name,
-        nameHi: row.name_hi,
-        mealType: row.meal_type,
-        cuisine: row.cuisine,
-        category: row.category,
-        budget: row.budget,
-        spice: row.spice,
-        diet,
-        cookTime: row.cook_time,
-      };
+    const diet = safeJson(row.diet, []);
+    const seed = {
+      id: row.id,
+      name: row.name,
+      nameHi: row.name_hi,
+      mealType: row.meal_type,
+      cuisine: row.cuisine,
+      category: row.category,
+      budget: row.budget,
+      spice: row.spice,
+      diet,
+      cookTime: row.cook_time,
+    };
 
+    try {
       const { recipe, quality, imageMeta } = await buildPremiumRecipe(seed, {
         writeImage: !dryRun,
         forceImage: dryRun ? false : forceImage || !isPremiumHero(row.id),
@@ -100,6 +103,7 @@ export async function runPremiumUpgrade(options = {}) {
 
       if (quality.score < minScore) {
         report.failed++;
+        report.processed++;
         if (report.errors.length < 40) {
           report.errors.push({
             id: row.id,
@@ -108,7 +112,7 @@ export async function runPremiumUpgrade(options = {}) {
             breakdown: quality.breakdown,
           });
         }
-        continue;
+        return;
       }
 
       if (!dryRun) {
@@ -149,24 +153,31 @@ export async function runPremiumUpgrade(options = {}) {
           syncPremiumToLive(recipe);
           if (recipe.localImage) {
             setLocalImage(recipe.id, recipe.localImage, {
-              source: "premium-hero",
+              source: imageMeta?.source || "premium-hero",
               title: imageMeta?.title || recipe.title,
               originalUrl: imageMeta?.originalUrl || `rasoira-ai://premium-hero/${recipe.id}`,
               score: 0.99,
               fetchedAt: imageMeta?.fetchedAt || new Date().toISOString(),
             });
             report.imagesWritten++;
+            if (imageMeta?.source === "premium-hero-real") report.realPhotos++;
+            else report.studioArt++;
           }
         }
 
         recordRecipeAudit(recipe.id, {
           type: "premium_upgraded",
           sourceName: "rasoira-premium",
-          licenseName: "RASOIRA-AI",
+          licenseName: recipe.imageLicense || "RASOIRA-AI",
           nutritionStatus: recipe.nutritionStatus,
           verificationStatus: recipe.verificationStatus,
           actor: "admin-premium-upgrade",
-          details: { qualityScore: quality.score, runId, templateKey: recipe.templateKey },
+          details: {
+            qualityScore: quality.score,
+            runId,
+            templateKey: recipe.templateKey,
+            imageSource: imageMeta?.source,
+          },
         });
       }
 
@@ -174,22 +185,6 @@ export async function runPremiumUpgrade(options = {}) {
       report.scoreSum += quality.score;
       report.minAchieved = Math.min(report.minAchieved, quality.score);
       report.maxAchieved = Math.max(report.maxAchieved, quality.score);
-
-      if (report.processed % 100 === 0) {
-        writeAuditLog({
-          runId,
-          action: "premium_upgrade_checkpoint",
-          details: {
-            processed: report.processed,
-            upgraded: report.upgraded,
-            failed: report.failed,
-            avgScore: report.upgraded ? Math.round(report.scoreSum / report.upgraded) : 0,
-          },
-        });
-        console.log(
-          `[premium] ${report.processed}/${rows.length} · upgraded ${report.upgraded} · failed ${report.failed}`
-        );
-      }
     } catch (err) {
       report.failed++;
       if (report.errors.length < 40) {
@@ -201,8 +196,37 @@ export async function runPremiumUpgrade(options = {}) {
           breakdown: err.quality?.breakdown,
         });
       }
+    } finally {
+      report.processed++;
+      if (report.processed % 100 === 0) {
+        writeAuditLog({
+          runId,
+          action: "premium_upgrade_checkpoint",
+          details: {
+            processed: report.processed,
+            upgraded: report.upgraded,
+            failed: report.failed,
+            realPhotos: report.realPhotos,
+            avgScore: report.upgraded ? Math.round(report.scoreSum / report.upgraded) : 0,
+          },
+        });
+        console.log(
+          `[premium] ${report.processed}/${rows.length} · upgraded ${report.upgraded} · real ${report.realPhotos} · studio ${report.studioArt} · failed ${report.failed}`
+        );
+      }
     }
   }
+
+  // Concurrent worker pool
+  let cursor = 0;
+  async function worker() {
+    while (cursor < rows.length) {
+      const i = cursor++;
+      await processOne(rows[i]);
+    }
+  }
+  const workers = Array.from({ length: Math.max(1, concurrency) }, () => worker());
+  await Promise.all(workers);
 
   report.finishedAt = new Date().toISOString();
   report.avgScore = report.upgraded ? Math.round(report.scoreSum / report.upgraded) : 0;
@@ -261,7 +285,7 @@ export function countPremiumHeroes() {
     if (!f.endsWith(".json")) continue;
     try {
       const m = JSON.parse(fs.readFileSync(path.join(META_DIR, f), "utf8"));
-      if (m.source === "premium-hero" || m.source === "rasoira-ai-original") n++;
+      if (m.source === "premium-hero" || m.source === "premium-hero-real" || m.source === "rasoira-ai-original") n++;
     } catch {
       /* skip */
     }
@@ -269,7 +293,7 @@ export function countPremiumHeroes() {
   return n;
 }
 
-export function getPremiumStatus() {
+export async function getPremiumStatus() {
   ensureIntelligenceDb();
   const intelDb = getIntelligenceDb();
   const live = getDb().prepare("SELECT COUNT(*) as c FROM recipes").get()?.c || 0;
@@ -281,12 +305,31 @@ export function getPremiumStatus() {
   const avg = intelDb
     .prepare("SELECT AVG(quality_score) as a FROM recipe_intelligence WHERE quality_score > 0")
     .get()?.a;
+  const realPhotos = countByImageSource("premium-hero-real");
   return {
     liveCatalog: live,
     quality90Plus: q90,
     nutritionVerified: verified,
     avgQualityScore: avg ? Math.round(avg) : 0,
     premiumHeroes: countPremiumHeroes(),
+    realPhotos,
+    studioArt: countByImageSource("premium-hero"),
     minScoreRequired: MIN_SCORE,
+    remainingBelow90: Math.max(0, live - q90),
   };
+}
+
+function countByImageSource(source) {
+  if (!fs.existsSync(META_DIR)) return 0;
+  let n = 0;
+  for (const f of fs.readdirSync(META_DIR)) {
+    if (!f.endsWith(".json")) continue;
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(META_DIR, f), "utf8"));
+      if (m.source === source) n++;
+    } catch {
+      /* skip */
+    }
+  }
+  return n;
 }
