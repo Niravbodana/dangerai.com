@@ -14,6 +14,7 @@ export function getDb() {
   fs.mkdirSync(DB_DIR, { recursive: true });
   db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 15000");
   db.pragma("foreign_keys = ON");
   return db;
 }
