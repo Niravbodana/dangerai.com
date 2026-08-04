@@ -48,15 +48,20 @@ function parseFlags(argv) {
     syncToLiveCatalog: true,
     minQualityScore: 40,
     offset: 0,
+    premiumDuringBuild: false,
+    progressEvery: 50,
   };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--target" && argv[i + 1]) flags.target = parseInt(argv[++i], 10);
     if (argv[i] === "--batch" && argv[i + 1]) flags.batchSize = parseInt(argv[++i], 10);
     if (argv[i] === "--offset" && argv[i + 1]) flags.offset = parseInt(argv[++i], 10);
     if (argv[i] === "--min-score" && argv[i + 1]) flags.minQualityScore = parseInt(argv[++i], 10);
+    if (argv[i] === "--progress" && argv[i + 1]) flags.progressEvery = parseInt(argv[++i], 10);
     if (argv[i] === "--dry-run") flags.dryRun = true;
     if (argv[i] === "--no-approve") flags.autoApprove = false;
     if (argv[i] === "--no-sync") flags.syncToLiveCatalog = false;
+    if (argv[i] === "--premium") flags.premiumDuringBuild = true;
+    if (argv[i] === "--fast") flags.premiumDuringBuild = false;
   }
   return flags;
 }
@@ -99,6 +104,9 @@ Flags:
   --batch N         Checkpoint every N recipes
   --offset N        Skip first N library dishes
   --min-score N     Minimum quality score (default 40)
+  --progress N      Log progress every N recipes (default 50)
+  --fast            Fast build — no per-recipe photos (default)
+  --premium         Slow build — premium photos during bulk (not recommended)
   --dry-run         No DB writes
   --no-approve      Queue only, don't auto-approve
   --no-sync         Don't sync to live catalog

@@ -37,6 +37,9 @@ export async function runBulkLibraryBuild(options = {}) {
     minQualityScore = 40,
     runId = `bulk-lib-${Date.now()}`,
     offset = 0,
+    /** Fast path: skip per-recipe photo fetch during bulk; run `premium:upgrade` after */
+    premiumDuringBuild = false,
+    progressEvery = 50,
   } = options;
 
   ensureIntelligenceDb();
@@ -66,10 +69,16 @@ export async function runBulkLibraryBuild(options = {}) {
     finishedAt: null,
   };
 
-  writeAuditLog({ runId, action: "bulk_library_started", details: { target, autoApprove } });
+  writeAuditLog({
+    runId,
+    action: "bulk_library_started",
+    details: { target, autoApprove, premiumDuringBuild },
+  });
 
   const library = generateUniqueDishLibrary(target + 500);
   const toProcess = library.slice(offset);
+  const mode = premiumDuringBuild ? "premium (slow — photos per recipe)" : "fast (run premium:upgrade after)";
+  console.log(`Bulk build mode: ${mode}. Processing up to ${toProcess.length} dishes toward target ${target}.`);
 
   for (let i = 0; i < toProcess.length; i++) {
     const currentApproved = countApproved(intelDb);
@@ -85,7 +94,7 @@ export async function runBulkLibraryBuild(options = {}) {
 
     try {
       report.processed++;
-      const recipe = await buildRecipeFast(seed);
+      const recipe = await buildRecipeFast(seed, { premiumDuringBuild });
 
       const qc = runQualityGate({
         ...recipe,
@@ -166,7 +175,15 @@ export async function runBulkLibraryBuild(options = {}) {
         report.approved++;
       }
 
+      if (progressEvery > 0 && report.processed % progressEvery === 0) {
+        const currentApproved = countApproved(intelDb);
+        console.log(
+          `[bulk] processed=${report.processed} approved=${report.approved} synced=${report.synced} catalog=${currentApproved}/${target}`
+        );
+      }
+
       if (report.processed % batchSize === 0) {
+        const currentApproved = countApproved(intelDb);
         writeAuditLog({
           runId,
           action: "bulk_library_checkpoint",
@@ -174,7 +191,7 @@ export async function runBulkLibraryBuild(options = {}) {
             processed: report.processed,
             approved: report.approved,
             synced: report.synced,
-            currentApproved: countApproved(intelDb),
+            currentApproved,
           },
         });
       }
@@ -216,15 +233,15 @@ function toSeed(dish) {
   };
 }
 
-async function buildRecipeFast(seed) {
-  // Prefer premium 90+ builder (verified nutrition + original heroes)
-  try {
-    const { buildPremiumRecipe } = await import("../premium/premiumRecipeBuilder.js");
-    const { recipe } = await buildPremiumRecipe(seed, { writeImage: true, forceImage: true });
-    return recipe;
-  } catch (err) {
-    // Fall through to legacy path if premium gate fails
-    if (process.env.DEBUG_PREMIUM) console.warn("premium build failed, fallback:", err.message);
+async function buildRecipeFast(seed, { premiumDuringBuild = false } = {}) {
+  if (premiumDuringBuild) {
+    try {
+      const { buildPremiumRecipe } = await import("../premium/premiumRecipeBuilder.js");
+      const { recipe } = await buildPremiumRecipe(seed, { writeImage: true, forceImage: true });
+      return recipe;
+    } catch (err) {
+      if (process.env.DEBUG_PREMIUM) console.warn("premium build failed, fallback:", err.message);
+    }
   }
 
   const brief = buildResearchBrief(seed);

@@ -43,6 +43,13 @@ npm run dev:kill
 npm run dev
 ```
 
+**Bulk build is fast by default** (~minutes for 10k). It skips per-recipe photo fetches during generation. Run `premium:upgrade` afterward to reach 90+ scores with real heroes and verified nutrition.
+
+Use `--premium` only if you want photos during bulk (very slow on Mac — hours).
+
+While building, progress logs every 50 recipes:
+`[bulk] processed=50 approved=48 synced=48 catalog=1338/10000`
+
 Invalid API keys: leave empty in `server/.env` (`GROQ_API_KEY=`, `GEMINI_API_KEY=`, `GOOGLE_API_KEY=`). App works without them.
 
 ## Why old bulk scores capped ~73
