@@ -5,8 +5,7 @@
  * Usage:
  *   npm run premium:status
  *   npm run premium:upgrade -- --limit 50
- *   npm run premium:upgrade -- --limit 500 --force-image
- *   npm run premium:upgrade -- --dry-run --limit 20
+ *   npm run premium:upgrade -- --only-below 90 --concurrency 8
  */
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,7 +20,6 @@ const { ensureIntelligenceDb, seedSourceRegistry } = await import(
   path.join(serverRoot, "src/intelligence/index.js")
 );
 const { seedIngredientDatabase } = await import(path.join(serverRoot, "src/enterprise/index.js"));
-const { runPremiumUpgrade, getPremiumStatus } = await import(path.join(serverRoot, "src/premium/index.js"));
 
 ensureDatabase();
 initRecipeCatalog(true);
@@ -58,11 +56,13 @@ function parseFlags(argv) {
 
 async function main() {
   if (command === "status") {
+    const { getPremiumStatus } = await import(path.join(serverRoot, "src/premium/upgradePipeline.js"));
     console.log(JSON.stringify(getPremiumStatus(), null, 2));
     return;
   }
 
   if (command === "upgrade" || command === "run") {
+    const { runPremiumUpgrade } = await import(path.join(serverRoot, "src/premium/upgradePipeline.js"));
     const flags = parseFlags(args.slice(1));
     console.log("Starting premium upgrade:", flags);
     const report = await runPremiumUpgrade(flags);
@@ -84,6 +84,7 @@ Flags:
   --offset N        Skip first N
   --min-score N     Minimum score (default 90)
   --only-below N    Skip recipes already at/above N
+  --concurrency N   Parallel workers (default 6)
   --dry-run         Score only, no DB/image writes
   --no-force-image  Keep existing premium heroes
   --no-sync         Don't update live catalog

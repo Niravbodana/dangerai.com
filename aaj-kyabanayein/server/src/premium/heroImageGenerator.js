@@ -7,8 +7,8 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
-import sharp from "sharp";
 import { findRealFoodPhoto, fetchAndNormalizePhoto } from "./realPhotoFetcher.js";
+import { svgOrThemeToJpeg, getSharp } from "./imageEncode.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -371,10 +371,9 @@ export async function generatePremiumHero(recipe, { force = false, preferReal = 
       seed: `${id}:${dishName}:${recipe.cuisine || ""}:v${HERO_VERSION}`,
       style,
     });
-    jpeg = await sharp(Buffer.from(svg))
-      .resize(WIDTH, HEIGHT, { fit: "cover" })
-      .jpeg({ quality: 94, mozjpeg: true, chromaSubsampling: "4:4:4" })
-      .toBuffer();
+    // Probe sharp once (optional); jpeg-js plate fallback if missing
+    await getSharp();
+    jpeg = await svgOrThemeToJpeg(svg, theme, WIDTH, HEIGHT, 94);
     metaExtra = {
       source: "premium-hero",
       title: `${dishName} — Rasoira Original`,

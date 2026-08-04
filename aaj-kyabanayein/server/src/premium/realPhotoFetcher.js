@@ -2,7 +2,7 @@
  * Fetch REAL high-quality food photos with commercial-safe licenses.
  * Fast-first: Wikimedia Commons → Wikipedia → Openverse (short timeouts).
  */
-import sharp from "sharp";
+import { normalizeToJpeg } from "./imageEncode.js";
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com; premium-photos)";
 
@@ -208,11 +208,7 @@ export async function findRealFoodPhoto(recipeName) {
 export async function fetchAndNormalizePhoto(match) {
   if (!match?.imageUrl) throw new Error("no image url");
   const raw = await downloadBuffer(match.imageUrl);
-  const jpeg = await sharp(raw)
-    .rotate()
-    .resize(1400, 1050, { fit: "cover", position: "attention" })
-    .jpeg({ quality: 92, mozjpeg: true, chromaSubsampling: "4:4:4" })
-    .toBuffer();
-  if (jpeg.length < 20000) throw new Error("normalized too small");
+  const jpeg = await normalizeToJpeg(raw, 1400, 1050, 92);
+  if (jpeg.length < 12000) throw new Error("normalized too small");
   return jpeg;
 }
