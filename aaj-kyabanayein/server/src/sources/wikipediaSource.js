@@ -70,6 +70,7 @@ export async function fetchDishesFromWikiList(listTitle, limit = 40) {
     return links
       .map((l) => l.title)
       .filter((t) => t && !/list of|category:|template:|wikipedia:/i.test(t))
+      .filter((t) => !/\b(cuisine|pradesh|caste|people|district|language|festival|religion|history|country|state|region|province|empire|dynasty|river|mountain|city|town|village|university|film|actor|politician)\b/i.test(t))
       .slice(0, limit)
       .map((title) => ({ name: title, wikiTitle: title, cuisine: "indian", mealType: "lunch", diet: ["veg"] }));
   } catch {

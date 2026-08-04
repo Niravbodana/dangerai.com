@@ -78,7 +78,7 @@ async function importOneDish(seed, options = {}) {
 
   let mealDb = null;
   try {
-    mealDb = await searchTheMealDb(seed.name);
+    mealDb = await searchTheMealDb(seed.name, seed.mealDbAlt || []);
   } catch {
     /* optional */
   }
@@ -89,8 +89,8 @@ async function importOneDish(seed, options = {}) {
 
   const name = wiki?.title || mealDb?.name || seed.name;
   const ingredients = mergeIngredients(seed, mealDb);
-  const steps = buildOriginalSteps(name, ingredients, wiki?.extract);
-  const stepsHi = buildOriginalStepsHi(name);
+  const steps = mealDb?.steps?.length >= 3 ? mealDb.steps : buildOriginalSteps(name, ingredients, wiki?.extract);
+  const stepsHi = mealDb?.stepsHi?.length >= 3 ? mealDb.stepsHi : buildOriginalStepsHi(name);
   const image = pickBestImage(wiki, mealDb);
   const mealType = seed.mealType || guessMealType(name);
   const diet = seed.diet || (mealDb ? ["veg"] : ["veg"]);
