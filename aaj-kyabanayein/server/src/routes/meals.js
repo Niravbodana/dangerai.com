@@ -142,15 +142,23 @@ router.get("/recipes/:id/load", async (req, res) => {
 });
 
 router.get("/recipes/categories", (_req, res) => {
-  const counts = getCategoryCounts();
-  res.json({
-    success: true,
-    categories: RECIPE_CATEGORIES,
-    counts: counts.categories,
-    cuisineCounts: counts.cuisines,
-    totalRecipes: getRecipeCount(),
-    cuisines: getCuisines(),
-  });
+  try {
+    const counts = getCategoryCounts();
+    res.json({
+      success: true,
+      categories: RECIPE_CATEGORIES,
+      counts: counts.categories,
+      cuisineCounts: counts.cuisines,
+      totalRecipes: getRecipeCount(),
+      cuisines: getCuisines(),
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to load categories",
+      totalRecipes: getRecipeCount(),
+    });
+  }
 });
 
 router.get("/recipes/trending", (req, res) => {

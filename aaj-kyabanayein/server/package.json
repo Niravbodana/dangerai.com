@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
+    "dev": "node --watch-path=./src src/index.js",
+    "dev:stable": "node src/index.js",
+    "dev:watch": "node --watch-path=./src src/index.js",
     "generate-recipes": "node src/scripts/generateRecipes.js",
     "build-recipe-books": "node src/scripts/buildRecipeBooks.js",
     "prefetch-images": "node src/scripts/prefetchRecipeImages.js",

@@ -136,14 +136,49 @@ function localIpv4() {
   return null;
 }
 
-app.listen(PORT, HOST, () => {
+process.on("uncaughtException", (err) => {
+  logger.error(`uncaughtException: ${err?.stack || err}`);
+});
+process.on("unhandledRejection", (reason) => {
+  logger.error(`unhandledRejection: ${reason?.stack || reason}`);
+});
+
+const server = app.listen(PORT, HOST, () => {
   const lan = localIpv4();
   logger.info(`Server running on http://localhost:${PORT}`);
   if (lan) logger.info(`Phone (same Wi‑Fi): http://${lan}:${PORT}/api/health`);
   if (isProd && !process.env.JWT_SECRET) {
     logger.warn("JWT_SECRET is not set — set it before production deploy");
   }
-  warmTrendingRecipeImages(getTrendingRecipes, 20);
-  warmFeaturedCookAgainImages();
-  startQualityGuardianOnBoot();
+
+  // Dev default: skip image warm + guardian — they freeze/crash API with 10k
+  // recipes and cause Vite "http proxy error / ECONNRESET".
+  const skipWarm = process.env.SKIP_BOOT_WARM !== "0";
+  if (skipWarm) {
+    logger.info("Boot image warm skipped. Set SKIP_BOOT_WARM=0 to enable.");
+  } else {
+    setTimeout(() => {
+      try {
+        warmTrendingRecipeImages(getTrendingRecipes, 20);
+        warmFeaturedCookAgainImages();
+      } catch (err) {
+        logger.warn(`Boot image warm failed: ${err.message}`);
+      }
+    }, 5000);
+  }
+
+  if (process.env.GUARDIAN_DISABLED === "1") {
+    logger.info("Quality Guardian disabled (GUARDIAN_DISABLED=1).");
+  } else {
+    startQualityGuardianOnBoot();
+  }
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    logger.error(`Port ${PORT} already in use. Run: npm run dev:kill`);
+    process.exit(1);
+  }
+  logger.error(`Server listen error: ${err.message}`);
+  process.exit(1);
 });
