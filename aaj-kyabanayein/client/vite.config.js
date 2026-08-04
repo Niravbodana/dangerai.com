@@ -16,6 +16,7 @@ export default defineConfig({
     host: true, // 0.0.0.0 — phone on same Wi‑Fi can open Mac IP:3000
     port: Number(process.env.VITE_PORT) || 3000,
     strictPort: false,
+    allowedHosts: [".trycloudflare.com", "localhost"],
     proxy: {
       "/api": {
         target: apiTarget,
