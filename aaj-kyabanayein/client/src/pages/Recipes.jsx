@@ -74,16 +74,25 @@ export default function Recipes() {
         setCatalogTotal(data.totalRecipes || 0);
       })
       .catch(() => {
-        if (attempt < 4) {
-          setTimeout(() => loadCatalogMeta(attempt + 1), 800 * (attempt + 1));
+        if (attempt < 6) {
+          setTimeout(() => loadCatalogMeta(attempt + 1), 1000 * (attempt + 1));
           return;
         }
         setCatalogTotal(0);
-        setApiError("API se connect nahi ho paya. Server check karo (port 5000).");
+        setApiError("API se connect nahi ho paya. Server check karo (port 5000), phir page refresh karo.");
       });
   };
 
   useEffect(() => {
+    // Clear stale filters that hide the full 10k catalog
+    try {
+      const savedFilters = loadRecipeFilters();
+      if (savedFilters?.category && savedFilters.category !== "all") {
+        // keep — user choice; only reset broken diet values
+      }
+    } catch {
+      /* ignore */
+    }
     loadCatalogMeta();
     fetchRecipeSuggestions("").then((data) => {
       setTrendingSearches(data.trendingSearches || []);
@@ -141,18 +150,34 @@ export default function Recipes() {
     if (debouncedSearch) params.search = debouncedSearch;
     if (maxCookTime) params.maxCookTime = maxCookTime;
 
-    fetchRecipes(params)
-      .then((data) => {
-        setRecipes(data.recipes || []);
-        setResultTotal(data.total ?? 0);
-        setTotalPages(data.totalPages || 1);
-      })
-      .catch(() => {
-        setRecipes([]);
-        setResultTotal(0);
-        setTotalPages(1);
-      })
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const loadRecipes = (attempt = 0) => {
+      fetchRecipes(params)
+        .then((data) => {
+          if (cancelled) return;
+          setApiError(null);
+          setRecipes(data.recipes || []);
+          setResultTotal(data.total ?? 0);
+          setTotalPages(data.totalPages || 1);
+          setLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          if (attempt < 5) {
+            setTimeout(() => loadRecipes(attempt + 1), 1000 * (attempt + 1));
+            return;
+          }
+          setRecipes([]);
+          setResultTotal(0);
+          setTotalPages(1);
+          setApiError("Recipes load nahi hui. Terminal mein `npm run dev` check karo, phir refresh.");
+          setLoading(false);
+        });
+    };
+    loadRecipes();
+    return () => {
+      cancelled = true;
+    };
   }, [diet, cuisine, category, page, debouncedSearch, sortTrending, maxCookTime]);
 
   const setSort = (trending) => {

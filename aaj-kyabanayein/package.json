@@ -48,6 +48,7 @@
     "library:approve": "node scripts/run-bulk-library.mjs approve-pending",
     "premium:status": "node scripts/run-premium-upgrade.mjs status",
     "premium:upgrade": "node scripts/run-premium-upgrade.mjs upgrade",
-    "health": "node scripts/check-local-health.mjs"
+    "health": "node scripts/check-local-health.mjs",
+    "smoke:recipes": "node scripts/smoke-recipes.mjs"
   }
 }

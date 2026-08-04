@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  CUISINES,
+  getCuisines,
   getCategoryCounts,
   getRecipeById,
   filterRecipeIndex,
@@ -149,7 +149,7 @@ router.get("/recipes/categories", (_req, res) => {
     counts: counts.categories,
     cuisineCounts: counts.cuisines,
     totalRecipes: getRecipeCount(),
-    cuisines: CUISINES,
+    cuisines: getCuisines(),
   });
 });
 
