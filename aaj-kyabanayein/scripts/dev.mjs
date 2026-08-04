@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const isWin = process.platform === "win32";
+const API_HEALTH = process.env.VITE_API_PROXY || "http://127.0.0.1:5000";
 
 function run(name, cwd, script, extraArgs = []) {
   const child = spawn(isWin ? "npm.cmd" : "npm", ["run", script, ...extraArgs], {
@@ -22,16 +23,34 @@ function run(name, cwd, script, extraArgs = []) {
   return child;
 }
 
+async function waitForApi(maxMs = 45000) {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    try {
+      const res = await fetch(`${API_HEALTH}/api/health`);
+      if (res.ok) {
+        const data = await res.json();
+        if ((data.totalRecipes || 0) > 0) return true;
+      }
+    } catch {
+      /* API still starting */
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  console.warn("[dev] API health check timed out — starting Vite anyway");
+  return false;
+}
+
 console.log("Starting Rasoira dev environment...");
 console.log("  API  → http://localhost:5000");
 console.log("  App  → http://localhost:3000");
 console.log("Press Ctrl+C to stop both.\n");
 
 const server = run("api", path.join(root, "server"), "dev");
-// Give API a moment to bind before Vite proxies /api
-setTimeout(() => {
+
+waitForApi().then(() => {
   run("web", path.join(root, "client"), "dev", ["--", "--host"]);
-}, 1500);
+});
 
 function shutdown() {
   server.kill("SIGTERM");

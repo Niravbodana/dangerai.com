@@ -45,8 +45,10 @@ function loadEnv() {
 }
 
 loadEnv();
+console.time("recipes-load");
 ensureDatabase();
 initRecipeCatalog(true);
+console.timeEnd("recipes-load");
 ensureIntelligenceDb();
 seedSourceRegistry();
 loadCustomMealsOnStartup();

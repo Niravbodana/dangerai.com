@@ -429,14 +429,26 @@ function estimateQuality(recipe, qc) {
 }
 
 function syncRecipeToLive(recipe) {
+  const diets = Array.isArray(recipe.diet) ? recipe.diet : [recipe.diet].filter(Boolean);
+  const isNonVeg = diets.some((d) => /non-veg|nonveg|non-vegetarian/i.test(String(d)));
+  const mealType = recipe.mealType || "lunch";
+  const browseCategory = mealType === "snack"
+    ? "snack"
+    : isNonVeg
+      ? `nonveg-${mealType}`
+      : `veg-${mealType}`;
+  const normalizedDiet = isNonVeg
+    ? diets.some((d) => d === "non-veg") ? diets : [...diets, "non-veg"]
+    : diets.some((d) => /veg|vegetarian/i.test(String(d))) ? diets : [...diets, "vegetarian"];
+
   upsertRecipe({
     id: recipe.id,
     name: recipe.title,
     nameHi: recipe.title,
-    mealType: recipe.mealType || "lunch",
-    diet: recipe.diet || [],
+    mealType,
+    diet: normalizedDiet,
     cuisine: recipe.cuisine || "indian",
-    category: recipe.category || recipe.cuisine,
+    category: browseCategory,
     budget: "medium",
     cookTime: recipe.cookTimeMin || recipe.totalTimeMin || 30,
     calories: recipe.calories || 300,

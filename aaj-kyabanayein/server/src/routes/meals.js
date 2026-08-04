@@ -4,8 +4,7 @@ import {
   getCategoryCounts,
   getRecipeById,
   filterRecipeIndex,
-  RECIPE_INDEX,
-  RECIPE_COUNT,
+  getRecipeCount,
   toListItem,
   PRICING_PLANS,
   RECIPE_CATEGORIES,
@@ -149,7 +148,7 @@ router.get("/recipes/categories", (_req, res) => {
     categories: RECIPE_CATEGORIES,
     counts: counts.categories,
     cuisineCounts: counts.cuisines,
-    totalRecipes: RECIPE_COUNT,
+    totalRecipes: getRecipeCount(),
     cuisines: CUISINES,
   });
 });
@@ -407,7 +406,7 @@ router.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "Rasoira API is running",
-    totalRecipes: RECIPE_COUNT,
+    totalRecipes: getRecipeCount(),
   });
 });
 

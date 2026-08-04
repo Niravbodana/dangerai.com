@@ -156,11 +156,15 @@ function mergeThumbUrlsFromIndex(entries) {
   }
 }
 
+function replaceRecipeIndex(entries) {
+  recipeIndex.splice(0, recipeIndex.length, ...entries);
+}
+
 function loadCuratedData() {
   enrichedCache.clear();
   if (isDatabaseReady()) {
     try {
-      recipeIndex = mergeThumbUrlsFromIndex(recipeRepo.getRecipeIndex());
+      replaceRecipeIndex(mergeThumbUrlsFromIndex(recipeRepo.getRecipeIndex()));
       getRecipeByIdImpl = (id) => {
         if (customRecipes.has(id)) return customRecipes.get(id);
         const raw = recipeRepo.getRecipeById(id);
@@ -173,6 +177,7 @@ function loadCuratedData() {
         return enrichedCache.get(id);
       };
       logger.info(`SQLite: ${recipeIndex.length} recipes loaded`);
+      rebuildDerivedCatalog();
       return;
     } catch (err) {
       logger.warn(`SQLite load failed, falling back to JSON: ${err.message}`);
@@ -185,19 +190,19 @@ function loadCuratedData() {
   }
 
   // Fast path: lightweight index for lists/search (includes thumbUrl)
-  recipeIndex = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
+  const indexEntries = JSON.parse(fs.readFileSync(INDEX_FILE, "utf-8"));
 
   // Full recipes loaded without per-recipe enrichment at startup
   const recipes = JSON.parse(fs.readFileSync(RECIPES_FILE, "utf-8"));
   recipeById = new Map(recipes.map((r) => [r.id, r]));
 
-  recipeIndex = recipeIndex.map((entry) => {
+  replaceRecipeIndex(indexEntries.map((entry) => {
     const full = recipeById.get(entry.id);
     const pantryKeys = full?.pantryKeys
       || full?.ingredients?.map((i) => (i.name || "").toLowerCase()).filter(Boolean)
       || [];
     return pantryKeys.length ? { ...entry, pantryKeys } : entry;
-  });
+  }));
 
   // Patch getRecipeById to enrich lazily on first access
   getRecipeByIdImpl = (id) => {
@@ -209,6 +214,7 @@ function loadCuratedData() {
     }
     return enrichedCache.get(id);
   };
+  rebuildDerivedCatalog();
 }
 
 let getRecipeByIdImpl = (id) => {
@@ -219,40 +225,65 @@ let getRecipeByIdImpl = (id) => {
 let catalogLoaded = false;
 
 export function initRecipeCatalog(force = false) {
-  if (catalogLoaded && !force) return;
+  if (catalogLoaded && !force) return recipeIndex.length;
   loadCuratedData();
   catalogLoaded = true;
+  logger.info(`Ready: ${recipeIndex.length} curated real recipes`);
+  return recipeIndex.length;
 }
 
-if (process.env.NODE_ENV !== "production") {
-  console.time("recipes-load");
-  initRecipeCatalog();
-  console.timeEnd("recipes-load");
-} else {
-  initRecipeCatalog();
+export function getRecipeCount() {
+  return recipeIndex.length;
 }
 
-export const RECIPE_COUNT = recipeIndex.length;
-logger.info(`Ready: ${RECIPE_COUNT} curated real recipes`);
+/** @deprecated use getRecipeCount() */
+export function getRECIPE_COUNT() {
+  return recipeIndex.length;
+}
 
-export const RECIPE_INDEX = recipeIndex;
+export { recipeIndex as RECIPE_INDEX };
 export const RECIPES = [...recipeById.values(), ...customRecipes.values()];
+
+function dietList(diet) {
+  return (Array.isArray(diet) ? diet : [diet]).filter(Boolean).map((d) => String(d).toLowerCase());
+}
+
+export function isVegRecipe(r) {
+  const d = dietList(r?.diet);
+  if (d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian")) return false;
+  return d.some((x) => x === "veg" || x === "vegetarian" || x === "vegan" || x === "jain" || x === "eggetarian");
+}
+
+export function isNonVegRecipe(r) {
+  const d = dietList(r?.diet);
+  return d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian");
+}
+
+function resolveBrowseCategory(r) {
+  const known = new Set(RECIPE_CATEGORIES.map((c) => c.id));
+  if (r.category && known.has(r.category)) return r.category;
+  if (r.mealType === "snack") return "snack";
+  if (isNonVegRecipe(r)) return `nonveg-${r.mealType || "lunch"}`;
+  return `veg-${r.mealType || "lunch"}`;
+}
 
 export function getRecipeById(id) {
   return getRecipeByIdImpl(id);
 }
 
 export function filterRecipeIndex(filters = {}) {
-  let list = RECIPE_INDEX;
+  let list = recipeIndex;
   const { cuisine, category, mealType, diet, search, maxCookTime } = filters;
 
   if (cuisine && cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
   if (category && category !== "all") {
-    list = category === "snack" ? list.filter((r) => r.mealType === "snack") : list.filter((r) => r.category === category);
+    list = category === "snack"
+      ? list.filter((r) => r.mealType === "snack")
+      : list.filter((r) => resolveBrowseCategory(r) === category);
   }
   if (mealType) list = list.filter((r) => r.mealType === mealType);
-  if (diet === "veg") list = list.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
-  if (diet === "non-veg") list = list.filter((r) => r.diet?.includes("non-veg"));
+  if (diet === "veg") list = list.filter((r) => isVegRecipe(r));
+  if (diet === "non-veg") list = list.filter((r) => isNonVegRecipe(r));
   if (maxCookTime) {
     const max = parseInt(maxCookTime, 10);
     if (!Number.isNaN(max)) list = list.filter((r) => (r.cookTime || 99) <= max);
@@ -283,9 +314,11 @@ export const RECIPE_CATEGORIES = [
   { id: "snack", label: "Snacks", labelHi: "स्नैक" },
 ];
 
+let CUISINES = [];
+
 function buildCuisinesList() {
   const counts = {};
-  for (const r of RECIPE_INDEX) {
+  for (const r of recipeIndex) {
     counts[r.cuisine] = (counts[r.cuisine] || 0) + 1;
   }
 
@@ -321,8 +354,15 @@ function buildCuisinesList() {
   return list;
 }
 
-export const CUISINES = buildCuisinesList();
-export const FUTURE_CUISINES = CUISINES;
+function rebuildDerivedCatalog() {
+  CUISINES = buildCuisinesList();
+}
+
+export function getCuisines() {
+  return CUISINES;
+}
+
+export { CUISINES, CUISINES as FUTURE_CUISINES };
 
 export const PRICING_PLANS = [
   {
@@ -333,7 +373,7 @@ export const PRICING_PLANS = [
     period: "forever core",
     popular: false,
     features: [
-      `${RECIPE_COUNT}+ real recipes`,
+      `${getRecipeCount()}+ real recipes`,
       "Cooking mode + voice",
       "Basic pantry & meal plan",
       "1× Aaj Kya Banaye / day",
@@ -378,20 +418,13 @@ export function getCategoryCounts() {
   const cuisineCounts = {};
   for (const c of CUISINES) if (c.id !== "all") cuisineCounts[c.id] = 0;
 
-  for (const r of RECIPE_INDEX) {
-    if (counts[r.category] !== undefined) counts[r.category]++;
+  for (const r of recipeIndex) {
+    const browseCategory = resolveBrowseCategory(r);
+    if (counts[browseCategory] !== undefined) counts[browseCategory]++;
     if (r.mealType === "snack") counts.snack++;
     if (cuisineCounts[r.cuisine] !== undefined) cuisineCounts[r.cuisine]++;
   }
   return { categories: counts, cuisines: cuisineCounts };
-}
-
-export function isVegRecipe(r) {
-  return r.diet?.includes("veg") && !r.diet?.includes("non-veg");
-}
-
-export function isNonVegRecipe(r) {
-  return r.diet?.includes("non-veg");
 }
 
 export function toListItem(meta) {

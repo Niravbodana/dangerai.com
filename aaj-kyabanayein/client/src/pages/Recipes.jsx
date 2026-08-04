@@ -26,6 +26,17 @@ const STATE_COLLECTION = {
   "tamil-nadu": "tamil-tiffin",
 };
 
+function recipeIsVeg(r) {
+  const d = (r.diet || []).map((x) => String(x).toLowerCase());
+  if (d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian")) return false;
+  return d.some((x) => x === "veg" || x === "vegetarian" || x === "vegan" || x === "jain" || x === "eggetarian");
+}
+
+function recipeIsNonVeg(r) {
+  const d = (r.diet || []).map((x) => String(x).toLowerCase());
+  return d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian");
+}
+
 export default function Recipes() {
   const { t, lang } = useLanguage();
   const homeState = getTasteProfile().homeState;
@@ -52,15 +63,28 @@ export default function Recipes() {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [trendingSearches, setTrendingSearches] = useState([]);
   const [maxCookTime, setMaxCookTime] = useState(null);
+  const [apiError, setApiError] = useState(null);
 
-  useEffect(() => {
+  const loadCatalogMeta = (attempt = 0) => {
     fetchCategories()
       .then((data) => {
+        setApiError(null);
         setCuisines(data.cuisines || []);
         setCategories(data.categories || []);
         setCatalogTotal(data.totalRecipes || 0);
       })
-      .catch(() => setCatalogTotal(1013));
+      .catch(() => {
+        if (attempt < 4) {
+          setTimeout(() => loadCatalogMeta(attempt + 1), 800 * (attempt + 1));
+          return;
+        }
+        setCatalogTotal(0);
+        setApiError("API se connect nahi ho paya. Server check karo (port 5000).");
+      });
+  };
+
+  useEffect(() => {
+    loadCatalogMeta();
     fetchRecipeSuggestions("").then((data) => {
       setTrendingSearches(data.trendingSearches || []);
     }).catch(() => {});
@@ -90,8 +114,8 @@ export default function Recipes() {
       fetchTrendingRecipes(24)
         .then((data) => {
           let list = data.recipes || [];
-          if (diet === "veg") list = list.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
-          else if (diet === "non-veg") list = list.filter((r) => r.diet?.includes("non-veg"));
+          if (diet === "veg") list = list.filter(recipeIsVeg);
+          else if (diet === "non-veg") list = list.filter(recipeIsNonVeg);
           if (cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
           if (debouncedSearch) {
             const q = debouncedSearch.toLowerCase();
@@ -217,11 +241,16 @@ export default function Recipes() {
             {sortTrending ? t("hotMakings") : t("recipes")}
           </h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {catalogTotal.toLocaleString()} hand-picked recipes with real ingredients
+            {catalogTotal > 0
+              ? `${catalogTotal.toLocaleString()} hand-picked recipes with real ingredients`
+              : "Loading recipe catalog…"}
             {resultTotal !== catalogTotal && resultTotal > 0 && (
               <span className="text-[var(--accent-soft)]"> · {resultTotal.toLocaleString()} showing</span>
             )}
           </p>
+          {apiError && (
+            <p className="mt-2 text-sm text-amber-400">{apiError}</p>
+          )}
         </div>
 
         {/* Mobile: sticky bar under logo — filter menu left + veg toggle */}
