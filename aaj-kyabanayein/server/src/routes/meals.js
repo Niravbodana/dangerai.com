@@ -1,11 +1,10 @@
 import { Router } from "express";
 import {
-  CUISINES,
+  getCuisines,
   getCategoryCounts,
   getRecipeById,
   filterRecipeIndex,
-  RECIPE_INDEX,
-  RECIPE_COUNT,
+  getRecipeCount,
   toListItem,
   PRICING_PLANS,
   RECIPE_CATEGORIES,
@@ -35,13 +34,21 @@ import {
   ensureRecipeImage,
   readCachedImage,
   warmRecipeImage,
+  auditCachedImage,
+  invalidateCachedImage,
+  ensureOverrideImageReady,
+  attachRecipeImageFields,
 } from "../services/recipeImageService.js";
-import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
+import { getDirectThumbOverride } from "../data/recipeImageOverrides.js";
+import { getPublicRecipeCount } from "../services/qualityCatalog.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
+import { searchRecipes, getSearchIndexStats } from "../intelligence/searchService.js";
 import { attachRecipeVideo } from "../data/recipeVideos.js";
+import { attachProvenance, attachProvenanceToList } from "../lib/attachProvenance.js";
 import path from "path";
+import fs from "fs";
 
 const router = Router();
 
@@ -50,17 +57,43 @@ const DEFAULT_IMAGE_ID = "_default";
 router.get("/recipes/image/:id", async (req, res) => {
   const { id } = req.params;
   const wait = req.query.wait !== "0";
-  res.setHeader("Cache-Control", "public, max-age=604800");
-
-  const cached = readCachedImage(id);
-  if (cached) {
-    res.type("image/jpeg");
-    return res.sendFile(path.resolve(cached));
-  }
-
   const recipe = id === DEFAULT_IMAGE_ID
     ? { id: DEFAULT_IMAGE_ID, name: "Indian thali platter" }
     : getRecipeById(id);
+
+  const sendCached = (file) => {
+    const stat = fs.statSync(file);
+    const etag = `"${id}-${stat.mtimeMs}-${stat.size}"`;
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
+    res.type("image/jpeg");
+    return res.sendFile(path.resolve(file));
+  };
+
+  if (recipe && id !== DEFAULT_IMAGE_ID && getDirectThumbOverride(recipe)) {
+    try {
+      const file = await ensureOverrideImageReady(recipe);
+      if (file) return sendCached(file);
+    } catch {
+      /* fall through to generic pipeline */
+    }
+  }
+
+  const cached = readCachedImage(id);
+  if (cached && recipe && id !== DEFAULT_IMAGE_ID) {
+    const override = getDirectThumbOverride(recipe);
+    const audit = auditCachedImage(recipe);
+    const metaOk = !override || (audit.meta?.source === "curated-thumb" && audit.meta?.originalUrl === override);
+    if (audit.ok && metaOk) {
+      return sendCached(cached);
+    }
+    invalidateCachedImage(id);
+  } else if (cached && id === DEFAULT_IMAGE_ID) {
+    return sendCached(cached);
+  }
 
   if (!recipe && id !== DEFAULT_IMAGE_ID) {
     return res.status(404).json({ success: false, message: "Recipe not found" });
@@ -84,8 +117,7 @@ router.get("/recipes/image/:id", async (req, res) => {
 
   try {
     const file = await ensureRecipeImage(recipe);
-    res.type("image/jpeg");
-    return res.sendFile(path.resolve(file));
+    return sendCached(file);
   } catch {
     if (recipe?.thumbUrl) {
       return res.redirect(302, recipe.thumbUrl);
@@ -94,15 +126,15 @@ router.get("/recipes/image/:id", async (req, res) => {
   }
 });
 
-/** Load recipe on select — fetches matching photo + enriched ingredients via Google/Gemini */
+/** Load recipe on select */
 router.get("/recipes/:id/load", async (req, res) => {
   try {
-    const result = await loadRecipeOnSelect(req.params.id);
-    if (!result) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+    const recipe = getRecipeById(req.params.id);
+    if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+    const merged = getCachedRecipeOverlay(recipe);
     res.json({
       success: true,
-      ...result,
-      recipe: attachRecipeVideo(result.recipe),
+      recipe: attachProvenance(attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged)))),
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -110,15 +142,25 @@ router.get("/recipes/:id/load", async (req, res) => {
 });
 
 router.get("/recipes/categories", (_req, res) => {
-  const counts = getCategoryCounts();
-  res.json({
-    success: true,
-    categories: RECIPE_CATEGORIES,
-    counts: counts.categories,
-    cuisineCounts: counts.cuisines,
-    totalRecipes: RECIPE_COUNT,
-    cuisines: CUISINES,
-  });
+  try {
+    const counts = getCategoryCounts();
+    res.json({
+      success: true,
+      categories: RECIPE_CATEGORIES,
+      counts: counts.categories,
+      cuisineCounts: counts.cuisines,
+      totalRecipes: getPublicRecipeCount(),
+      totalInLibrary: getRecipeCount(),
+      cuisines: getCuisines(),
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to load categories",
+      totalRecipes: getPublicRecipeCount(),
+      totalInLibrary: getRecipeCount(),
+    });
+  }
 });
 
 router.get("/recipes/trending", (req, res) => {
@@ -126,6 +168,11 @@ router.get("/recipes/trending", (req, res) => {
   const recipes = getTrendingRecipes(limit).map(toListItem).map(attachRating);
   const trendingDate = recipes[0]?.trendingDate || null;
   res.json({ success: true, recipes, total: recipes.length, trendingDate });
+});
+
+router.get("/recipes/featured-strip", (req, res) => {
+  const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 6));
+  res.json({ success: true, recipes: [], total: 0 });
 });
 
 router.get("/recipes/suggest", (req, res) => {
@@ -170,8 +217,66 @@ router.post("/ai/recommend", optionalAuth, (req, res) => {
   res.json({ success: true, ...result });
 });
 
+router.get("/recipes/search", (req, res) => {
+  const result = searchRecipes({
+    q: req.query.q || "",
+    cuisine: req.query.cuisine || null,
+    region: req.query.region || null,
+    festival: req.query.festival || null,
+    mealType: req.query.mealType || null,
+    diet: req.query.diet || null,
+    difficulty: req.query.difficulty || null,
+    maxCookTime: req.query.maxCookTime ? Number(req.query.maxCookTime) : null,
+    minCalories: req.query.minCalories ? Number(req.query.minCalories) : null,
+    maxCalories: req.query.maxCalories ? Number(req.query.maxCalories) : null,
+    minProtein: req.query.minProtein ? Number(req.query.minProtein) : null,
+    mode: req.query.mode || "keyword",
+    page: parseInt(req.query.page) || 1,
+    limit: Math.min(50, parseInt(req.query.limit) || 24),
+  });
+  res.json({ success: true, ...result, index: getSearchIndexStats() });
+});
+
 router.get("/recipes/enrichment-status", (_req, res) => {
   res.json({ success: true, ...getEnrichmentStatus() });
+});
+
+/** Import famous dishes from Wikipedia (HD photos) + TheMealDB (ingredients) */
+router.post("/recipes/import/open-source", async (req, res) => {
+  try {
+    const { initRecipeCatalog } = await import("../data/recipes.js");
+    const { runOpenSourceImport, getOpenSourceImportStatus } = await import("../import/openSourceImporter.js");
+    const limit = Math.min(200, Math.max(0, parseInt(req.body?.limit) || 0));
+    const dryRun = req.body?.dryRun === true;
+    const report = await runOpenSourceImport({
+      limit,
+      includeWikiList: req.body?.includeWikiList !== false,
+      dryRun,
+      concurrency: 4,
+    });
+    if (!dryRun) initRecipeCatalog(true);
+    res.json({
+      success: true,
+      report,
+      status: getOpenSourceImportStatus(),
+      totalInLibrary: getRecipeCount(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/recipes/import/open-source/status", async (_req, res) => {
+  try {
+    const { getOpenSourceImportStatus } = await import("../import/openSourceImporter.js");
+    res.json({
+      success: true,
+      ...getOpenSourceImportStatus(),
+      totalInLibrary: getRecipeCount(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 router.post("/recipes/:id/enrich", async (req, res) => {
@@ -189,27 +294,34 @@ router.get("/recipes/:id", (req, res) => {
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   const merged = getCachedRecipeOverlay(recipe);
-  const full = attachRecipeVideo(enrichRecipeWithFlow(merged));
+  const full = attachProvenance(attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged))));
   enrichRecipeInBackground(recipe);
   res.json({ success: true, recipe: full });
 });
 
 router.get("/recipes", (req, res) => {
-  const { category, mealType, diet, cuisine, search, maxCookTime, page = 1, limit = 24 } = req.query;
-  const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search, maxCookTime });
+  const t0 = Date.now();
+  try {
+    const { category, mealType, diet, cuisine, search, maxCookTime, page = 1, limit = 24 } = req.query;
+    const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search, maxCookTime });
 
-  const pageNum = Math.max(1, parseInt(page));
-  const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
-  const start = (pageNum - 1) * limitNum;
-  const paginated = filtered.slice(start, start + limitNum);
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 24));
+    const start = (pageNum - 1) * limitNum;
+    const paginated = filtered.slice(start, start + limitNum);
+    const recipes = attachProvenanceToList(paginated.map(toListItem).map(attachRating));
 
-  res.json({
-    success: true,
-    total: filtered.length,
-    page: pageNum,
-    totalPages: Math.ceil(filtered.length / limitNum),
-    recipes: paginated.map(toListItem).map(attachRating),
-  });
+    res.setHeader("Server-Timing", `recipes;dur=${Date.now() - t0}`);
+    res.json({
+      success: true,
+      total: filtered.length,
+      page: pageNum,
+      totalPages: Math.max(1, Math.ceil(filtered.length / limitNum)),
+      recipes,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || "Failed to list recipes" });
+  }
 });
 
 router.get("/pantry/items", (_req, res) => {
@@ -348,7 +460,8 @@ router.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "Rasoira API is running",
-    totalRecipes: RECIPE_COUNT,
+    totalRecipes: getPublicRecipeCount(),
+    totalInLibrary: getRecipeCount(),
   });
 });
 

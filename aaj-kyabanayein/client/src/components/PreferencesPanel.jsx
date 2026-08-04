@@ -86,6 +86,35 @@ export default function PreferencesPanel({ prefs, onChange }) {
             className="w-full accent-[var(--accent)]"
           />
         </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">Leftover planning</label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "alternating", label: "Smart leftovers" },
+              { value: "minimal", label: "Fresh daily" },
+              { value: "max", label: "Max reuse" },
+            ].map((opt) => (
+              <Chip
+                key={opt.value}
+                active={(prefs.leftoverFrequency || "alternating") === opt.value}
+                onClick={() => update("leftoverFrequency", opt.value)}
+              >
+                {opt.label}
+              </Chip>
+            ))}
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+          <input
+            type="checkbox"
+            checked={prefs.includeVariations !== false}
+            onChange={(e) => update("includeVariations", e.target.checked)}
+            className="accent-[var(--accent)]"
+          />
+          Meal variations (swap options)
+        </label>
       </div>
     </div>
   );

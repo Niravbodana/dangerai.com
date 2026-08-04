@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { fetchMe, getToken, login as apiLogin, loginWithGoogle as apiGoogleLogin, register as apiRegister } from "../api";
+import { syncOnLogin } from "../lib/cloudSync";
 import { getGuestId, getLocalFavorites, setLocalFavorites } from "../lib/guest";
 
 const AuthContext = createContext(null);
@@ -32,6 +33,7 @@ export function AuthProvider({ children }) {
     try {
       const data = await fetchMe();
       setUser(data.user);
+      syncOnLogin().catch(() => {});
     } catch {
       localStorage.removeItem("akb-token");
       setUser(null);
@@ -44,11 +46,18 @@ export function AuthProvider({ children }) {
     loadUser();
   }, [loadUser]);
 
+  useEffect(() => {
+    if (user?.plan) {
+      import("../lib/subscription.js").then(({ syncPlanFromServer }) => syncPlanFromServer(user.plan));
+    }
+  }, [user?.plan]);
+
   const login = async (email, password) => {
     const data = await apiLogin(email, password, guestMergePayload());
     localStorage.setItem("akb-token", data.token);
     applyMergedFavorites(data.mergedFavorites);
     setUser(data.user);
+    syncOnLogin().catch(() => {});
     return data;
   };
 
@@ -57,6 +66,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("akb-token", data.token);
     applyMergedFavorites(data.mergedFavorites);
     setUser(data.user);
+    syncOnLogin().catch(() => {});
     return data;
   };
 
@@ -65,6 +75,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("akb-token", data.token);
     applyMergedFavorites(data.mergedFavorites);
     setUser(data.user);
+    syncOnLogin().catch(() => {});
     return data;
   };
 

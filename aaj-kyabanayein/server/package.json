@@ -6,17 +6,26 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
-    "generate-recipes": "node src/scripts/generateRecipes.js",
-    "build-recipe-books": "node src/scripts/buildRecipeBooks.js",
-    "prefetch-images": "node src/scripts/prefetchRecipeImages.js"
+    "dev": "node --watch-path=./src src/index.js",
+    "dev:stable": "node src/index.js",
+    "dev:watch": "node --watch-path=./src src/index.js",
+    "db:init": "node -e \"import('./src/db/ensureDatabase.js').then(m=>{m.ensureDatabase();console.log('DB ready')})\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@sentry/node": "^9.47.1",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^11.9.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "google-auth-library": "^11.0.0",
-    "jsonwebtoken": "^9.0.3"
+    "jpeg-js": "^0.4.4",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.22.0",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.5"
   }
 }

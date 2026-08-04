@@ -1,41 +1,27 @@
 import { Link } from "react-router-dom";
 import { useAuthModal } from "../context/AuthModalContext";
+import { useAuth } from "../context/AuthContext";
 import BrandLogo from "../components/BrandLogo";
 import RecipeSearch from "../components/RecipeSearch";
 import HotMakings from "../components/HotMakings";
 import CuisineExplorer from "../components/CuisineExplorer";
 import DailyHealthyPlan from "../components/DailyHealthyPlan";
 import MoodTonight from "../components/MoodTonight";
-import QuickMeals from "../components/QuickMeals";
+import RecentCooksStrip from "../components/RecentCooksStrip";
+import HomeTrendingGallery from "../components/HomeTrendingGallery";
+import HomeProudMoment from "../components/HomeProudMoment";
+import HomeCookingSteps from "../components/HomeCookingSteps";
+import HomeTestimonials from "../components/HomeTestimonials";
 import { getStreak } from "../lib/streak";
-import { getHomeRecommendations } from "../lib/growth";
-import { IconArrowRight, IconBook, IconCalendar, IconChef, IconHeart, IconPantry } from "../components/Icons";
-
-const GALLERY = [
-  { name: "Ghar ka Thali", img: "/home/gallery-thali.png", tag: "Comfort food" },
-  { name: "Masala Dosa", img: "/home/gallery-dosa.png", tag: "South Indian" },
-  { name: "Veg Biryani", img: "/home/gallery-biryani.png", tag: "Special" },
-  { name: "Paneer Butter Masala", img: "/home/gallery-paneer.png", tag: "Restaurant style" },
-  { name: "Poha & Chai", img: "/home/gallery-poha.png", tag: "Breakfast" },
-  { name: "Chole Bhature", img: "/home/gallery-chole.png", tag: "Weekend treat" },
-];
-
-const FEATURES = [
-  { to: "/today", icon: IconChef, title: "Aaj Kya Banaye?", desc: "Roz 4 meals — breakfast se dinner." },
-  { to: "/pantry", icon: IconPantry, title: "Ghar mein kya pada?", desc: "Jo ingredients hain, usi se recipe." },
-  { to: "/recipes", icon: IconBook, title: "Sab Recipes", desc: "Search karo, photo dekho, pakao." },
-  { to: "/collections", icon: IconCalendar, title: "Collections", desc: "Sunday lunch, sweets, budget meals." },
-  { to: "/favorites", icon: IconHeart, title: "Favourites", desc: "Pasand save karo, streak banao." },
-];
+import { IconArrowRight } from "../components/Icons";
 
 export default function Home() {
   const { openLogin, openSignup } = useAuthModal();
+  const { user } = useAuth();
   const streak = getStreak();
-  const { recentRecipeIds, taste } = getHomeRecommendations();
 
   return (
     <div className="home-page min-h-screen">
-      {/* Hero: brand + line + search + CTA + small cooking woman */}
       <section className="home-hero relative overflow-hidden">
         <div className="hero-glow" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 lg:py-20">
@@ -46,7 +32,8 @@ export default function Home() {
               <span className="home-gradient-text">aapka pride</span>
             </h1>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base lg:mx-0">
-              Aaj kya banaye? Search karo → ingredients dekho → step-by-step pakao.
+              Ghar ka khana banana koi chhoti baat nahi — yeh pyaar hai, care hai, tradition hai.
+              Rasoira aapke saath hai har meal mein.
             </p>
             <div className="mx-auto mt-6 max-w-xl lg:mx-0">
               <RecipeSearch large />
@@ -63,114 +50,53 @@ export default function Home() {
                 <Link to="/streak" className="text-xs text-[var(--accent-soft)]">🔥 {streak.current} din</Link>
               )}
             </div>
+            <p className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-secondary)] lg:justify-start">
+              <span className="flex -space-x-1">
+                {["🍛", "👩‍🍳", "❤️"].map((e) => (
+                  <span key={e} className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs">{e}</span>
+                ))}
+              </span>
+              Bharat bhar ki ghar ki rasoiyanon ka bharosa
+            </p>
           </div>
 
-          {/* Small cooking woman — restored */}
           <div className="home-hero__visual relative mx-auto w-full max-w-[280px] sm:max-w-[320px] lg:max-w-none">
             <div className="home-hero__glow" />
             <img
               src="/home/hero-homemaker.png"
-              alt="Indian homemaker cooking with Rasoira"
-              className="home-hero__img relative z-[1] mx-auto max-h-[340px] w-auto rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
+              alt="Indian home cook — Rasoira"
+              className="home-hero__img relative z-0 mx-auto max-h-[340px] w-full max-w-sm rounded-2xl object-cover shadow-2xl sm:max-h-[400px]"
               loading="eager"
               fetchPriority="high"
               decoding="async"
+              onError={(e) => {
+                e.currentTarget.src = "/logo-wordmark-light.svg";
+                e.currentTarget.className = "relative z-[1] mx-auto max-h-[200px] w-auto opacity-90";
+              }}
             />
-            <div className="home-float-card home-float-card--stats !left-2 !bottom-4 sm:!left-0">
-              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">900+</p>
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Recipes</p>
+            <div className="home-float-card home-float-card--stats z-10 !left-2 !bottom-4 sm:!left-0">
+              <p className="font-display text-xl text-[var(--accent-soft)] sm:text-2xl">1000+</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Verified Recipes</p>
             </div>
           </div>
         </div>
       </section>
-
-      {/* Simple 3 steps — easy to understand */}
-      <section className="border-t border-white/[0.06] py-10 sm:py-14">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center font-display text-2xl text-[var(--text-primary)] sm:text-3xl">Bas 3 simple steps</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              { n: "1", title: "Search / Aaj Kya Banaye", desc: "Dish naam likho ya aaj ka plan kholo" },
-              { n: "2", title: "Ingredients check", desc: "Poori list notes jaisi — quantity ke saath" },
-              { n: "3", title: "Cook with voice", desc: "Start Cooking → 🔊 suno → Next dabao" },
-            ].map((s) => (
-              <div key={s.n} className="recipe-card p-5 text-center sm:text-left">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-bold text-[#14110e]">{s.n}</span>
-                <h3 className="mt-3 font-semibold text-[var(--text-primary)]">{s.title}</h3>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {recentRecipeIds.length > 0 && (
-        <section className="border-t border-white/[0.06] py-8">
-          <div className="mx-auto max-w-6xl px-4">
-            <h2 className="font-display text-xl text-[var(--text-primary)]">For you</h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Based on your recent cooking{taste.diet ? ` · ${taste.diet}` : ""}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {recentRecipeIds.map((id) => (
-                <Link key={id} to={`/recipe/${id}`} className="premium-btn-outline px-4 py-2 text-sm capitalize">
-                  {id.replace(/-/g, " ")}
-                </Link>
-              ))}
-              <Link to="/today" className="premium-btn px-4 py-2 text-sm">Aaj Kya Banaye</Link>
-            </div>
-          </div>
-        </section>
-      )}
 
       <MoodTonight />
-      <QuickMeals />
+      <HomeProudMoment />
+      <HomeCookingSteps />
+      <HomeTrendingGallery />
       <HotMakings />
+      <RecentCooksStrip />
 
       <section className="home-section border-t border-white/[0.06]">
         <div className="mx-auto max-w-6xl px-4">
-          <DailyHealthyPlan deferMs={900} />
-        </div>
-      </section>
-
-      <section className="home-section border-t border-white/[0.06]">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="font-display text-2xl text-[var(--text-primary)] sm:text-3xl">Ghar ka swad</h2>
-        </div>
-        <div className="home-gallery-scroll mt-8">
-          <div className="home-gallery-track">
-            {[...GALLERY, ...GALLERY].map((food, i) => (
-              <Link key={`${food.name}-${i}`} to="/recipes" className="home-gallery-card group">
-                <img src={food.img} alt={`${food.name} — ${food.tag} Indian recipe`} loading="lazy" />
-                <div className="home-gallery-card__overlay">
-                  <span className="home-gallery-card__tag">{food.tag}</span>
-                  <p className="font-semibold text-white">{food.name}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <DailyHealthyPlan deferMs={600} />
         </div>
       </section>
 
       <CuisineExplorer />
-
-      <section className="home-section border-t border-white/[0.06]">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="font-display text-2xl text-[var(--text-primary)]">Sab ek jagah</h2>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <Link key={f.to} to={f.to} className="home-feature group">
-                  <div className="home-feature__icon"><Icon className="h-5 w-5" /></div>
-                  <h3 className="mt-3 font-semibold text-[var(--text-primary)]">{f.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{f.desc}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <HomeTestimonials />
 
       <section className="home-section pb-20">
         <div className="mx-auto max-w-6xl px-4">
@@ -180,8 +106,17 @@ export default function Home() {
               Free recipes + cooking. Plus se unlimited daily plans.
             </p>
             <div className="relative mt-6 flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={openSignup} className="premium-btn px-8 py-3 text-sm">Join free</button>
-              <button type="button" onClick={openLogin} className="premium-btn-outline px-8 py-3 text-sm">Login</button>
+              {user ? (
+                <>
+                  <Link to="/today" className="premium-btn px-8 py-3 text-sm">Aaj Kya Banaye</Link>
+                  <Link to="/planner" className="premium-btn-outline px-8 py-3 text-sm">Meal Plan</Link>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={openSignup} className="premium-btn px-8 py-3 text-sm">Join free</button>
+                  <button type="button" onClick={openLogin} className="premium-btn-outline px-8 py-3 text-sm">Login</button>
+                </>
+              )}
             </div>
           </div>
         </div>

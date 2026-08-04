@@ -3,6 +3,7 @@
  */
 import { filterRecipeIndex, getRecipeById, toListItem } from "../data/recipes.js";
 import { rankRecipes } from "./ai/personalizationPipeline.js";
+import { stateBoostForRecipe } from "../data/stateRegions.js";
 
 function daySeed() {
   const d = new Date().toISOString().slice(0, 10);
@@ -56,7 +57,7 @@ function pickScored(pool, profile, mealType, usedIds, count = 1) {
 
   const boosted = ranked.map((p) => ({
     ...p,
-    score: p.score + seasonalBoost(p.recipe),
+    score: p.score + seasonalBoost(p.recipe) + stateBoostForRecipe(p.recipe, profile.homeState),
   })).sort((a, b) => b.score - a.score);
 
   const picks = boosted.slice(0, count);
@@ -78,7 +79,7 @@ function explainPick(recipe, profile) {
   if (recipe.spice === profile.spice) reasons.push(`${recipe.spice} spice like you like`);
   if (recipe.tags?.includes("healthy")) reasons.push("Healthy pick");
   if (recipe.budget === "low") reasons.push("Budget friendly");
-  if (profile.streak >= 3) reasons.push("Keeps your streak going");
+  if (profile.homeState) reasons.push("Matches your region");
   return reasons.slice(0, 2).join(" · ") || "Fresh pick for today";
 }
 

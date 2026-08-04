@@ -34,8 +34,8 @@ function mealToSteps(meal) {
     .filter((s) => s.length > 10);
 }
 
-export async function searchTheMealDb(name) {
-  const queries = [cleanName(name), name].filter(Boolean);
+export async function searchTheMealDb(name, altNames = []) {
+  const queries = [cleanName(name), name, ...altNames.map(cleanName), ...altNames].filter(Boolean);
   for (const q of [...new Set(queries)]) {
     const data = await fetchJson(`${BASE}/search.php?s=${encodeURIComponent(q)}`);
     const meal = data?.meals?.[0];
@@ -47,6 +47,7 @@ export async function searchTheMealDb(name) {
 
     return {
       source: "themealdb",
+      idMeal: meal.idMeal,
       name: meal.strMeal,
       imageUrl: meal.strMealThumb,
       ingredients,

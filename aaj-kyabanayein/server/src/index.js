@@ -8,12 +8,17 @@ import authRouter from "./routes/auth.js";
 import mealsRouter from "./routes/meals.js";
 import mealsUserRouter, { loadCustomMealsOnStartup } from "./routes/mealsUser.js";
 import socialRouter from "./routes/social.js";
+import kitchenRouter from "./routes/kitchen.js";
+import adminRouter from "./routes/admin.js";
+import siteRouter from "./routes/site.js";
+import paymentsRouter from "./routes/payments.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
-import { initSentry, captureException } from "./lib/sentry.js";
-import { getTrendingRecipes } from "./services/trendingService.js";
-import { warmTrendingRecipeImages } from "./services/recipeImageService.js";
+import { initSentry } from "./lib/sentry.js";
+import { ensureDatabase } from "./db/ensureDatabase.js";
+import { initRecipeCatalog } from "./data/recipes.js";
+import { getFullConfig } from "./services/siteConfigService.js";
 
 initSentry();
 
@@ -34,7 +39,12 @@ function loadEnv() {
 }
 
 loadEnv();
+console.time("recipes-load");
+ensureDatabase();
+initRecipeCatalog(true);
+console.timeEnd("recipes-load");
 loadCustomMealsOnStartup();
+getFullConfig();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,46 +54,38 @@ const isProd = process.env.NODE_ENV === "production";
 const corsOrigin = process.env.CORS_ORIGIN;
 app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((o) => o.trim()) } : undefined));
 app.use(securityHeaders);
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf.toString();
+  },
+}));
 
 app.use("/api/auth", authRouter);
+app.use("/api/site", siteRouter);
+app.use("/api/payments", paymentsRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api", kitchenRouter);
 app.use("/api", socialRouter);
 app.use("/api", mealsUserRouter);
 app.use("/api", mealsRouter);
 
-app.get("/", (_req, res) => {
-  res.json({
-    name: "Rasoira API",
-    version: "2.0.0",
-    endpoints: [
-      "/api/health",
-      "/api/recipes",
-      "/api/recipes/trending",
-      "/api/recipes/enrichment-status",
-      "POST /api/recipes/:id/enrich",
-      "/api/pantry/items",
-      "POST /api/pantry/suggest",
-      "POST /api/plan/healthy",
-      "/api/pricing",
-      "POST /api/plan",
-      "POST /api/auth/register",
-      "POST /api/auth/login",
-      "POST /api/auth/google",
-      "GET /api/auth/me",
-      "PUT /api/auth/preferences",
-    ],
-  });
-});
+const clientDist = path.join(__dirname, "../../client/dist");
+const serveClient = isProd && fs.existsSync(clientDist);
 
-if (isProd) {
-  const clientDist = path.join(__dirname, "../../client/dist");
-  if (fs.existsSync(clientDist)) {
-    app.use(express.static(clientDist));
-    app.get("*", (req, res, next) => {
-      if (req.path.startsWith("/api")) return next();
-      res.sendFile(path.join(clientDist, "index.html"));
+if (serveClient) {
+  app.use(express.static(clientDist));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+} else {
+  app.get("/", (_req, res) => {
+    res.json({
+      name: "Rasoira API",
+      version: "2.0.0",
+      endpoints: ["/api/health", "/api/recipes", "/api/recipes/trending"],
     });
-  }
+  });
 }
 
 app.use("/api", notFoundHandler);
@@ -99,6 +101,13 @@ function localIpv4() {
   return null;
 }
 
+process.on("uncaughtException", (err) => {
+  logger.error(`uncaughtException: ${err?.stack || err}`);
+});
+process.on("unhandledRejection", (reason) => {
+  logger.error(`unhandledRejection: ${reason?.stack || reason}`);
+});
+
 app.listen(PORT, HOST, () => {
   const lan = localIpv4();
   logger.info(`Server running on http://localhost:${PORT}`);
@@ -106,5 +115,4 @@ app.listen(PORT, HOST, () => {
   if (isProd && !process.env.JWT_SECRET) {
     logger.warn("JWT_SECRET is not set — set it before production deploy");
   }
-  warmTrendingRecipeImages(getTrendingRecipes, 20);
 });

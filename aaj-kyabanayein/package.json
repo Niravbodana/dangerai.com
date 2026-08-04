@@ -5,15 +5,18 @@
   "description": "Rasoira - Indian meal planner (Node + React)",
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client",
+    "dev": "node scripts/dev.mjs",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client -- --host",
     "start:server": "npm start --prefix server",
     "build:client": "npm run build --prefix client",
     "test": "npm run test --prefix client",
-    "generate-recipes": "npm run generate-recipes --prefix server",
-    "build-recipe-books": "npm run build-recipe-books --prefix server",
-    "prefetch-images": "npm run prefetch-images --prefix server",
     "verify": "node scripts/verify-project.mjs",
-    "generate-sitemap": "node scripts/generate-sitemap.mjs"
+    "db:init": "npm run db:init --prefix server",
+    "dev:kill": "node scripts/kill-dev-ports.mjs",
+    "health": "node scripts/check-local-health.mjs",
+    "test:server": "npm run test --prefix server",
+    "test:all": "npm run test --prefix client && npm run test --prefix server",
+    "import:open": "node scripts/import-open-recipes.mjs"
   }
 }
