@@ -293,7 +293,7 @@ export function countPremiumHeroes() {
   return n;
 }
 
-export async function getPremiumStatus() {
+export function getPremiumStatus() {
   ensureIntelligenceDb();
   const intelDb = getIntelligenceDb();
   const live = getDb().prepare("SELECT COUNT(*) as c FROM recipes").get()?.c || 0;

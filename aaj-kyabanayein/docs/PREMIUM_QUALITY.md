@@ -25,9 +25,10 @@ Premium path writes real heroes and verified macros, so scores reach **90–100*
 
 ## Image policy
 
-- Generated originals land in `server/data/image-cache/{id}.jpg` with `source: premium-hero`
-- Scrapers (`ensureRecipeImage`) **never overwrite** premium heroes
-- License: RASOIRA-AI (commercial OK)
+1. **Real photos first** — Wikimedia Commons / Wikipedia / Openverse with commercial-safe licenses, dish-name title match ≥ 0.5, normalized to 1400×1050
+2. **Studio fallback** — RASOIRA-AI original composition when no licensed photo matches
+3. Cached in `server/data/image-cache/{id}.jpg` with `source: premium-hero-real` or `premium-hero`
+4. Scrapers never overwrite premium heroes
 
 ## Modules
 
