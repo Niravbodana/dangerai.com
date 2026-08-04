@@ -3,7 +3,6 @@
  */
 import { getIntelligenceDb } from "./repository.js";
 import { writeAuditLog } from "./auditLog.js";
-import { isPostgresConfigured } from "../pipeline/db/postgresClient.js";
 
 export function saveIntelligenceRecipe(recipe) {
   const db = getIntelligenceDb();
@@ -93,21 +92,8 @@ export function saveIntelligenceRecipe(recipe) {
   return recipe.id;
 }
 
-export async function saveToPostgresIfConfigured(recipe, batchId) {
-  if (!isPostgresConfigured()) return false;
-  try {
-    const { upsertProductionRecipe } = await import("../pipeline/db/postgresRepository.js");
-    await upsertProductionRecipe(recipe, batchId);
-    return true;
-  } catch (err) {
-    writeAuditLog({
-      action: "postgres_save_failed",
-      entityType: "recipe",
-      entityId: recipe.id,
-      details: { error: err.message },
-    });
-    return false;
-  }
+export async function saveToPostgresIfConfigured() {
+  return false;
 }
 
 export function getIntelligenceRecipe(id) {

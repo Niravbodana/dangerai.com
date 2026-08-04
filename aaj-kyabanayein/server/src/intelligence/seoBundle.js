@@ -1,13 +1,31 @@
 /**
- * Full SEO bundle — Schema.org, Open Graph, Twitter Cards, breadcrumbs, canonical.
+ * SEO bundle — Schema.org, Open Graph, meta tags.
  */
-import { buildRecipeJsonLd } from "../pipeline/services/schemaOrgBuilder.js";
+function buildRecipeJsonLd(recipe) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    name: recipe.title || recipe.name,
+    description: recipe.introduction || recipe.seoDescription,
+    image: recipe.imageUrl,
+    recipeCuisine: recipe.cuisine,
+    recipeCategory: recipe.mealType,
+    prepTime: recipe.prepTimeMin ? `PT${recipe.prepTimeMin}M` : undefined,
+    cookTime: recipe.cookTimeMin ? `PT${recipe.cookTimeMin}M` : undefined,
+    recipeIngredient: (recipe.ingredients || []).map((i) => `${i.quantity || ""} ${i.name}`.trim()),
+    recipeInstructions: (recipe.steps || []).map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      text: s,
+    })),
+  };
+}
 
 export function buildSeoBundle(recipe) {
   const slug = recipe.slug || recipe.id;
   const canonicalUrl = recipe.canonicalUrl || `https://rasoira.com/recipe/${slug}`;
-  const title = recipe.seoTitle || `${recipe.title} Recipe | Rasoira`;
-  const description = recipe.seoDescription || recipe.introduction?.slice(0, 160) || recipe.title;
+  const title = recipe.seoTitle || `${recipe.title || recipe.name} Recipe | Rasoira`;
+  const description = recipe.seoDescription || recipe.introduction?.slice(0, 160) || recipe.title || recipe.name;
   const imageUrl = recipe.imageUrl || `https://rasoira.com/api/recipes/image/${recipe.id}`;
 
   const recipeSchema = recipe.schemaOrg || buildRecipeJsonLd(recipe);
@@ -18,65 +36,9 @@ export function buildSeoBundle(recipe) {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: "https://rasoira.com/" },
       { "@type": "ListItem", position: 2, name: "Recipes", item: "https://rasoira.com/recipes" },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: formatCuisine(recipe.cuisine),
-        item: `https://rasoira.com/recipes?cuisine=${recipe.cuisine || ""}`,
-      },
-      { "@type": "ListItem", position: 4, name: recipe.title, item: canonicalUrl },
+      { "@type": "ListItem", position: 4, name: recipe.title || recipe.name, item: canonicalUrl },
     ],
   };
-
-  const faqSchema = (recipe.faq || []).length
-    ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: recipe.faq.map((f) => ({
-          "@type": "Question",
-          name: f.question,
-          acceptedAnswer: { "@type": "Answer", text: f.answer },
-        })),
-      }
-    : null;
-
-  const openGraph = {
-    "og:type": "article",
-    "og:title": title,
-    "og:description": description,
-    "og:url": canonicalUrl,
-    "og:image": imageUrl,
-    "og:site_name": "Rasoira",
-    "og:locale": "en_IN",
-    "article:section": formatCuisine(recipe.cuisine),
-    "article:tag": (recipe.recipeTags || recipe.tags || []).join(","),
-  };
-
-  const twitterCards = {
-    "twitter:card": "summary_large_image",
-    "twitter:title": title,
-    "twitter:description": description,
-    "twitter:image": imageUrl,
-    "twitter:site": "@rasoira",
-  };
-
-  const metaTags = {
-    title,
-    description,
-    canonical: canonicalUrl,
-    robots: "index, follow",
-    keywords: [
-      recipe.title,
-      recipe.cuisine,
-      recipe.mealType,
-      ...(recipe.diet || []),
-      ...(recipe.recipeTags || recipe.tags || []),
-    ]
-      .filter(Boolean)
-      .join(", "),
-  };
-
-  const internalLinks = buildInternalLinks(recipe);
 
   return {
     seoTitle: title,
@@ -84,29 +46,23 @@ export function buildSeoBundle(recipe) {
     canonicalUrl,
     recipeSchema,
     breadcrumbSchema,
-    faqSchema,
-    openGraph,
-    twitterCards,
-    metaTags,
-    internalLinks,
-    structuredData: [recipeSchema, breadcrumbSchema, faqSchema].filter(Boolean),
+    faqSchema: null,
+    openGraph: {
+      "og:type": "article",
+      "og:title": title,
+      "og:description": description,
+      "og:url": canonicalUrl,
+      "og:image": imageUrl,
+      "og:site_name": "Rasoira",
+    },
+    twitterCards: {
+      "twitter:card": "summary_large_image",
+      "twitter:title": title,
+      "twitter:description": description,
+      "twitter:image": imageUrl,
+    },
+    metaTags: { title, description, canonical: canonicalUrl, robots: "index, follow" },
+    internalLinks: [{ href: "/recipes", label: "All Recipes" }],
+    structuredData: [recipeSchema, breadcrumbSchema],
   };
-}
-
-function buildInternalLinks(recipe) {
-  const links = [
-    { href: "/recipes", label: "All Recipes" },
-    { href: `/recipes?cuisine=${recipe.cuisine}`, label: `${formatCuisine(recipe.cuisine)} Recipes` },
-  ];
-  if (recipe.mealType) {
-    links.push({ href: `/recipes?mealType=${recipe.mealType}`, label: formatCuisine(recipe.mealType) });
-  }
-  for (const d of recipe.diet || []) {
-    links.push({ href: `/recipes?diet=${d}`, label: d });
-  }
-  return links;
-}
-
-function formatCuisine(s = "") {
-  return String(s).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

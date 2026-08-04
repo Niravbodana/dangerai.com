@@ -7,7 +7,6 @@ import { auditCachedImage, hasCachedImage } from "./recipeImageService.js";
 import { getRecipeCount } from "../db/recipeRepository.js";
 import { getFullConfig, getPartnerList } from "./siteConfigService.js";
 import { getRazorpayCredentials } from "./siteConfigService.js";
-import { runQualityGuardian } from "./qualityGuardian.js";
 
 let lastBugReport = null;
 
@@ -107,12 +106,7 @@ export async function runBugGuardian({ fix = false, sampleSize = 100 } = {}) {
 
   let guardianResult = null;
   if (fix) {
-    guardianResult = await runQualityGuardian({ fix: true });
-    fixes.push({
-      type: "quality_guardian",
-      photosFixed: guardianResult.photosFixed,
-      ingredientsFixed: guardianResult.ingredientsFixed,
-    });
+    guardianResult = { skipped: true, message: "Quality guardian removed" };
   }
 
   const report = {

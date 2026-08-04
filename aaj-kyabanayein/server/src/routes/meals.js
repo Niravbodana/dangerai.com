@@ -40,9 +40,7 @@ import {
   attachRecipeImageFields,
 } from "../services/recipeImageService.js";
 import { getDirectThumbOverride } from "../data/recipeImageOverrides.js";
-import { getFeaturedCookAgainRecipes } from "../services/featuredCookAgainService.js";
-import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
-import { passesQualityGate, getPublicRecipeCount } from "../services/qualityCatalog.js";
+import { getPublicRecipeCount } from "../services/qualityCatalog.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
@@ -127,18 +125,15 @@ router.get("/recipes/image/:id", async (req, res) => {
   }
 });
 
-/** Load recipe on select — fetches matching photo + enriched ingredients via Google/Gemini */
+/** Load recipe on select */
 router.get("/recipes/:id/load", async (req, res) => {
   try {
-    if (!passesQualityGate(req.params.id)) {
-      return res.status(404).json({ success: false, message: "Recipe abhi quality check se guzar rahi hai" });
-    }
-    const result = await loadRecipeOnSelect(req.params.id);
-    if (!result) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+    const recipe = getRecipeById(req.params.id);
+    if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
+    const merged = getCachedRecipeOverlay(recipe);
     res.json({
       success: true,
-      ...result,
-      recipe: attachRecipeImageFields(attachRecipeVideo(result.recipe)),
+      recipe: attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged))),
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -176,8 +171,7 @@ router.get("/recipes/trending", (req, res) => {
 
 router.get("/recipes/featured-strip", (req, res) => {
   const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 6));
-  const recipes = getFeaturedCookAgainRecipes(limit);
-  res.json({ success: true, recipes, total: recipes.length });
+  res.json({ success: true, recipes: [], total: 0 });
 });
 
 router.get("/recipes/suggest", (req, res) => {
@@ -258,9 +252,6 @@ router.post("/recipes/:id/enrich", async (req, res) => {
 });
 
 router.get("/recipes/:id", (req, res) => {
-  if (!passesQualityGate(req.params.id)) {
-    return res.status(404).json({ success: false, message: "Recipe abhi quality check se guzar rahi hai" });
-  }
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   const merged = getCachedRecipeOverlay(recipe);
@@ -433,15 +424,6 @@ router.get("/health", (_req, res) => {
     totalRecipes: getPublicRecipeCount(),
     totalInLibrary: getRecipeCount(),
   });
-});
-
-router.get("/import/status", async (_req, res) => {
-  try {
-    const { getImportApiStatus } = await import("../import/multiApiImportRunner.js");
-    res.json({ success: true, ...getImportApiStatus() });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
 });
 
 export default router;

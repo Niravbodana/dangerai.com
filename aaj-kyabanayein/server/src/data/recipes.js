@@ -13,7 +13,6 @@ import { isDatabaseReady } from "../db/migrate.js";
 import * as recipeRepo from "../db/recipeRepository.js";
 import {
   initQualityCatalog,
-  passesQualityGate,
   sortCatalogForBrowse,
 } from "../services/qualityCatalog.js";
 
@@ -299,17 +298,11 @@ export function filterRecipeIndex(filters = {}) {
     search,
     maxCookTime,
     includeHidden = false,
-    includeBelowQuality = false,
   } = filters;
 
   // Soft-hidden duplicates (same dish name, prefer curated)
   if (!includeHidden) {
     list = list.filter((r) => !r.tags?.includes("hidden-duplicate"));
-  }
-
-  // Only 90+ quality recipes in public catalog (premium verified)
-  if (!includeBelowQuality) {
-    list = list.filter((r) => passesQualityGate(r.id));
   }
 
   if (cuisine && cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
@@ -459,7 +452,6 @@ export function getCategoryCounts() {
 
   for (const r of recipeIndex) {
     if (r.tags?.includes("hidden-duplicate")) continue;
-    if (!passesQualityGate(r.id)) continue;
     const browseCategory = resolveBrowseCategory(r);
     if (counts[browseCategory] !== undefined) counts[browseCategory]++;
     if (r.mealType === "snack") counts.snack++;

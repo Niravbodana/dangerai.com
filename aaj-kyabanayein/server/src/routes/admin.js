@@ -2,7 +2,6 @@ import { Router } from "express";
 import { optionalAuth } from "../middleware/auth.js";
 import { adminMiddleware } from "../middleware/adminAuth.js";
 import { validateAdminLogin, signAdminToken } from "../services/adminSessionService.js";
-import { getGuardianReport, runQualityGuardian } from "../services/qualityGuardian.js";
 import { getBugGuardianReport, runBugGuardian } from "../services/bugGuardian.js";
 import { getAdminConfig, updateAdminConfig, getPublicConfig } from "../services/siteConfigService.js";
 import { RECIPE_INDEX, getRecipeById, enrichRecipe, invalidateRecipeCache, refreshRecipeInCache } from "../data/recipes.js";
@@ -50,13 +49,11 @@ router.get("/dashboard", (_req, res) => {
     photoIssues: photoBad.length,
     sampleIngredientBad: ingredientBad.slice(0, 15),
     samplePhotoBad: photoBad.slice(0, 15),
-    lastGuardian: getGuardianReport(),
   });
 });
 
-router.post("/guardian/run", async (req, res) => {
-  const report = await runQualityGuardian({ fix: req.body?.fix !== false });
-  res.json({ success: true, report });
+router.post("/guardian/run", async (_req, res) => {
+  res.json({ success: true, report: { message: "Quality guardian removed — catalog is empty" } });
 });
 
 router.get("/recipes/issues", (req, res) => {
