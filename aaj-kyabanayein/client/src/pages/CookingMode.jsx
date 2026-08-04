@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchRecipeLoad } from "../api";
 import { useLanguage } from "../context/LanguageContext";
-import { useSpeech } from "../hooks/useSpeech";
+import StepVoicePanel from "../components/StepVoicePanel";
+import { useSpeech, getSpeechLangCode } from "../hooks/useSpeech";
 import { useVoiceCommands } from "../hooks/useVoiceCommands";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { useStepTimers } from "../hooks/useStepTimers";
@@ -18,30 +19,15 @@ import { shouldShowAccountWall } from "../lib/accountWall";
 import { getStreak } from "../lib/streak";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
+import { useTouchDevice } from "../hooks/useTouchDevice";
+import { useSwipe } from "../hooks/useSwipe";
+import { trackRecipeCooked } from "../lib/recentRecipes";
 
-function VoiceButton({ text, lang, label, onSpeak }) {
-  const { speak, stop, speaking, supported } = useSpeech(lang);
-  if (!supported) return null;
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (speaking) stop();
-        else {
-          speak(text);
-          onSpeak?.();
-        }
-      }}
-      className={`tap-smooth flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition ${
-        speaking
-          ? "bg-[var(--accent)] text-[#14110e]"
-          : "border border-white/15 bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-      }`}
-      aria-label={label}
-    >
-      {speaking ? "⏹ Stop" : "🔊 Listen"}
-    </button>
-  );
+function getStepTexts(current, recipe, stepIndex, instructionSteps) {
+  const en = current?.title || recipe?.steps?.[stepIndex] || instructionSteps[stepIndex] || "";
+  const hi = current?.titleHi || recipe?.stepsHi?.[stepIndex] || en;
+  const gu = recipe?.stepsGu?.[stepIndex] || hi;
+  return { en, hi, gu };
 }
 
 function StepTimer({ timerKey, minutes, timers, ensureTimer, toggleTimer, resetTimer }) {
@@ -106,6 +92,7 @@ export default function CookingMode() {
   const { lang } = useLanguage();
   const { user } = useAuth();
   const { openSignup } = useAuthModal();
+  const isTouch = useTouchDevice();
   const [recipe, setRecipe] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
@@ -114,10 +101,12 @@ export default function CookingMode() {
   const [checkedItems, setCheckedItems] = useState({});
   const [handsFree, setHandsFree] = useState(false);
   const [cookLang, setCookLang] = useState(() => localStorage.getItem("akb-cook-lang") || lang || "en");
-  const { speak, stop, speaking, supported } = useSpeech(cookLang === "hinglish" ? "hi" : cookLang);
+  const speechLang = getSpeechLangCode(cookLang);
+  const { speak, stop, speaking, supported } = useSpeech(speechLang);
   const { timers, setTimers, ensureTimer, toggleTimer, resetTimer } = useStepTimers();
   const savedSession = useMemo(() => loadCookSession(id), [id]);
   const stepTextRef = useRef("");
+  const stepCardRef = useRef(null);
 
   useWakeLock(started);
 
@@ -160,7 +149,7 @@ export default function CookingMode() {
 
   const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
     ? recipe.stepsHi
-    : recipe?.steps || [];
+    : (recipe?.steps?.length ? recipe.steps : recipe?.stepsHi || []);
   const steps = recipe?.cookingFlow?.length ? recipe.cookingFlow : instructionSteps.map((text, i) => ({
     id: i + 1,
     type: i === instructionSteps.length - 1 ? "done" : "cook",
@@ -171,15 +160,20 @@ export default function CookingMode() {
   const isDone = current?.type === "done" || stepIndex >= steps.length - 1;
   const ui = getCookUI(cookLang);
 
-  const stepText = current
-    ? cookLang === "hi" || cookLang === "gu" || cookLang === "mr"
-      ? current.titleHi || current.title
-      : cookLang === "hinglish"
-        ? `${current.title}${current.titleHi ? ` — ${current.titleHi}` : ""}`
-        : current.title || current.titleHi
-    : "";
+  const stepTexts = useMemo(
+    () => getStepTexts(current, recipe, stepIndex, instructionSteps),
+    [current, recipe, stepIndex, instructionSteps],
+  );
 
-  const voiceLang = cookLang === "en" ? "en" : "hi";
+  const stepText = cookLang === "hi"
+    ? stepTexts.hi
+    : cookLang === "gu"
+      ? stepTexts.gu
+      : cookLang === "hinglish"
+        ? `${stepTexts.en}${stepTexts.hi ? ` — ${stepTexts.hi}` : ""}`
+        : stepTexts.en;
+
+  const voiceLang = speechLang;
   const stepMinutes = estimateStepMinutes(stepText);
   const stepCountRef = useRef(0);
   stepCountRef.current = steps.length;
@@ -197,6 +191,12 @@ export default function CookingMode() {
     stop();
     setStepIndex((i) => Math.max(0, i - 1));
   }, [stop]);
+
+  useSwipe(stepCardRef, {
+    enabled: started && isTouch,
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrevious,
+  });
 
   const repeatStep = useCallback(() => {
     if (stepTextRef.current) {
@@ -228,6 +228,7 @@ export default function CookingMode() {
   const finishCook = () => {
     clearCookSession(id);
     recordCookFinish(id);
+    trackRecipeCooked(id);
     track("cook_finish", { id });
     const streak = getStreak();
     if (shouldShowAccountWall(!!user, streak.totalCooks)) {
@@ -321,7 +322,7 @@ export default function CookingMode() {
             </div>
             <label className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} className="accent-[var(--accent)]" />
-              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
+              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;पुढे&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
             </label>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               {ui.ingredients}
@@ -376,7 +377,7 @@ export default function CookingMode() {
           {handsFree && <span className="text-[10px] text-[var(--accent-soft)]">🎤 Listening</span>}
         </div>
         <p className="mx-auto mt-1 max-w-2xl text-center text-[10px] text-[var(--text-secondary)]">
-          Space = next · ← → navigate · R = repeat
+          {isTouch ? `${ui.mobileHint} · ${ui.swipeHint}` : ui.keyboardHint}
         </p>
         <div className="mx-auto mt-2 h-1 max-w-2xl overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${((Math.min(stepIndex + 1, steps.length)) / steps.length) * 100}%` }} />
@@ -385,7 +386,7 @@ export default function CookingMode() {
       </div>
 
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 pb-32">
-        <div className="glass-strong rounded-2xl p-6 text-center sm:p-10">
+        <div ref={stepCardRef} className="glass-strong rounded-2xl p-6 text-center sm:p-10">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-xl font-bold text-[#14110e]">
             {isDone ? "☺️" : stepIndex + 1}
           </div>
@@ -398,12 +399,12 @@ export default function CookingMode() {
             toggleTimer={toggleTimer}
             resetTimer={resetTimer}
           />
-          {supported && stepText && (
-            <div className="mt-5 flex justify-center gap-2">
-              <VoiceButton
-                text={stepText}
-                lang={voiceLang}
-                label="Listen to step"
+          {stepText && (
+            <div className="mt-5">
+              <StepVoicePanel
+                texts={stepTexts}
+                activeLang={cookLang === "mr" || cookLang === "hinglish" ? "hi" : cookLang}
+                onLangChange={setCookLang}
                 onSpeak={() => recordVoiceUse()}
               />
             </div>

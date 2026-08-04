@@ -290,3 +290,57 @@ export async function fetchCollection(id) {
   if (!res.ok) throw new Error('Collection not found');
   return res.json();
 }
+
+export { syncOnLogin, pushCloudSync, pullCloudSync } from './lib/cloudSync.js';
+
+export async function fetchHelpers() {
+  const res = await apiFetch(`${API_BASE}/maid/helpers`, { headers: authHeaders() });
+  return handleResponse(res);
+}
+
+export async function createHelper(body) {
+  const res = await apiFetch(`${API_BASE}/maid/helpers`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteHelper(id) {
+  const res = await apiFetch(`${API_BASE}/maid/helpers/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function generateHelperLink(helperId) {
+  const res = await apiFetch(`${API_BASE}/maid/helpers/${helperId}/token`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({}),
+  });
+  return handleResponse(res);
+}
+
+export async function importRecipeUrl(url) {
+  const res = await apiFetch(`${API_BASE}/recipes/import`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ url }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchImportedRecipes() {
+  const res = await apiFetch(`${API_BASE}/recipes/imported`, { headers: authHeaders() });
+  if (!res.ok) return { recipes: [] };
+  return res.json();
+}
+
+export async function fetchUpcomingFestivals() {
+  const res = await apiFetch(`${API_BASE}/festivals/upcoming`);
+  if (!res.ok) return { festivals: [] };
+  return res.json();
+}

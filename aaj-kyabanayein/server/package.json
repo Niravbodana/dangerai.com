@@ -9,14 +9,33 @@
     "dev": "node --watch src/index.js",
     "generate-recipes": "node src/scripts/generateRecipes.js",
     "build-recipe-books": "node src/scripts/buildRecipeBooks.js",
-    "prefetch-images": "node src/scripts/prefetchRecipeImages.js"
+    "prefetch-images": "node src/scripts/prefetchRecipeImages.js",
+    "db:init": "node src/scripts/initDatabase.js",
+    "sync-images": "node src/scripts/syncLocalImages.js",
+    "pipeline:run": "node ../scripts/run-recipe-pipeline.mjs run",
+    "pipeline:status": "node ../scripts/run-recipe-pipeline.mjs status",
+    "pipeline:verify": "node ../scripts/run-recipe-pipeline.mjs verify",
+    "pipeline:init-db": "node ../scripts/run-recipe-pipeline.mjs init-db",
+    "research:run": "node ../scripts/run-research.mjs run",
+    "research:status": "node ../scripts/run-research.mjs status",
+    "enterprise:run": "node ../scripts/run-enterprise-research.mjs run",
+    "enterprise:status": "node ../scripts/run-enterprise-research.mjs status",
+    "phase3:plan": "node ../scripts/run-phase3-import.mjs plan",
+    "phase3:import": "node ../scripts/run-phase3-import.mjs import",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@sentry/node": "^9.47.1",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^11.9.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "google-auth-library": "^11.0.0",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.5"
   }
 }

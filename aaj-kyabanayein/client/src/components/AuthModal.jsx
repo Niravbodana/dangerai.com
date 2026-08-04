@@ -2,22 +2,39 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
+import { useLanguage } from "../context/LanguageContext";
 import { dismissAccountWall } from "../lib/accountWall";
 import BrandLogo from "./BrandLogo";
 import GoogleSignInButton, { AuthDivider } from "./GoogleSignInButton";
 
 const SIGNUP_COPY = {
-  cook: {
-    title: "Save your cooking streak",
-    subtitle: "You've cooked a few meals — create a free account to save favorites, streaks, and meal plans.",
+  en: {
+    cook: {
+      title: "Save your cooking streak",
+      subtitle: "You've cooked a few meals — create a free account to save favorites, streaks, and meal plans.",
+    },
+    favorite: {
+      title: "Keep your saved recipes",
+      subtitle: "Sign up free so your favorites sync across devices and never get lost.",
+    },
+    default: {
+      title: "Join Rasoira",
+      subtitle: "Account free for now — save recipes & meal plans.",
+    },
   },
-  favorite: {
-    title: "Keep your saved recipes",
-    subtitle: "Sign up free so your favorites sync across devices and never get lost.",
-  },
-  default: {
-    title: "Join Rasoira",
-    subtitle: "Account free for now — save recipes & meal plans.",
+  hi: {
+    cook: {
+      title: "Apni cooking streak save karo",
+      subtitle: "Kuch meals ban chuke — free account banao, favorites aur streak phone pe safe rahe.",
+    },
+    favorite: {
+      title: "Saved recipes mat khona",
+      subtitle: "Free signup karo — pasand ki recipes har device pe sync rahengi.",
+    },
+    default: {
+      title: "Rasoira join karo",
+      subtitle: "Abhi free — recipes save karo aur meal plan banao.",
+    },
   },
 };
 
@@ -103,7 +120,8 @@ function LoginForm({ onSuccess }) {
 function SignupForm({ onSuccess, signupReason }) {
   const { register } = useAuth();
   const { openLogin, close } = useAuthModal();
-  const copy = SIGNUP_COPY[signupReason] || SIGNUP_COPY.default;
+  const { t, lang } = useLanguage();
+  const copy = (SIGNUP_COPY[lang] || SIGNUP_COPY.en)[signupReason] || (SIGNUP_COPY[lang] || SIGNUP_COPY.en).default;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -166,7 +184,7 @@ function SignupForm({ onSuccess, signupReason }) {
         }}
         className="mt-3 w-full text-center text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
       >
-        Maybe later
+        {t("maybeLater")}
       </button>
     </>
   );
@@ -199,7 +217,7 @@ export default function AuthModal() {
     <div className="auth-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={close} aria-label="Close" />
       <div
-        className="auth-modal-panel relative z-10 w-full max-w-md animate-modal-in rounded-3xl border border-white/15 bg-[#1c1814]/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8"
+        className="auth-modal-panel relative z-10 max-h-[min(90dvh,calc(100vh-2rem))] w-full max-w-md animate-modal-in overflow-y-auto rounded-3xl border border-white/15 bg-[#1c1814]/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8"
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
