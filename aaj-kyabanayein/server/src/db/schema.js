@@ -101,6 +101,7 @@ export function createSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_recipes_meal_type ON recipes(meal_type);
     CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category);
     CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe ON recipe_ingredients(recipe_id);
+    CREATE INDEX IF NOT EXISTS idx_recipe_steps_recipe ON recipe_steps(recipe_id);
     CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
     CREATE INDEX IF NOT EXISTS idx_saved_meals_user ON saved_meals(user_id);
 

@@ -261,21 +261,28 @@ router.get("/recipes/:id", (req, res) => {
 });
 
 router.get("/recipes", (req, res) => {
-  const { category, mealType, diet, cuisine, search, maxCookTime, page = 1, limit = 24 } = req.query;
-  const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search, maxCookTime });
+  const t0 = Date.now();
+  try {
+    const { category, mealType, diet, cuisine, search, maxCookTime, page = 1, limit = 24 } = req.query;
+    const filtered = filterRecipeIndex({ category, mealType, diet, cuisine, search, maxCookTime });
 
-  const pageNum = Math.max(1, parseInt(page));
-  const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
-  const start = (pageNum - 1) * limitNum;
-  const paginated = filtered.slice(start, start + limitNum);
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 24));
+    const start = (pageNum - 1) * limitNum;
+    const paginated = filtered.slice(start, start + limitNum);
+    const recipes = paginated.map(toListItem).map(attachRating);
 
-  res.json({
-    success: true,
-    total: filtered.length,
-    page: pageNum,
-    totalPages: Math.ceil(filtered.length / limitNum),
-    recipes: paginated.map(toListItem).map(attachRating),
-  });
+    res.setHeader("Server-Timing", `recipes;dur=${Date.now() - t0}`);
+    res.json({
+      success: true,
+      total: filtered.length,
+      page: pageNum,
+      totalPages: Math.max(1, Math.ceil(filtered.length / limitNum)),
+      recipes,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || "Failed to list recipes" });
+  }
 });
 
 router.get("/pantry/items", (_req, res) => {

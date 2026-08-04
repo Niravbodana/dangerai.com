@@ -1,5 +1,5 @@
 import fs from "fs";
-import { DB_PATH } from "./connection.js";
+import { DB_PATH, getDb } from "./connection.js";
 import { seedFromCurated, initDatabase } from "./migrate.js";
 import { upsertRecipe, getRecipeCount } from "./recipeRepository.js";
 import { WORLD_CUISINE_RECIPES } from "../data/recipeBookWorldCuisines.js";
@@ -17,6 +17,16 @@ const MIN_SEEDED_RECIPES = 200;
 export function ensureDatabase() {
   const existedBefore = fs.existsSync(DB_PATH);
   initDatabase();
+
+  // Ensure indexes exist on older DBs (createSchema is IF NOT EXISTS)
+  try {
+    getDb().exec(`
+      CREATE INDEX IF NOT EXISTS idx_recipe_steps_recipe ON recipe_steps(recipe_id);
+      CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe ON recipe_ingredients(recipe_id);
+    `);
+  } catch {
+    /* ignore */
+  }
 
   let count = 0;
   try {

@@ -159,19 +159,22 @@ export default function Recipes() {
           setRecipes(data.recipes || []);
           setResultTotal(data.total ?? 0);
           setTotalPages(data.totalPages || 1);
-          setLoading(false);
         })
         .catch(() => {
           if (cancelled) return;
-          if (attempt < 5) {
-            setTimeout(() => loadRecipes(attempt + 1), 1000 * (attempt + 1));
+          if (attempt < 2) {
+            setTimeout(() => {
+              if (!cancelled) loadRecipes(attempt + 1);
+            }, 800 * (attempt + 1));
             return;
           }
           setRecipes([]);
           setResultTotal(0);
           setTotalPages(1);
-          setApiError("Recipes load nahi hui. Terminal mein `npm run dev` check karo, phir refresh.");
-          setLoading(false);
+          setApiError("Recipes load nahi hui. Terminal: npm run dev:kill && npm run dev");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
         });
     };
     loadRecipes();

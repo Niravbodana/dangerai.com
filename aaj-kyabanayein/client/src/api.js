@@ -155,7 +155,8 @@ export async function fetchCustomMeals(guestId) {
 
 export async function fetchRecipes(params = {}) {
   const query = new URLSearchParams(params).toString();
-  const res = await apiFetch(`${API_BASE}/recipes?${query}`);
+  // Longer timeout for 10k catalog machines; no multi-retry here (page handles retries)
+  const res = await apiFetch(`${API_BASE}/recipes?${query}`, { timeout: 30000, retries: 0 });
   if (!res.ok) throw new Error('Recipes fetch failed');
   return res.json();
 }

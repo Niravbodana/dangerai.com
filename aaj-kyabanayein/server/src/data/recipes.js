@@ -6,7 +6,7 @@ import { ENGLISH_STEPS, HINDI_STEPS } from "./recipeTemplates.js";
 import { logger } from "../lib/logger.js";
 import { hasDevanagari, isGenericSteps } from "../lib/recipeQuality.js";
 import { buildIngredientAwareSteps, expandIngredients } from "../lib/recipeStepBuilder.js";
-import { getImageCacheVersion, recipeImageUrl } from "../services/recipeImageService.js";
+import { recipeImageUrl } from "../services/recipeImageService.js";
 import { isPremiumThumbUrl } from "../lib/cdnImage.js";
 import { getDirectThumbOverride } from "./recipeImageOverrides.js";
 import { isDatabaseReady } from "../db/migrate.js";
@@ -259,9 +259,20 @@ export function isNonVegRecipe(r) {
   return d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian");
 }
 
+const BROWSE_CATEGORY_IDS = new Set([
+  "veg-breakfast",
+  "nonveg-breakfast",
+  "veg-lunch",
+  "nonveg-lunch",
+  "veg-dinner",
+  "nonveg-dinner",
+  "healthy",
+  "snack",
+]);
+
 function resolveBrowseCategory(r) {
-  const known = new Set(RECIPE_CATEGORIES.map((c) => c.id));
-  if (r.category && known.has(r.category)) return r.category;
+  if (r.browseCategory) return r.browseCategory;
+  if (r.category && BROWSE_CATEGORY_IDS.has(r.category)) return r.category;
   if (r.mealType === "snack") return "snack";
   if (isNonVegRecipe(r)) return `nonveg-${r.mealType || "lunch"}`;
   return `veg-${r.mealType || "lunch"}`;
@@ -431,9 +442,10 @@ export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const override = getDirectThumbOverride(meta);
   const thumb = override || meta.thumbUrl || full?.thumbUrl;
-  const imageVersion = getImageCacheVersion(meta.id);
+  // Skip disk stat/meta reads on list pages (10k catalog) — version 0 is fine for cache busting
+  const imageVersion = 0;
   const apiImageUrl = recipeImageUrl(meta.id, imageVersion);
-  const displayUrl = isPremiumThumbUrl(thumb) ? thumb : apiImageUrl;
+  const displayUrl = isPremiumThumbUrl(thumb) ? thumb : (thumb && /^https?:\/\//i.test(thumb) ? thumb : apiImageUrl);
   return {
     id: meta.id,
     name: meta.name,

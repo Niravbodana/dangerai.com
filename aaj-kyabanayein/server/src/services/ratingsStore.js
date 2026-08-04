@@ -10,7 +10,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RATINGS_FILE = path.join(__dirname, "../data/ratings.json");
 
 function recipeName(recipeId) {
-  return getRecipeById(recipeId)?.name || "";
+  try {
+    return getRecipeById(recipeId)?.name || "";
+  } catch {
+    return "";
+  }
 }
 
 function ensure() {
@@ -73,9 +77,9 @@ function writeLiveBlock(recipeId, block) {
   writeJson(data);
 }
 
-export function getRating(recipeId, userId = null) {
+export function getRating(recipeId, userId = null, nameHint = "") {
   const live = readLiveBlock(recipeId);
-  const merged = mergeRatings(recipeId, live, recipeName(recipeId));
+  const merged = mergeRatings(recipeId, live, nameHint || recipeName(recipeId));
   const userScore = userId && live?.users?.[userId] ? live.users[userId] : 0;
   return { ...merged, userScore };
 }
@@ -121,7 +125,8 @@ export function getReviews(recipeId, limit = 20) {
 }
 
 export function attachRating(recipe) {
-  return { ...recipe, rating: getRating(recipe.id) };
+  // Pass name from list meta — never trigger getRecipeById (slow on 10k DB)
+  return { ...recipe, rating: getRating(recipe.id, null, recipe.name || "") };
 }
 
 export function getTopRated(limit = 10) {
