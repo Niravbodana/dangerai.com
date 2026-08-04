@@ -57,6 +57,12 @@ if (!skipUpgrade) {
   if (limit) upgradeArgs.push("--limit", limit);
   run("Premium upgrade (90+ scores + heroes)", "npm", upgradeArgs);
   run("Premium status", "npm", ["run", "premium:status"]);
+
+  if (!argv.includes("--skip-real-photos")) {
+    run("Real HD photos (replace studio art)", "npm", [
+      "run", "photos:real-only", "--", "--concurrency", concurrency,
+    ]);
+  }
 }
 
 if (!upgradeOnly) {

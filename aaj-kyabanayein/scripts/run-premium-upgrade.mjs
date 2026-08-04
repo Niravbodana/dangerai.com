@@ -35,6 +35,7 @@ function parseFlags(argv) {
     forceImage: true,
     minScore: 90,
     onlyBelowScore: null,
+    onlyStudio: false,
     syncToLiveCatalog: true,
     autoApprove: true,
     concurrency: 6,
@@ -49,7 +50,7 @@ function parseFlags(argv) {
     if (argv[i] === "--no-force-image") flags.forceImage = false;
     if (argv[i] === "--force-image") flags.forceImage = true;
     if (argv[i] === "--no-sync") flags.syncToLiveCatalog = false;
-    if (argv[i] === "--no-approve") flags.autoApprove = false;
+    if (argv[i] === "--only-studio") flags.onlyStudio = true;
   }
   return flags;
 }
@@ -88,6 +89,7 @@ Flags:
   --dry-run         Score only, no DB/image writes
   --no-force-image  Keep existing premium heroes
   --no-sync         Don't update live catalog
+  --only-studio     Re-fetch real HD photos for studio-art recipes only
   --no-approve      Queue only
 `);
 }

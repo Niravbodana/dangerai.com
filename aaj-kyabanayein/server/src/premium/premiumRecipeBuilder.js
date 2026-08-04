@@ -302,7 +302,7 @@ export async function buildPremiumRecipe(seed, options = {}) {
   if (writeImage) {
     const hero = await generatePremiumHero(
       { ...recipe, templateKey },
-      { force: forceImage }
+      { force: forceImage, preferReal: options.preferRealPhoto !== false }
     );
     recipe.localImage = hero.filePath;
     recipe.imageUrl = `/api/recipes/image/${id}`;

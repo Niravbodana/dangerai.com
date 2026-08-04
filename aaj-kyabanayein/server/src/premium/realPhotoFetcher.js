@@ -4,7 +4,7 @@
  */
 import { normalizeToJpeg } from "./imageEncode.js";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
-import { searchMealDbThumb } from "../services/fastImageSearch.js";
+import { searchAllHdSources } from "./multiApiImageSources.js";
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com; premium-photos)";
 
@@ -206,23 +206,35 @@ async function searchWikipedia(recipeName) {
 }
 
 /**
- * Find best real photo — try multiple dish name variants before studio fallback.
+ * Find best real photo — parallel multi-API search across all name variants.
  * @param {string|object} recipeOrName — recipe row or dish name
  */
 export async function findRealFoodPhoto(recipeOrName) {
+  const recipe = typeof recipeOrName === "object" ? recipeOrName : { name: recipeOrName };
   const names = searchNamesFor(recipeOrName);
   if (!names.length) return null;
 
   let best = null;
+  const cuisine = recipe.cuisine || "indian";
 
   for (const name of names) {
     const q = cleanQuery(name);
     if (!q || q.length < 2) continue;
 
     try {
+      const match = await searchAllHdSources(name, { cuisine });
+      if (match && (!best || match.score > best.score || (match.width || 0) > (best.width || 0))) {
+        best = match;
+      }
+      if (best?.score >= 0.75) return best;
+    } catch {
+      /* continue */
+    }
+
+    // Fallback: legacy sequential for curated wiki titles
+    try {
       const commons = await searchCommons(name);
       if (commons && (!best || commons.score > best.score)) best = commons;
-      if (best?.score >= 0.7) return best;
     } catch {
       /* continue */
     }
@@ -230,24 +242,6 @@ export async function findRealFoodPhoto(recipeOrName) {
     try {
       const wiki = await searchWikipedia(name);
       if (wiki && (!best || wiki.score > best.score)) best = wiki;
-      if (best?.score >= 0.65) return best;
-    } catch {
-      /* continue */
-    }
-
-    try {
-      const ov = await searchOpenverse(name);
-      if (ov && (!best || ov.score > best.score)) best = ov;
-    } catch {
-      /* continue */
-    }
-
-    try {
-      const meal = await searchMealDbThumb(name);
-      if (meal?.imageUrl) {
-        const scored = { ...meal, score: Math.max(meal.score || 0.75, titleScore(meal.title, names[0])) };
-        if (!best || scored.score > best.score) best = scored;
-      }
     } catch {
       /* continue */
     }

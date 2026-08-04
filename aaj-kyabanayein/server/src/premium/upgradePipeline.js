@@ -21,6 +21,17 @@ import { refreshQualityCatalog } from "../services/qualityCatalog.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
+function isStudioHero(recipeId) {
+  try {
+    const metaFile = path.join(META_DIR, `${recipeId}.json`);
+    if (!fs.existsSync(metaFile)) return true;
+    const meta = JSON.parse(fs.readFileSync(metaFile, "utf8"));
+    return meta.source === "premium-hero" || meta.source === "rasoira-ai-original";
+  } catch {
+    return true;
+  }
+}
+
 /**
  * @param {object} options
  */
@@ -32,6 +43,7 @@ export async function runPremiumUpgrade(options = {}) {
     forceImage = true,
     minScore = MIN_SCORE,
     onlyBelowScore = null,
+    onlyStudio = false,
     syncToLiveCatalog = true,
     autoApprove = true,
     concurrency = 6,
@@ -44,11 +56,15 @@ export async function runPremiumUpgrade(options = {}) {
   seedIngredientDatabase();
 
   const liveDb = getDb();
-  const rows = liveDb
+  let rows = liveDb
     .prepare(
       "SELECT id, name, name_hi, meal_type, cuisine, category, budget, cook_time, spice, diet, tags FROM recipes ORDER BY name LIMIT ? OFFSET ?"
     )
     .all(limit > 0 ? limit : 100000, offset);
+
+  if (onlyStudio) {
+    rows = rows.filter((r) => isStudioHero(r.id));
+  }
 
   const report = {
     runId,
@@ -99,7 +115,8 @@ export async function runPremiumUpgrade(options = {}) {
     try {
       const { recipe, quality, imageMeta } = await buildPremiumRecipe(seed, {
         writeImage: !dryRun,
-        forceImage: dryRun ? false : forceImage || !isPremiumHero(row.id),
+        forceImage: dryRun ? false : forceImage || !isPremiumHero(row.id) || onlyStudio,
+        preferRealPhoto: true,
       });
 
       if (quality.score < minScore) {

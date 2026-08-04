@@ -50,6 +50,9 @@
     "premium:upgrade": "node scripts/run-premium-upgrade.mjs upgrade",
     "health": "node scripts/check-local-health.mjs",
     "smoke:recipes": "node scripts/smoke-recipes.mjs",
-    "post10k": "node scripts/post-10k-pipeline.mjs"
+    "post10k": "node scripts/post-10k-pipeline.mjs",
+    "import:apis": "node scripts/import-multi-api.mjs",
+    "import:status": "node scripts/import-multi-api.mjs status",
+    "photos:real-only": "node scripts/run-premium-upgrade.mjs upgrade -- --only-studio --force-image --concurrency 10"
   }
 }

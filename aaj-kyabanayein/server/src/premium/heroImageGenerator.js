@@ -347,7 +347,7 @@ export async function generatePremiumHero(recipe, { force = false, preferReal = 
   if (preferReal) {
     try {
       const match = await findRealFoodPhoto(recipe);
-      if (match?.score >= 0.45) {
+      if (match?.score >= 0.4) {
         jpeg = await fetchAndNormalizePhoto(match);
         metaExtra = {
           source: "premium-hero-real",

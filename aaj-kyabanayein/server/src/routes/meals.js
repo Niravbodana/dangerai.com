@@ -435,4 +435,13 @@ router.get("/health", (_req, res) => {
   });
 });
 
+router.get("/import/status", async (_req, res) => {
+  try {
+    const { getImportApiStatus } = await import("../import/multiApiImportRunner.js");
+    res.json({ success: true, ...getImportApiStatus() });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 export default router;
