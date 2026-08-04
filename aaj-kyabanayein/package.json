@@ -16,6 +16,7 @@
     "dev:kill": "node scripts/kill-dev-ports.mjs",
     "health": "node scripts/check-local-health.mjs",
     "test:server": "npm run test --prefix server",
-    "test:all": "npm run test --prefix client && npm run test --prefix server"
+    "test:all": "npm run test --prefix client && npm run test --prefix server",
+    "import:open": "node scripts/import-open-recipes.mjs"
   }
 }

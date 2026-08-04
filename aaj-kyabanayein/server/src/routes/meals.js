@@ -46,6 +46,7 @@ import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBri
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
 import { searchRecipes, getSearchIndexStats } from "../intelligence/searchService.js";
 import { attachRecipeVideo } from "../data/recipeVideos.js";
+import { attachProvenance, attachProvenanceToList } from "../lib/attachProvenance.js";
 import path from "path";
 import fs from "fs";
 
@@ -133,7 +134,7 @@ router.get("/recipes/:id/load", async (req, res) => {
     const merged = getCachedRecipeOverlay(recipe);
     res.json({
       success: true,
-      recipe: attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged))),
+      recipe: attachProvenance(attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged)))),
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -240,6 +241,44 @@ router.get("/recipes/enrichment-status", (_req, res) => {
   res.json({ success: true, ...getEnrichmentStatus() });
 });
 
+/** Import famous dishes from Wikipedia (HD photos) + TheMealDB (ingredients) */
+router.post("/recipes/import/open-source", async (req, res) => {
+  try {
+    const { initRecipeCatalog } = await import("../data/recipes.js");
+    const { runOpenSourceImport, getOpenSourceImportStatus } = await import("../import/openSourceImporter.js");
+    const limit = Math.min(200, Math.max(0, parseInt(req.body?.limit) || 0));
+    const dryRun = req.body?.dryRun === true;
+    const report = await runOpenSourceImport({
+      limit,
+      includeWikiList: req.body?.includeWikiList !== false,
+      dryRun,
+      concurrency: 4,
+    });
+    if (!dryRun) initRecipeCatalog(true);
+    res.json({
+      success: true,
+      report,
+      status: getOpenSourceImportStatus(),
+      totalInLibrary: getRecipeCount(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/recipes/import/open-source/status", async (_req, res) => {
+  try {
+    const { getOpenSourceImportStatus } = await import("../import/openSourceImporter.js");
+    res.json({
+      success: true,
+      ...getOpenSourceImportStatus(),
+      totalInLibrary: getRecipeCount(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.post("/recipes/:id/enrich", async (req, res) => {
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
@@ -255,7 +294,7 @@ router.get("/recipes/:id", (req, res) => {
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   const merged = getCachedRecipeOverlay(recipe);
-  const full = attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged)));
+  const full = attachProvenance(attachRecipeImageFields(attachRecipeVideo(enrichRecipeWithFlow(merged))));
   enrichRecipeInBackground(recipe);
   res.json({ success: true, recipe: full });
 });
@@ -270,7 +309,7 @@ router.get("/recipes", (req, res) => {
     const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 24));
     const start = (pageNum - 1) * limitNum;
     const paginated = filtered.slice(start, start + limitNum);
-    const recipes = paginated.map(toListItem).map(attachRating);
+    const recipes = attachProvenanceToList(paginated.map(toListItem).map(attachRating));
 
     res.setHeader("Server-Timing", `recipes;dur=${Date.now() - t0}`);
     res.json({

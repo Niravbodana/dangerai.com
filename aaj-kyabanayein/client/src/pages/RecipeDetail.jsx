@@ -356,6 +356,42 @@ export default function RecipeDetail() {
                 </div>
               )}
 
+              {(recipe.wikipediaUrl || recipe.sourceLinks?.length > 0) && (
+                <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/90">
+                    {lang === "hi" ? "स्रोत और लाइसेंस" : "Sources & attribution"}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                    {lang === "hi"
+                      ? "HD फोटो Wikipedia से, असली सामग्री TheMealDB से — दोनों खुले स्रोत।"
+                      : "HD photo from Wikipedia, real ingredients from TheMealDB — open sources."}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(recipe.sourceLinks?.length ? recipe.sourceLinks : [{ label: "Wikipedia", url: recipe.wikipediaUrl }])
+                      .filter((link) => link?.url)
+                      .map((link) => (
+                        <a
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                        >
+                          {link.label || link.system}
+                          {link.license && (
+                            <span className="text-[10px] opacity-70">({link.license})</span>
+                          )}
+                        </a>
+                      ))}
+                  </div>
+                  {recipe.attributionText && (
+                    <p className="mt-2 text-[10px] leading-relaxed text-[var(--text-secondary)]">
+                      {recipe.attributionText}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-5">
                 <NutritionSummary nutrition={getRecipeNutrition(recipe)} title="Nutrition (per serving)" compact />
               </div>

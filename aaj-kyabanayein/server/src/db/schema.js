@@ -174,7 +174,7 @@ export function createSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_payment_orders_razorpay ON payment_orders(razorpay_order_id);
 
     CREATE TABLE IF NOT EXISTS recipe_provenance (
-      recipe_id TEXT PRIMARY KEY REFERENCES recipes(id) ON DELETE CASCADE,
+      recipe_id TEXT NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
       source_system TEXT NOT NULL,
       external_id TEXT,
       source_url TEXT,
@@ -186,7 +186,8 @@ export function createSchema(db) {
       ingest_batch_id TEXT,
       verification_status TEXT DEFAULT 'verified',
       fetched_at TEXT,
-      verified_at TEXT
+      verified_at TEXT,
+      PRIMARY KEY (recipe_id, source_system)
     );
 
     CREATE INDEX IF NOT EXISTS idx_recipe_provenance_source ON recipe_provenance(source_system);

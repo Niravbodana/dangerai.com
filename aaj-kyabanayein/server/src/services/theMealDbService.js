@@ -47,6 +47,7 @@ export async function searchTheMealDb(name) {
 
     return {
       source: "themealdb",
+      idMeal: meal.idMeal,
       name: meal.strMeal,
       imageUrl: meal.strMealThumb,
       ingredients,
