@@ -11,6 +11,11 @@ import { isPremiumThumbUrl } from "../lib/cdnImage.js";
 import { getDirectThumbOverride } from "./recipeImageOverrides.js";
 import { isDatabaseReady } from "../db/migrate.js";
 import * as recipeRepo from "../db/recipeRepository.js";
+import {
+  initQualityCatalog,
+  passesQualityGate,
+  sortCatalogForBrowse,
+} from "../services/qualityCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CURATED_DIR = path.join(__dirname, "curated");
@@ -177,6 +182,7 @@ function loadCuratedData() {
         return enrichedCache.get(id);
       };
       logger.info(`SQLite: ${recipeIndex.length} recipes loaded`);
+      initQualityCatalog();
       rebuildDerivedCatalog();
       return;
     } catch (err) {
@@ -214,6 +220,7 @@ function loadCuratedData() {
     }
     return enrichedCache.get(id);
   };
+  initQualityCatalog();
   rebuildDerivedCatalog();
 }
 
@@ -284,11 +291,25 @@ export function getRecipeById(id) {
 
 export function filterRecipeIndex(filters = {}) {
   let list = recipeIndex;
-  const { cuisine, category, mealType, diet, search, maxCookTime, includeHidden = false } = filters;
+  const {
+    cuisine,
+    category,
+    mealType,
+    diet,
+    search,
+    maxCookTime,
+    includeHidden = false,
+    includeBelowQuality = false,
+  } = filters;
 
   // Soft-hidden duplicates (same dish name, prefer curated)
   if (!includeHidden) {
     list = list.filter((r) => !r.tags?.includes("hidden-duplicate"));
+  }
+
+  // Only 90+ quality recipes in public catalog (premium verified)
+  if (!includeBelowQuality) {
+    list = list.filter((r) => passesQualityGate(r.id));
   }
 
   if (cuisine && cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
@@ -307,6 +328,8 @@ export function filterRecipeIndex(filters = {}) {
   if (search) {
     list = list.filter((r) => recipeMatchesSearch(r, search));
     list = [...list].sort((a, b) => scoreRecipeSearch(b, search) - scoreRecipeSearch(a, search));
+  } else {
+    list = sortCatalogForBrowse(list);
   }
   return list;
 }
@@ -436,6 +459,7 @@ export function getCategoryCounts() {
 
   for (const r of recipeIndex) {
     if (r.tags?.includes("hidden-duplicate")) continue;
+    if (!passesQualityGate(r.id)) continue;
     const browseCategory = resolveBrowseCategory(r);
     if (counts[browseCategory] !== undefined) counts[browseCategory]++;
     if (r.mealType === "snack") counts.snack++;

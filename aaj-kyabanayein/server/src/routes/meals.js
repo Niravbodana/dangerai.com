@@ -42,6 +42,7 @@ import {
 import { getDirectThumbOverride } from "../data/recipeImageOverrides.js";
 import { getFeaturedCookAgainRecipes } from "../services/featuredCookAgainService.js";
 import { loadRecipeOnSelect } from "../services/recipeLoadService.js";
+import { passesQualityGate, getPublicRecipeCount } from "../services/qualityCatalog.js";
 import { COLLECTIONS, getCollectionById } from "../data/collections.js";
 import { generateDailyBrief, matchCollectionRecipes } from "../services/dailyBriefService.js";
 import { getAIServiceStatus, recommendRecipes, semanticSearch } from "../services/ai/index.js";
@@ -129,6 +130,9 @@ router.get("/recipes/image/:id", async (req, res) => {
 /** Load recipe on select — fetches matching photo + enriched ingredients via Google/Gemini */
 router.get("/recipes/:id/load", async (req, res) => {
   try {
+    if (!passesQualityGate(req.params.id)) {
+      return res.status(404).json({ success: false, message: "Recipe abhi quality check se guzar rahi hai" });
+    }
     const result = await loadRecipeOnSelect(req.params.id);
     if (!result) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
     res.json({
@@ -149,14 +153,16 @@ router.get("/recipes/categories", (_req, res) => {
       categories: RECIPE_CATEGORIES,
       counts: counts.categories,
       cuisineCounts: counts.cuisines,
-      totalRecipes: getRecipeCount(),
+      totalRecipes: getPublicRecipeCount(),
+      totalInLibrary: getRecipeCount(),
       cuisines: getCuisines(),
     });
   } catch (err) {
     res.status(500).json({
       success: false,
       message: err.message || "Failed to load categories",
-      totalRecipes: getRecipeCount(),
+      totalRecipes: getPublicRecipeCount(),
+      totalInLibrary: getRecipeCount(),
     });
   }
 });
@@ -252,6 +258,9 @@ router.post("/recipes/:id/enrich", async (req, res) => {
 });
 
 router.get("/recipes/:id", (req, res) => {
+  if (!passesQualityGate(req.params.id)) {
+    return res.status(404).json({ success: false, message: "Recipe abhi quality check se guzar rahi hai" });
+  }
   const recipe = getRecipeById(req.params.id);
   if (!recipe) return res.status(404).json({ success: false, message: "Recipe nahi mili" });
   const merged = getCachedRecipeOverlay(recipe);
@@ -421,7 +430,8 @@ router.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "Rasoira API is running",
-    totalRecipes: getRecipeCount(),
+    totalRecipes: getPublicRecipeCount(),
+    totalInLibrary: getRecipeCount(),
   });
 });
 

@@ -21,6 +21,10 @@ const WRONG = [
   /airplane|aircraft|boeing|airbus|helicopter|train|car\b/i,
   /uncooked|raw lentil|ingredient|types of/i,
   /person|people|portrait|selfie|logo|map|flag/i,
+  /half.?eaten|half.?bitten|bitten|bite taken|partially eaten|leftover plate/i,
+  /messy plate|scraps|crumbs only|half finished|half consumed/i,
+  /low.?res|low.?quality|blurry|pixelated|thumbnail only/i,
+  /eating|diner eating|person eating|hands holding/i,
 ];
 
 function cleanQuery(name = "") {
@@ -77,6 +81,13 @@ async function downloadBuffer(url) {
   return buf;
 }
 
+function meetsMinResolution(match) {
+  const w = match?.width || 0;
+  const h = match?.height || 0;
+  if (w > 0 && h > 0 && (w < 640 || h < 480)) return false;
+  return true;
+}
+
 async function searchOpenverse(recipeName) {
   const q = cleanQuery(recipeName);
   if (!q || q.split(/\s+/).length > 5) return null;
@@ -106,7 +117,7 @@ async function searchOpenverse(recipeName) {
         height: item.height,
       };
     })
-    .filter((x) => x.imageUrl && x.score >= 0.55 && !isWrong(x.title, x.imageUrl))
+    .filter((x) => x.imageUrl && x.score >= 0.55 && !isWrong(x.title, x.imageUrl) && meetsMinResolution(x))
     .sort((a, b) => b.score - a.score || (b.width || 0) - (a.width || 0));
   return ranked[0] || null;
 }
@@ -144,7 +155,7 @@ async function searchCommons(recipeName) {
     if (license && /nc|nd\b/.test(license) && !/cc0|public domain|pd/.test(license)) continue;
     const imageUrl = info.thumburl || info.url;
     const score = titleScore(title, recipeName);
-    if (!imageUrl || score < 0.5 || isWrong(title, imageUrl)) continue;
+    if (!imageUrl || score < 0.5 || isWrong(title, imageUrl) || !meetsMinResolution({ width: info.width, height: info.height })) continue;
     if (!/^image\/(jpeg|png|webp)/i.test(info.mime || "image/jpeg")) continue;
     ranked.push({
       imageUrl,

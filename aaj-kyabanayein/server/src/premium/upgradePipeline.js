@@ -16,6 +16,7 @@ import { upsertRecipe, setLocalImage } from "../db/recipeRepository.js";
 import { getDb } from "../db/connection.js";
 import { writeAuditLog } from "../intelligence/auditLog.js";
 import { recordRecipeAudit } from "../research/auditTrail.js";
+import { refreshQualityCatalog } from "../services/qualityCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
@@ -213,6 +214,7 @@ export async function runPremiumUpgrade(options = {}) {
         console.log(
           `[premium] ${report.processed}/${rows.length} · upgraded ${report.upgraded} · real ${report.realPhotos} · studio ${report.studioArt} · failed ${report.failed}`
         );
+        refreshQualityCatalog();
       }
     }
   }
@@ -239,6 +241,7 @@ export async function runPremiumUpgrade(options = {}) {
     intelDb.prepare("SELECT COUNT(*) as c FROM recipe_intelligence WHERE quality_score >= 90").get()?.c || 0;
 
   writeAuditLog({ runId, action: "premium_upgrade_completed", details: report });
+  refreshQualityCatalog();
   return report;
 }
 

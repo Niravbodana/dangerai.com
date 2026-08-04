@@ -53,6 +53,10 @@ const RAW_INGREDIENT_PATTERNS = [
   /uncooked/i,
   /ingredient/i,
   /flattened rice$/i,
+  /half.?eaten|half.?bitten|bitten|partially eaten|leftover plate/i,
+  /messy plate|scraps|crumbs only|half finished/i,
+  /low.?res|pixelated|blurry/i,
+  /person eating|diner eating|hands holding/i,
 ];
 
 const GENERIC_TITLES = new Set([
