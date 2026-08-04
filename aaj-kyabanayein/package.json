@@ -49,6 +49,7 @@
     "premium:status": "node scripts/run-premium-upgrade.mjs status",
     "premium:upgrade": "node scripts/run-premium-upgrade.mjs upgrade",
     "health": "node scripts/check-local-health.mjs",
-    "smoke:recipes": "node scripts/smoke-recipes.mjs"
+    "smoke:recipes": "node scripts/smoke-recipes.mjs",
+    "post10k": "node scripts/post-10k-pipeline.mjs"
   }
 }
