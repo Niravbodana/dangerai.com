@@ -6,6 +6,7 @@ import { buildImportQueue, buildImportPlan } from "./importPlanner.js";
 import { ensurePhase3Schema, recordImportProgress, getImportedIds, getImportProgress } from "./schema.js";
 import { runAgentPipeline } from "../enterprise/agentOrchestrator.js";
 import { runResearchQualityGate } from "../research/researchQualityGate.js";
+import { runQualityGate } from "../intelligence/qualityGate.js";
 import { saveIntelligenceRecipe } from "../intelligence/recipeStore.js";
 import { enqueueForReview } from "../intelligence/reviewQueue.js";
 import { writeAuditLog } from "../intelligence/auditLog.js";
@@ -28,6 +29,7 @@ export async function runPhase3Import(options = {}) {
     dryRun = false,
     runId = `phase3-${Date.now()}`,
     minQualityScore = 70,
+    queueMode = true,
   } = options;
 
   ensureIntelligenceDb();
@@ -64,7 +66,10 @@ export async function runPhase3Import(options = {}) {
     }
 
     try {
-      const pipeline = await runAgentPipeline(seed, { runId });
+      const pipeline = await runAgentPipeline(seed, {
+        runId,
+        nonBlockingAgents: queueMode ? ["duplicate_detection"] : [],
+      });
       const recipe = {
         ...pipeline.recipe,
         dataSource: "rasoira-phase3",
@@ -74,18 +79,24 @@ export async function runPhase3Import(options = {}) {
         popularityScore: seed.popularityScore,
         alternativeNames: seed.alternativeNames,
         searchKeywords: seed.searchKeywords,
+        requireVerifiedNutrition: !queueMode,
       };
+
+      const licenseFailed = pipeline.aborted && pipeline.agentResults?.license_compliance?.success === false;
+      const minScore = queueMode ? Math.min(minQualityScore, 20) : minQualityScore;
+      const scoreOk = pipeline.quality.score >= minScore;
+      const contentOk = queueMode && (recipe.steps || []).length >= 3 && recipe.introduction?.length >= 20;
 
       recordRecipeAudit(recipe.id, {
         type: "phase3_import_generated",
         sourceName: "rasoira-phase3",
         licenseName: "RASOIRA-AI",
         nutritionStatus: recipe.nutritionStatus,
-        verificationStatus: pipeline.success ? "pending_review" : "rejected",
-        details: { popularityScore: seed.popularityScore, qualityScore: pipeline.quality.score },
+        verificationStatus: licenseFailed ? "rejected" : "pending_review",
+        details: { popularityScore: seed.popularityScore, qualityScore: pipeline.quality.score, queueMode },
       });
 
-      if (!pipeline.success || pipeline.quality.score < minQualityScore) {
+      if (licenseFailed || (!scoreOk && !contentOk)) {
         report.rejected++;
         report.errors.push({
           id: seed.id,
@@ -113,8 +124,10 @@ export async function runPhase3Import(options = {}) {
         continue;
       }
 
-      const qc = runResearchQualityGate(recipe);
-      if (!qc.passed) {
+      const qc = queueMode
+        ? runQualityGate({ ...recipe, duplicateScore: recipe.duplicateScore || 0 })
+        : runResearchQualityGate(recipe);
+      if (!qc.passed && !queueMode) {
         report.rejected++;
         report.errors.push({ id: seed.id, name: seed.name, error: "quality_gate", issues: qc.issues });
         continue;

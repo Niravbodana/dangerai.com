@@ -15,15 +15,27 @@ const CULINARY_KB = {
   grill: { method: "grilling", tempC: "200-230", equipment: ["grill", "tandoor"], timeMin: 20 },
 };
 
+const FALLBACK_DEFAULTS = { method: "simmer", spice: "medium", oil: "vegetable oil" };
+
 const CUISINE_DEFAULTS = {
   gujarati: { method: "simmer", spice: "mild", oil: "groundnut oil" },
   punjabi: { method: "simmer", spice: "medium", oil: "ghee" },
   rajasthani: { method: "simmer", spice: "medium", oil: "mustard oil" },
   maharashtrian: { method: "shallow_fry", spice: "medium", oil: "peanut oil" },
+  "south-indian": { method: "simmer", spice: "medium", oil: "coconut oil" },
+  "north-indian": { method: "simmer", spice: "medium", oil: "ghee" },
   tamil: { method: "simmer", spice: "medium", oil: "sesame oil" },
   kerala: { method: "simmer", spice: "medium", oil: "coconut oil" },
+  andhra: { method: "simmer", spice: "spicy", oil: "sesame oil" },
+  karnataka: { method: "simmer", spice: "medium", oil: "coconut oil" },
   bengali: { method: "simmer", spice: "mild", oil: "mustard oil" },
+  goan: { method: "simmer", spice: "medium", oil: "coconut oil" },
   hyderabadi: { method: "pressure_cook", spice: "spicy", oil: "ghee" },
+  kashmiri: { method: "simmer", spice: "mild", oil: "mustard oil" },
+  sindhi: { method: "simmer", spice: "medium", oil: "vegetable oil" },
+  jain: { method: "simmer", spice: "mild", oil: "vegetable oil" },
+  "street-food": { method: "shallow_fry", spice: "medium", oil: "vegetable oil" },
+  "chinese-indian": { method: "shallow_fry", spice: "medium", oil: "sesame oil" },
   chinese: { method: "shallow_fry", spice: "medium", oil: "sesame oil" },
   italian: { method: "simmer", spice: "mild", oil: "olive oil" },
   thai: { method: "simmer", spice: "spicy", oil: "coconut oil" },
@@ -37,7 +49,7 @@ const CUISINE_DEFAULTS = {
  */
 export function buildResearchBrief(seed) {
   const cuisine = seed.cuisine || "north-indian";
-  const defaults = CUISINE_DEFAULTS[cuisine] || CUISINE_DEFAULTS["north-indian"];
+  const defaults = CUISINE_DEFAULTS[cuisine] || FALLBACK_DEFAULTS;
   const methodKey = inferMethod(seed.name, defaults.method);
   const method = CULINARY_KB[methodKey] || CULINARY_KB.simmer;
 

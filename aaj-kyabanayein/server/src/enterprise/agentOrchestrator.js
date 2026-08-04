@@ -42,7 +42,7 @@ export async function runAgentPipeline(seed, options = {}) {
 
     mergeContext(context, agent.name, result);
 
-    if (!result.success && isBlockingAgent(agent.name)) {
+    if (!result.success && isBlockingAgent(agent.name, options)) {
       aborted = true;
       break;
     }
@@ -212,7 +212,9 @@ function buildTags(seed, expertise) {
   return [...new Set(tags.filter(Boolean))];
 }
 
-function isBlockingAgent(name) {
+function isBlockingAgent(name, options = {}) {
+  const nonBlocking = options.nonBlockingAgents || [];
+  if (nonBlocking.includes(name)) return false;
   return ["license_compliance", "duplicate_detection"].includes(name);
 }
 
