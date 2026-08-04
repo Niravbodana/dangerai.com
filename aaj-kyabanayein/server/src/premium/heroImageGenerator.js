@@ -150,11 +150,13 @@ function buildSvg({ title, theme, seed, style }) {
   const bowlRy = 118 + wobble(3, 15);
   const steamOp = 0.18 + (h[5] / 255) * 0.15;
 
+  // Slice BEFORE entity-escaping — truncating "&amp;" mid-entity breaks sharp SVG parse
   const safeTitle = String(title || "Rasoira")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .slice(0, 40);
+    .replace(/&/g, " and ")
+    .replace(/[<>"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 42);
 
   const isBread = style === "bread";
   const isSnack = style === "snack";

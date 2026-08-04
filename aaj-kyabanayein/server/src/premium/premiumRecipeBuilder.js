@@ -169,7 +169,8 @@ export async function buildPremiumRecipe(seed, options = {}) {
 
   const researchSeed = {
     id,
-    slug: seed.slug || slugify(`${name}-${cuisine}`),
+    // Always unique: recipe id is the stable slug (avoids UNIQUE slug collisions)
+    slug: seed.slug || id,
     name,
     cuisine,
     region: seed.region || cuisine,

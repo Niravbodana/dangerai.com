@@ -72,10 +72,14 @@ export async function normalizeToJpeg(inputBuffer, width = 1400, height = 1050, 
 export async function svgOrThemeToJpeg(svgString, themeColors, width = 1400, height = 1050, quality = 94) {
   const sharp = await getSharp();
   if (sharp) {
-    return sharp(Buffer.from(svgString))
-      .resize(width, height, { fit: "cover" })
-      .jpeg({ quality, mozjpeg: true, chromaSubsampling: "4:4:4" })
-      .toBuffer();
+    try {
+      return await sharp(Buffer.from(svgString))
+        .resize(width, height, { fit: "cover" })
+        .jpeg({ quality, mozjpeg: true, chromaSubsampling: "4:4:4" })
+        .toBuffer();
+    } catch (err) {
+      console.warn("[premium] SVG rasterize failed, using plate fallback:", err.message?.split("\n")[0]);
+    }
   }
   return paintFoodPlateJpeg(themeColors, width, height, quality);
 }
