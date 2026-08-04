@@ -10,11 +10,7 @@ import { VegSymbol, NonVegSymbol } from './DietSymbols';
 import { IconClock, IconFlame, IconHeart, IconStar } from './Icons';
 
 import { pantryMatchForRecipe } from '../lib/pantryMatch';
-
-function isVeg(diet) {
-  if (Array.isArray(diet)) return diet.includes('veg') && !diet.includes('non-veg');
-  return diet === 'veg';
-}
+import { isVegDiet } from '../lib/diet';
 
 export default function RecipeCard({ recipe, onFavoriteChange, trending = false, rank, showPantryMatch = true }) {
   const { t, lang } = useLanguage();
@@ -22,12 +18,14 @@ export default function RecipeCard({ recipe, onFavoriteChange, trending = false,
   const { openSignup } = useAuthModal();
   const prefetched = useRef(false);
   const [fav, setFav] = useState(isFavorite(recipe.id));
-  const veg = isVeg(recipe.diet);
+  const veg = isVegDiet(recipe.diet);
   const rating = recipe.rating || recipe.trendingRating;
   const displayName = lang === 'hi' ? (recipe.nameHi || recipe.name) : recipe.name;
-  const imageUrl = (recipe.thumbUrl && /^https?:\/\//i.test(recipe.thumbUrl) && !/dummyjson\.com/i.test(recipe.thumbUrl))
+  // Prefer local/API premium heroes; skip MealDB/DummyJSON remotes when we have /api image
+  const remoteThumb = recipe.thumbUrl && /^https?:\/\//i.test(recipe.thumbUrl) && !/dummyjson\.com|themealdb\.com/i.test(recipe.thumbUrl)
     ? recipe.thumbUrl
-    : (recipe.cdnImageUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`);
+    : null;
+  const imageUrl = remoteThumb || recipe.cdnImageUrl || recipe.imageUrl || `/api/recipes/image/${recipe.id}`;
   const useRemote = /^https?:\/\//i.test(imageUrl);
   const pantryPct = showPantryMatch ? (recipe.pantryMatchPercent ?? pantryMatchForRecipe(recipe)) : 0;
 

@@ -14,6 +14,7 @@ import { loadRecipeFilters, saveRecipeFilters, normalizeCategoryForDiet } from "
 import useDebounce from "../hooks/useDebounce";
 import { getTasteProfile } from "../lib/tasteProfile";
 import { getStateById, stateLabel } from "../data/indianStates";
+import { isVegDiet, isNonVegDiet } from "../lib/diet";
 
 const STATE_COLLECTION = {
   gujarat: "gujarati-thali",
@@ -27,14 +28,11 @@ const STATE_COLLECTION = {
 };
 
 function recipeIsVeg(r) {
-  const d = (r.diet || []).map((x) => String(x).toLowerCase());
-  if (d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian")) return false;
-  return d.some((x) => x === "veg" || x === "vegetarian" || x === "vegan" || x === "jain" || x === "eggetarian");
+  return isVegDiet(r.diet);
 }
 
 function recipeIsNonVeg(r) {
-  const d = (r.diet || []).map((x) => String(x).toLowerCase());
-  return d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian");
+  return isNonVegDiet(r.diet);
 }
 
 export default function Recipes() {

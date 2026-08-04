@@ -254,7 +254,11 @@ export default function RecipeDetail() {
   }
 
   const displayRating = userRating || rating.average;
-  const isVeg = recipe.diet?.includes("veg") && !recipe.diet?.includes("non-veg");
+  const isVeg = (() => {
+    const d = (recipe.diet || []).map((x) => String(x).toLowerCase());
+    if (d.some((x) => x.includes("non-veg") || x === "nonveg" || x === "non-vegetarian")) return false;
+    return d.some((x) => x === "veg" || x === "vegetarian" || x === "vegan" || x === "jain" || x === "eggetarian") || d.length === 0;
+  })();
   const displayName = lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name;
   const steps = lang === "hi"
     ? (recipe.stepsHi?.length ? recipe.stepsHi : recipe.steps)

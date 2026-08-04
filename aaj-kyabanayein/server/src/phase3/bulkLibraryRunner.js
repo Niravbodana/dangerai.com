@@ -21,6 +21,7 @@ import { ensureEnterpriseSchema } from "../enterprise/schema.js";
 import { calculateQualityScore } from "../enterprise/qualityScore.js";
 import { upsertRecipe } from "../db/recipeRepository.js";
 import { getDb } from "../db/connection.js";
+import { canonicalizeDiet, browseCategoryFor } from "../lib/dietNormalize.js";
 
 const TARGET_DEFAULT = 10000;
 
@@ -429,17 +430,9 @@ function estimateQuality(recipe, qc) {
 }
 
 function syncRecipeToLive(recipe) {
-  const diets = Array.isArray(recipe.diet) ? recipe.diet : [recipe.diet].filter(Boolean);
-  const isNonVeg = diets.some((d) => /non-veg|nonveg|non-vegetarian/i.test(String(d)));
   const mealType = recipe.mealType || "lunch";
-  const browseCategory = mealType === "snack"
-    ? "snack"
-    : isNonVeg
-      ? `nonveg-${mealType}`
-      : `veg-${mealType}`;
-  const normalizedDiet = isNonVeg
-    ? diets.some((d) => d === "non-veg") ? diets : [...diets, "non-veg"]
-    : diets.some((d) => /veg|vegetarian/i.test(String(d))) ? diets : [...diets, "vegetarian"];
+  const normalizedDiet = canonicalizeDiet(recipe.diet || []);
+  const browseCategory = browseCategoryFor({ diet: normalizedDiet, mealType });
 
   upsertRecipe({
     id: recipe.id,

@@ -243,20 +243,32 @@ export async function runPremiumUpgrade(options = {}) {
 }
 
 function syncPremiumToLive(recipe) {
+  // Dynamic import avoided — keep sync path light; canonicalize inline
+  const diets = (Array.isArray(recipe.diet) ? recipe.diet : [recipe.diet]).filter(Boolean).map((d) => String(d).toLowerCase());
+  const nonVeg = diets.some((d) => d.includes("non-veg") || d === "nonveg" || d === "non-vegetarian");
+  const canon = nonVeg
+    ? [...new Set([...diets, "non-veg"])]
+    : [...new Set([...diets, "veg", diets.includes("vegetarian") ? null : "vegetarian"].filter(Boolean))];
+  const mealType = recipe.mealType || "lunch";
+  const category = mealType === "snack" ? "snack" : nonVeg ? `nonveg-${mealType}` : `veg-${mealType}`;
+  const id = recipe.id;
+  const hasLocal = Boolean(recipe.localImage);
+
   upsertRecipe({
-    id: recipe.id,
+    id,
     name: recipe.title || recipe.name,
     nameHi: recipe.nameHi || recipe.title,
-    mealType: recipe.mealType || "lunch",
-    diet: recipe.diet || [],
+    mealType,
+    diet: canon,
     cuisine: recipe.cuisine || "indian",
-    category: recipe.category || recipe.cuisine,
+    category,
     budget: recipe.budget || "medium",
     cookTime: recipe.cookTimeMin || recipe.totalTimeMin || 30,
     calories: recipe.calories || 300,
     spice: recipe.spice || "medium",
     healthScore: recipe.healthScore ?? 9,
     localImage: recipe.localImage || null,
+    thumbUrl: hasLocal ? `/api/recipes/image/${id}` : recipe.thumbUrl || null,
     tags: recipe.tags || [],
     pantryKeys: (recipe.ingredients || []).map((i) => (i.name || "").toLowerCase()),
     source: "premium-upgrade",

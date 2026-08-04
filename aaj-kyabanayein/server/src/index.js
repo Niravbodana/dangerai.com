@@ -22,6 +22,7 @@ import { warmTrendingRecipeImages } from "./services/recipeImageService.js";
 import { ensureDatabase } from "./db/ensureDatabase.js";
 import { initRecipeCatalog } from "./data/recipes.js";
 import { startQualityGuardianOnBoot } from "./services/qualityGuardian.js";
+import { repairCatalogOnBoot } from "./services/catalogRepair.js";
 import { getFullConfig } from "./services/siteConfigService.js";
 import { warmFeaturedCookAgainImages } from "./services/featuredCookAgainService.js";
 import { ensureIntelligenceDb, seedSourceRegistry } from "./intelligence/index.js";
@@ -48,6 +49,11 @@ loadEnv();
 console.time("recipes-load");
 ensureDatabase();
 initRecipeCatalog(true);
+try {
+  repairCatalogOnBoot();
+} catch (err) {
+  logger.warn(`Catalog repair failed: ${err.message}`);
+}
 console.timeEnd("recipes-load");
 ensureIntelligenceDb();
 seedSourceRegistry();

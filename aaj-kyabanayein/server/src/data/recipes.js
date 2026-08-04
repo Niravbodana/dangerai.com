@@ -284,7 +284,12 @@ export function getRecipeById(id) {
 
 export function filterRecipeIndex(filters = {}) {
   let list = recipeIndex;
-  const { cuisine, category, mealType, diet, search, maxCookTime } = filters;
+  const { cuisine, category, mealType, diet, search, maxCookTime, includeHidden = false } = filters;
+
+  // Soft-hidden duplicates (same dish name, prefer curated)
+  if (!includeHidden) {
+    list = list.filter((r) => !r.tags?.includes("hidden-duplicate"));
+  }
 
   if (cuisine && cuisine !== "all") list = list.filter((r) => r.cuisine === cuisine);
   if (category && category !== "all") {
@@ -430,6 +435,7 @@ export function getCategoryCounts() {
   for (const c of CUISINES) if (c.id !== "all") cuisineCounts[c.id] = 0;
 
   for (const r of recipeIndex) {
+    if (r.tags?.includes("hidden-duplicate")) continue;
     const browseCategory = resolveBrowseCategory(r);
     if (counts[browseCategory] !== undefined) counts[browseCategory]++;
     if (r.mealType === "snack") counts.snack++;
@@ -441,11 +447,16 @@ export function getCategoryCounts() {
 export function toListItem(meta) {
   const full = typeof meta.ingredients !== "undefined" ? meta : null;
   const override = getDirectThumbOverride(meta);
-  const thumb = override || meta.thumbUrl || full?.thumbUrl;
+  const rawThumb = override || meta.thumbUrl || full?.thumbUrl;
   // Skip disk stat/meta reads on list pages (10k catalog) — version 0 is fine for cache busting
   const imageVersion = 0;
   const apiImageUrl = recipeImageUrl(meta.id, imageVersion);
-  const displayUrl = isPremiumThumbUrl(thumb) ? thumb : (thumb && /^https?:\/\//i.test(thumb) ? thumb : apiImageUrl);
+  // Prefer premium/API local heroes over MealDB/DummyJSON remotes
+  const remoteJunk = rawThumb && /themealdb\.com|dummyjson\.com/i.test(rawThumb);
+  const thumb = remoteJunk ? null : rawThumb;
+  const displayUrl = isPremiumThumbUrl(thumb)
+    ? thumb
+    : (thumb && /^https?:\/\//i.test(thumb) ? thumb : apiImageUrl);
   return {
     id: meta.id,
     name: meta.name,
