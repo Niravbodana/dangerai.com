@@ -70,7 +70,7 @@ export default function Home() {
               fetchPriority="high"
               decoding="async"
               onError={(e) => {
-                e.currentTarget.src = "/brand/rasoira-logo.png";
+                e.currentTarget.src = "/logo-wordmark-light.svg";
                 e.currentTarget.className = "relative z-[1] mx-auto max-h-[200px] w-auto opacity-90";
               }}
             />

@@ -1,7 +1,7 @@
 /**
- * Fast recipe image pipeline.
- * Priority: cache → recipe.thumbUrl → MealDB/Openverse/Wiki (parallel) → Groq hint → Google CSE
- * Low quality OK — speed first.
+ * Recipe image pipeline.
+ * Priority: premium-hero cache → curated override → recipe.thumbUrl → Wiki/MealDB/Openverse
+ * Premium RASOIRA-AI heroes are never overwritten by scrapers.
  */
 import fs from "fs";
 import path from "path";
@@ -425,10 +425,19 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
 
   const cached = cachePath(id);
   const directThumb = getDirectThumbOverride(recipe);
+  const metaExisting = readImageMeta(id);
+  const isPremium =
+    metaExisting?.source === "premium-hero" ||
+    metaExisting?.source === "rasoira-ai-original";
+
+  // Never overwrite premium original heroes unless explicitly regenerating premium
+  if (!force && isPremium && fs.existsSync(cached)) {
+    return cached;
+  }
 
   if (!force && fs.existsSync(cached)) {
     const audit = auditCachedImage(recipe);
-    const meta = readImageMeta(id);
+    const meta = metaExisting;
     if (directThumb) {
       const usesOverride =
         meta?.source === "curated-thumb" &&
@@ -442,8 +451,12 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
     }
   }
 
-  if (force && fs.existsSync(cached)) {
+  if (force && fs.existsSync(cached) && !isPremium) {
     invalidateCachedImage(id);
+  }
+  if (force && isPremium) {
+    // Keep premium heroes — scrapers must not replace them
+    return cached;
   }
 
   if (inFlight.has(id)) return inFlight.get(id);
@@ -509,6 +522,10 @@ export function readImageMeta(recipeId) {
 export function auditCachedImage(recipe) {
   const meta = readImageMeta(recipe.id);
   if (!meta) return { ok: false, issue: "missing-cache" };
+  // Premium original heroes always pass (RASOIRA-AI licensed, dish-specific)
+  if (meta.source === "premium-hero" || meta.source === "rasoira-ai-original") {
+    return { ok: true, meta, titleScore: meta.score || 0.99 };
+  }
   if (meta.source === "similar-fallback") {
     return { ok: true, meta, titleScore: meta.score || 0.72 };
   }

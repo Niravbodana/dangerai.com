@@ -217,6 +217,16 @@ function toSeed(dish) {
 }
 
 async function buildRecipeFast(seed) {
+  // Prefer premium 90+ builder (verified nutrition + original heroes)
+  try {
+    const { buildPremiumRecipe } = await import("../premium/premiumRecipeBuilder.js");
+    const { recipe } = await buildPremiumRecipe(seed, { writeImage: true, forceImage: true });
+    return recipe;
+  } catch (err) {
+    // Fall through to legacy path if premium gate fails
+    if (process.env.DEBUG_PREMIUM) console.warn("premium build failed, fallback:", err.message);
+  }
+
   const brief = buildResearchBrief(seed);
   const briefCheck = validateBriefSources(brief);
   if (!briefCheck.valid) {
