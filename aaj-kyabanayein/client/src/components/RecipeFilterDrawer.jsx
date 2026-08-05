@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { IconArrowLeft, IconArrowRight } from "./Icons";
+import { sameMealCategory } from "../lib/recipeFilters";
 
 const BROWSE = [
   { id: "all", icon: "🍽️", labelEn: "All Recipes", labelHi: "सभी रेसिपी", descEn: "Full catalog", descHi: "पूरी कैटलॉग" },
@@ -25,6 +26,7 @@ const CUISINES = [
   { id: "maharashtrian", labelEn: "Maharashtrian", labelHi: "महाराष्ट्रीय", icon: "🍲" },
   { id: "bengali", labelEn: "Bengali", labelHi: "बंगाली", icon: "🐟" },
   { id: "punjabi", labelEn: "Punjabi", labelHi: "पंजाबी", icon: "🫓" },
+  { id: "goan", labelEn: "Goan", labelHi: "गोवन", icon: "🐠" },
   { id: "chinese", labelEn: "Chinese", labelHi: "चाइनीज़", icon: "🥡" },
   { id: "thai", labelEn: "Thai", labelHi: "थाई", icon: "🍜" },
   { id: "mexican", labelEn: "Mexican", labelHi: "मेक्सिकन", icon: "🌮" },
@@ -72,7 +74,7 @@ export default function RecipeFilterDrawer({
     if (id === "quick") return !!maxCookTime && maxCookTime <= 20;
     if (id === "snack") return activeCategory === "snack";
     if (id === "healthy") return activeCategory === "healthy";
-    return !sortTrending && activeCategory === id;
+    return !sortTrending && sameMealCategory(activeCategory, id);
   };
 
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));

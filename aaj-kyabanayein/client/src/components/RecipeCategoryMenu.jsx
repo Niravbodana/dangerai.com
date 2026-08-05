@@ -1,4 +1,5 @@
 import { useLanguage } from "../context/LanguageContext";
+import { sameMealCategory } from "../lib/recipeFilters";
 
 const MENU_ITEMS = [
   { id: "all", icon: "🍽️", labelEn: "All", labelHi: "सभी" },
@@ -20,6 +21,7 @@ const CUISINE_QUICK = [
   { id: "maharashtrian", labelEn: "Maharashtrian", labelHi: "महाराष्ट्र" },
   { id: "bengali", labelEn: "Bengali", labelHi: "बंगाली" },
   { id: "punjabi", labelEn: "Punjabi", labelHi: "पंजाबी" },
+  { id: "goan", labelEn: "Goan", labelHi: "गोवन" },
   { id: "chinese", labelEn: "Chinese", labelHi: "चाइनीज़" },
   { id: "thai", labelEn: "Thai", labelHi: "थाई" },
   { id: "mexican", labelEn: "Mexican", labelHi: "मेक्सिकन" },
@@ -28,6 +30,7 @@ const CUISINE_QUICK = [
   { id: "mughlai", labelEn: "Mughlai", labelHi: "मुग़लाई" },
   { id: "turkish", labelEn: "Turkish", labelHi: "तुर्की" },
 ];
+
 
 export default function RecipeCategoryMenu({
   activeCategory,
@@ -42,11 +45,11 @@ export default function RecipeCategoryMenu({
 
   const isActive = (item) => {
     if (item.id === "trending") return sortTrending;
-    if (item.id === "all") return !sortTrending && activeCategory === "all" && activeDiet === "all" && !maxCookTime;
+    if (item.id === "all") return !sortTrending && activeCategory === "all" && !maxCookTime;
     if (item.id === "quick") return !!maxCookTime && maxCookTime <= 20;
     if (item.id === "snack") return activeCategory === "snack";
     if (item.id === "healthy") return activeCategory === "healthy";
-    return !sortTrending && activeCategory === item.id && activeDiet === "all" && !maxCookTime;
+    return !sortTrending && sameMealCategory(activeCategory, item.id) && !maxCookTime;
   };
 
   return (

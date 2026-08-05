@@ -43,7 +43,9 @@ export default function Recipes() {
   const sortTrending = searchParams.get("sort") === "trending";
 
   const saved = loadRecipeFilters();
-  const initialDiet = saved.diet || "all";
+  // Default view is vegetarian-first: show only veg dishes until the user
+  // explicitly taps "Non-Veg" (or "All"). A previously saved choice always wins.
+  const initialDiet = saved.diet || "veg";
   const [recipes, setRecipes] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -244,7 +246,7 @@ export default function Recipes() {
   const activeFilters = [cuisine !== "all", category !== "all", !!maxCookTime, sortTrending].filter(Boolean).length;
 
   const clearFilters = () => {
-    setDiet("all");
+    setDiet("veg");
     setCuisine("all");
     setCategory("all");
     setMaxCookTime(null);

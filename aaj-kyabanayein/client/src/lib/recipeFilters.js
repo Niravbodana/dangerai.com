@@ -21,6 +21,14 @@ export function normalizeCategoryForDiet(category, diet) {
   return category;
 }
 
+/** Compare two meal categories ignoring the veg-/nonveg- diet prefix, so a
+ * meal-type chip (e.g. "Breakfast") stays highlighted across diet toggles. */
+export function sameMealCategory(a, b) {
+  if (!a || !b) return a === b;
+  const strip = (x) => x.replace(/^nonveg-/, "").replace(/^veg-/, "");
+  return strip(a) === strip(b);
+}
+
 export function saveRecipeFilters(partial) {
   const next = { ...loadRecipeFilters(), ...partial };
   localStorage.setItem(KEY, JSON.stringify(next));
