@@ -419,4 +419,14 @@ export function isPremiumHero(recipeId) {
   }
 }
 
+/** True only when the cached hero is an actual real photo (not AI/SVG studio art). */
+export function isRealPhotoHero(recipeId) {
+  try {
+    const meta = JSON.parse(fs.readFileSync(path.join(META_DIR, `${recipeId}.json`), "utf8"));
+    return meta.source === "premium-hero-real";
+  } catch {
+    return false;
+  }
+}
+
 export { WIDTH, HEIGHT, THEMES, HERO_VERSION };

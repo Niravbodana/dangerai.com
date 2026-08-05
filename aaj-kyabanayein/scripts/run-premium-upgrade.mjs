@@ -35,6 +35,7 @@ function parseFlags(argv) {
     forceImage: true,
     minScore: 90,
     onlyBelowScore: null,
+    onlyStudioArt: false,
     syncToLiveCatalog: true,
     autoApprove: true,
     concurrency: 6,
@@ -48,6 +49,7 @@ function parseFlags(argv) {
     if (argv[i] === "--dry-run") flags.dryRun = true;
     if (argv[i] === "--no-force-image") flags.forceImage = false;
     if (argv[i] === "--force-image") flags.forceImage = true;
+    if (argv[i] === "--only-studio-art") flags.onlyStudioArt = true;
     if (argv[i] === "--no-sync") flags.syncToLiveCatalog = false;
     if (argv[i] === "--no-approve") flags.autoApprove = false;
   }
@@ -80,15 +82,20 @@ Commands:
   upgrade    Upgrade recipes to quality score 90+
 
 Flags:
-  --limit N         Process N recipes (0 = all)
-  --offset N        Skip first N
-  --min-score N     Minimum score (default 90)
-  --only-below N    Skip recipes already at/above N
-  --concurrency N   Parallel workers (default 6)
-  --dry-run         Score only, no DB/image writes
-  --no-force-image  Keep existing premium heroes
-  --no-sync         Don't update live catalog
-  --no-approve      Queue only
+  --limit N          Process N recipes (0 = all)
+  --offset N         Skip first N
+  --min-score N      Minimum score (default 90)
+  --only-below N     Skip recipes already at/above N
+  --only-studio-art  Only re-fetch recipes that still have AI/SVG art —
+                      skips ones that already have a real photo, saving
+                      Google/Wikimedia quota. Use this after setting
+                      GOOGLE_API_KEY + GOOGLE_CSE_ID to replace remaining
+                      studio-art images with real photos.
+  --concurrency N    Parallel workers (default 6)
+  --dry-run          Score only, no DB/image writes
+  --no-force-image   Keep existing premium heroes
+  --no-sync          Don't update live catalog
+  --no-approve       Queue only
 `);
 }
 

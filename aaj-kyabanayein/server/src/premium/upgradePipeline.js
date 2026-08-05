@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { buildPremiumRecipe, MIN_SCORE } from "./premiumRecipeBuilder.js";
-import { isPremiumHero } from "./heroImageGenerator.js";
+import { isPremiumHero, isRealPhotoHero } from "./heroImageGenerator.js";
 import { saveIntelligenceRecipe } from "../intelligence/recipeStore.js";
 import { enqueueForReview, approveRecipe } from "../intelligence/reviewQueue.js";
 import { ensureIntelligenceDb, getIntelligenceDb } from "../intelligence/repository.js";
@@ -31,6 +31,7 @@ export async function runPremiumUpgrade(options = {}) {
     forceImage = true,
     minScore = MIN_SCORE,
     onlyBelowScore = null,
+    onlyStudioArt = false,
     syncToLiveCatalog = true,
     autoApprove = true,
     concurrency = 6,
@@ -79,6 +80,14 @@ export async function runPremiumUpgrade(options = {}) {
         report.processed++;
         return;
       }
+    }
+
+    // Skip recipes that already have a real photo — saves Google/Wikimedia
+    // quota for the recipes that still need one (AI/SVG studio art only).
+    if (onlyStudioArt && isRealPhotoHero(row.id)) {
+      report.skipped++;
+      report.processed++;
+      return;
     }
 
     const diet = safeJson(row.diet, []);

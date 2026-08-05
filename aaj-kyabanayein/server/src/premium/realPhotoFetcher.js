@@ -1,8 +1,13 @@
 /**
  * Fetch REAL high-quality food photos with commercial-safe licenses.
- * Fast-first: Wikimedia Commons → Wikipedia → Openverse (short timeouts).
+ * Google Images first (broadest coverage of real food-blog photos, when
+ * GOOGLE_API_KEY + GOOGLE_CSE_ID are configured), then Wikimedia Commons
+ * → Wikipedia → Openverse (short timeouts). Never generates AI/studio art
+ * here — that fallback only kicks in one level up, in heroImageGenerator,
+ * when every real source below comes back empty.
  */
 import { normalizeToJpeg } from "./imageEncode.js";
+import { searchGoogleImage, isGoogleSearchConfigured } from "../services/googleSearchService.js";
 
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com; premium-photos)";
 
@@ -138,6 +143,21 @@ async function searchCommons(recipeName) {
   return ranked[0] || null;
 }
 
+async function searchGoogle(recipeName) {
+  if (!isGoogleSearchConfigured()) return null;
+  const match = await searchGoogleImage(recipeName);
+  if (!match?.imageUrl) return null;
+  const score = titleScore(match.title || "", recipeName);
+  if (score < 0.4 || isWrong(match.title, match.imageUrl)) return null;
+  return {
+    imageUrl: match.imageUrl,
+    title: match.title,
+    score: Math.max(score, 0.6), // Google's own relevance ranking already filtered hard
+    license: "google-images",
+    source: "google-images",
+  };
+}
+
 async function searchWikipedia(recipeName) {
   const q = cleanQuery(recipeName);
   if (!q) return null;
@@ -173,13 +193,22 @@ async function searchWikipedia(recipeName) {
 }
 
 /**
- * Find best real photo — Commons first (best for Indian food), then Wiki, then Openverse.
+ * Find best real photo. Google Images first when configured (broadest,
+ * highest-quality coverage of real dish photos), then Commons (best free
+ * source for Indian food), then Wikipedia, then Openverse.
  */
 export async function findRealFoodPhoto(recipeName) {
   const q = cleanQuery(recipeName);
   // Skip network for very invented / long catalog names — use studio art
   if (!q || q.length < 3) return null;
   if (q.split(/\s+/).length > 6) return null;
+
+  try {
+    const google = await searchGoogle(recipeName);
+    if (google?.score >= 0.4) return google;
+  } catch {
+    /* continue */
+  }
 
   try {
     const commons = await searchCommons(recipeName);
