@@ -14063,7 +14063,8 @@
     "nameHi": "Beetroot Soup (Borscht)",
     "mealType": "snack",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
     "category": "snack",
@@ -24120,10 +24121,11 @@
     "nameHi": "Chinese Tomato Egg Stir Fry",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "chinese",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -28804,7 +28806,8 @@
     "nameHi": "Creamy Corn Soup Recipe",
     "mealType": "snack",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
     "category": "snack",
@@ -32113,7 +32116,8 @@
     "nameHi": "Egg Drop Soup",
     "mealType": "snack",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "chinese",
     "category": "snack",
@@ -32373,10 +32377,11 @@
     "nameHi": "Eggplant Adobo",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -40778,10 +40783,11 @@
     "nameHi": "Jamaican Instant Pot Rice and Beans",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -41008,10 +41014,11 @@
     "nameHi": "Jamaican Rice and Peas",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -43603,10 +43610,11 @@
     "nameHi": "Kidney Bean Curry",
     "mealType": "dinner",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-dinner",
+    "category": "veg-dinner",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -47452,7 +47460,8 @@
     "nameHi": "Liegeoise Salad",
     "mealType": "snack",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
     "category": "snack",
@@ -50415,10 +50424,11 @@
     "nameHi": "Molasses Baked Beans",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -61181,10 +61191,11 @@
     "nameHi": "Roast aubergine with goat's cheese & toasted flatbread",
     "mealType": "breakfast",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-breakfast",
+    "category": "veg-breakfast",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -65402,10 +65413,11 @@
     "nameHi": "Sichuan Eggplant",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "chinese",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -74213,7 +74225,8 @@
     "nameHi": "Thai rice noodle salad",
     "mealType": "snack",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "thai",
     "category": "snack",
@@ -77659,10 +77672,11 @@
     "nameHi": "Vegetarian Chilli",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "continental",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
@@ -79077,10 +79091,11 @@
     "nameHi": "Vietnamese veg parcels",
     "mealType": "lunch",
     "diet": [
-      "non-veg"
+      "veg",
+      "vegetarian"
     ],
     "cuisine": "thai",
-    "category": "nonveg-lunch",
+    "category": "veg-lunch",
     "budget": "medium",
     "cookTime": 30,
     "calories": 300,
