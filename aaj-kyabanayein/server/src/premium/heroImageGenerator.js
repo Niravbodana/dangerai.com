@@ -313,9 +313,12 @@ function detectStyle(name = "", templateKey = "") {
 
 /**
  * Generate and cache a premium hero JPEG for a recipe.
- * Tries real licensed photos first, then studio art fallback.
+ * Tries real licensed photos first, then studio art fallback — unless
+ * allowStudioArt is false, in which case it throws when no real photo is
+ * found instead of ever writing AI/SVG art (used by the "real photos only"
+ * cleanup path so a recipe is left imageless/pending rather than fake).
  */
-export async function generatePremiumHero(recipe, { force = false, preferReal = true } = {}) {
+export async function generatePremiumHero(recipe, { force = false, preferReal = true, allowStudioArt = true } = {}) {
   const id = recipe?.id;
   if (!id) throw new Error("recipe.id required");
 
@@ -363,6 +366,10 @@ export async function generatePremiumHero(recipe, { force = false, preferReal = 
     } catch {
       /* fall through to studio art */
     }
+  }
+
+  if (!jpeg && !allowStudioArt) {
+    throw new Error("no real photo found (studio art disabled)");
   }
 
   if (!jpeg) {

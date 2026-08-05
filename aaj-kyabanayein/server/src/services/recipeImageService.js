@@ -17,7 +17,7 @@ import {
   searchWikipediaSummary,
 } from "./fastImageSearch.js";
 import { resolveWikiThumbnailFirst } from "./wikiImageResolver.js";
-import { getWikiTitlesForRecipe, getSimilarRecipeId } from "../data/recipeImageCatalog.js";
+import { getWikiTitlesForRecipe } from "../data/recipeImageCatalog.js";
 import { logger } from "../lib/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -394,30 +394,6 @@ async function downloadImage(url, dest, retries = 3) {
   throw lastErr;
 }
 
-function copyFromSimilarRecipe(recipe) {
-  const recipeId = recipe?.id;
-  if (!recipeId) return null;
-  const similarId = getSimilarRecipeId(recipeId);
-  if (!similarId) return null;
-  const src = cachePath(similarId);
-  const dest = cachePath(recipeId);
-  if (!fs.existsSync(src)) return null;
-  fs.copyFileSync(src, dest);
-  fs.writeFileSync(
-    metaPath(recipeId),
-    JSON.stringify({
-      recipeId,
-      recipeName: recipe.name,
-      source: "similar-fallback",
-      title: recipe.name || similarId,
-      originalUrl: similarId,
-      score: 0.72,
-      fetchedAt: new Date().toISOString(),
-    }, null, 2)
-  );
-  return dest;
-}
-
 export async function ensureRecipeImage(recipe, { force = false } = {}) {
   ensureDirs();
   const id = recipe.id;
@@ -488,9 +464,10 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
       }
     }
 
-    const similar = copyFromSimilarRecipe(recipe);
-    if (similar) return similar;
-
+    // Deliberately no "copy a similar recipe's photo" fallback here — that
+    // would show a different dish's real photo mislabeled as this one. When
+    // no real photo of THIS dish can be found, leave it uncached; the client
+    // renders a neutral placeholder instead of a misleading image.
     throw new Error(`No image found for ${recipe.name}`);
   });
 
@@ -681,15 +658,10 @@ export async function forceFixRecipePhoto(recipe) {
     const verified = verify();
     if (verified) return { ok: true, file: verified, source: "search" };
   } catch {
-    /* try similar fallback */
+    /* no real photo of this dish found anywhere */
   }
   invalidateCachedImage(id);
 
-  const similar = copyFromSimilarRecipe(recipe);
-  if (similar) {
-    const file = verify();
-    if (file) return { ok: true, file, source: "similar-fallback" };
-  }
-
+  // No "copy a similar recipe's photo" fallback — see ensureRecipeImage for why.
   return { ok: false, error: `No valid image found for ${recipe.name || id}` };
 }
