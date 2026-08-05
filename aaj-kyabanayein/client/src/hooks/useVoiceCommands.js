@@ -3,14 +3,11 @@ import { useEffect, useRef } from "react";
 const RECOG_LANG = {
   en: "en-IN",
   hi: "hi-IN",
-  gu: "gu-IN",
-  mr: "mr-IN",
-  hinglish: "hi-IN",
 };
 
-const NEXT_RE = /next|आगे|अगला|aage|agla|done|खत्म|aage badho|पुढे|આગળ|आगे जाओ/i;
-const PREV_RE = /back|पीछे|peeche|previous|pichla|पिछला|pehle|मागे|પાછળ/i;
-const REPEAT_RE = /repeat|दोहर|dohra|फिर|fir|again|sunao|सुनाओ|dobara|पुन्हा|ફરી/i;
+const NEXT_RE = /next|आगे|अगला|aage|agla|done|खत्म|aage badho/i;
+const PREV_RE = /back|पीछे|peeche|previous|pichla|पिछला|pehle/i;
+const REPEAT_RE = /repeat|दोहर|dohra|फिर|fir|again|sunao|सुनाओ|dobara/i;
 
 export function getRecognitionLang(cookLang = "en") {
   return RECOG_LANG[cookLang] || RECOG_LANG.en;

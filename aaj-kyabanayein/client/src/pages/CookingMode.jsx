@@ -26,8 +26,7 @@ import { trackRecipeCooked } from "../lib/recentRecipes";
 function getStepTexts(current, recipe, stepIndex, instructionSteps) {
   const en = current?.title || recipe?.steps?.[stepIndex] || instructionSteps[stepIndex] || "";
   const hi = current?.titleHi || recipe?.stepsHi?.[stepIndex] || en;
-  const gu = recipe?.stepsGu?.[stepIndex] || hi;
-  return { en, hi, gu };
+  return { en, hi };
 }
 
 function StepTimer({ timerKey, minutes, timers, ensureTimer, toggleTimer, resetTimer }) {
@@ -147,7 +146,7 @@ export default function CookingMode() {
     saveCookSession(id, { stepIndex, started, checkedItems, handsFree, timers });
   }, [id, started, recipe, stepIndex, checkedItems, handsFree, timers]);
 
-  const instructionSteps = recipe?.stepsHi?.length && (cookLang === "hi" || cookLang === "gu" || cookLang === "mr")
+  const instructionSteps = recipe?.stepsHi?.length && cookLang === "hi"
     ? recipe.stepsHi
     : (recipe?.steps?.length ? recipe.steps : recipe?.stepsHi || []);
   const steps = recipe?.cookingFlow?.length ? recipe.cookingFlow : instructionSteps.map((text, i) => ({
@@ -165,13 +164,7 @@ export default function CookingMode() {
     [current, recipe, stepIndex, instructionSteps],
   );
 
-  const stepText = cookLang === "hi"
-    ? stepTexts.hi
-    : cookLang === "gu"
-      ? stepTexts.gu
-      : cookLang === "hinglish"
-        ? `${stepTexts.en}${stepTexts.hi ? ` — ${stepTexts.hi}` : ""}`
-        : stepTexts.en;
+  const stepText = cookLang === "hi" ? stepTexts.hi : stepTexts.en;
 
   const voiceLang = speechLang;
   const stepMinutes = estimateStepMinutes(stepText);
@@ -322,7 +315,7 @@ export default function CookingMode() {
             </div>
             <label className="mb-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} className="accent-[var(--accent)]" />
-              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;पुढे&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
+              Hands-free: say &ldquo;next&rdquo; / &ldquo;अगला&rdquo; / &ldquo;repeat&rdquo; / &ldquo;दोहराओ&rdquo;
             </label>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               {ui.ingredients}
@@ -403,7 +396,7 @@ export default function CookingMode() {
             <div className="mt-5">
               <StepVoicePanel
                 texts={stepTexts}
-                activeLang={cookLang === "mr" || cookLang === "hinglish" ? "hi" : cookLang}
+                activeLang={cookLang}
                 onLangChange={setCookLang}
                 onSpeak={() => recordVoiceUse()}
               />

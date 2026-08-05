@@ -1,9 +1,8 @@
+/** Cooking-mode language options — kept to Hindi + English only so the
+ * voice narration always matches an installed, natural-sounding OS voice. */
 export const COOK_LANGS = [
   { id: "en", label: "English" },
   { id: "hi", label: "हिंदी" },
-  { id: "gu", label: "ગુજરાતી" },
-  { id: "mr", label: "मराठी" },
-  { id: "hinglish", label: "Hinglish" },
 ];
 
 const UI = {
@@ -61,87 +60,6 @@ const UI = {
     mobileHint: "अगला कदम दबाएं — 🔊 से सुनें",
     swipeHint: "Swipe करें ← →",
   },
-  gu: {
-    checkIngredients: "સામગ્રી તપાસો",
-    setupKitchen: "રસોઈ તૈયાર કરો",
-    serveHot: "ગરમ ગરમ પીરસો!",
-    youDidIt: "થઈ ગયું! અભિનંદન!",
-    reviewMsg: "જો તમને મારી સાથે રસોઈ કરવી ગમી હોય તો કૃપા કરીને review આપો ☺️",
-    setupDesc: "ગેસ ચાલુ કરો, કઢાઈ ગરમ કરો, તેલ અથવા ઘી તૈયાર રાખો",
-    serveDesc: (name) => `${name} ગરમ ગરમ પ્લેટમાં પીરસો. મજા કરો!`,
-    introDesc: (name, n) => `${name} બનાવવા માટે ${n} સામગ્રી જોઈએ`,
-    wash: (name, qty) => `${qty} ${name} સારી રીતે પાણીથી ધોવો`,
-    soak: (name, qty) => `${qty} ${name} ને ૨-૪ કલાક પાણીમાં ભિજવો`,
-    cut: (name, qty) => `${qty} ${name} બારીક કાપીને વાટકીમાં મૂકો`,
-    step: (n) => `પગલું ${n}`,
-    ingredients: "સામગ્રી",
-    startCooking: "રસોઈ શરૂ કરો",
-    close: "બંધ",
-    back: "પાછળ",
-    next: "આગળ",
-    review: "રિવ્યૂ આપો ☺️",
-    timer: "ટાઈમર",
-    min: "મિનિટ",
-    steps: "પગલા",
-    chooseLang: "ભાષા પસંદ કરો",
-    keyboardHint: "Space = આગળ · ← → નેવિગેટ",
-    mobileHint: "આગળ દબાવો — 🔊 સાંભળો",
-    swipeHint: "Swipe ← →",
-  },
-  mr: {
-    checkIngredients: "साहित्य तपासा",
-    setupKitchen: "स्वयंपाकघर तयार करा",
-    serveHot: "गरम गरम सर्व्ह करा!",
-    youDidIt: "झाले! अभिनंदन!",
-    reviewMsg: "जर तुम्हाला माझ्यासोबत cooking आवडले असेल तर कृपया review द्या ☺️",
-    setupDesc: "गॅस चालू करा, कढई गरम करा, तेल किंवा तूप तयार ठेवा",
-    serveDesc: (name) => `${name} गरम गरम प्लेटमध्ये सर्व्ह करा. मजा करा!`,
-    introDesc: (name, n) => `${name} बनवण्यासाठी ${n} साहित्य लागेल`,
-    wash: (name, qty) => `${qty} ${name} चांगले पाण्याने धुवा`,
-    soak: (name, qty) => `${qty} ${name} २-४ तास पाण्यात भिजवा`,
-    cut: (name, qty) => `${qty} ${name} बारीक चिरून वाटीत ठेवा`,
-    step: (n) => `पाऊल ${n}`,
-    ingredients: "साहित्य",
-    startCooking: "स्वयंपाक सुरू करा",
-    close: "बंद",
-    back: "मागे",
-    next: "पुढे",
-    review: "रिव्ह्यू द्या ☺️",
-    timer: "टाइमर",
-    min: "मिनिटे",
-    steps: "पाऊले",
-    chooseLang: "भाषा निवडा",
-    keyboardHint: "Space = पुढे · ← → नेव्हिगेट",
-    mobileHint: "पुढे दाबा — 🔊 ऐका",
-    swipeHint: "Swipe ← →",
-  },
-  hinglish: {
-    checkIngredients: "Ingredients check karo",
-    setupKitchen: "Kitchen setup karo",
-    serveHot: "Garam garam serve karo!",
-    youDidIt: "Ho gaya! Badhai ho!",
-    reviewMsg: "Agar aapko mere saath cooking karna accha laga to please review dijiye ☺️",
-    setupDesc: "Gas on karo, kadhai garam karo, tel ya ghee ready rakho",
-    serveDesc: (name) => `${name} ko garam garam plate mein serve karo. Enjoy!`,
-    introDesc: (name, n) => `${name} banane ke liye ${n} cheezein chahiye`,
-    wash: (name, qty) => `${qty} ${name} ko achhe se paani se dho lo`,
-    soak: (name, qty) => `${qty} ${name} ko 2-4 ghante paani mein bhigo do`,
-    cut: (name, qty) => `${qty} ${name} ko barik kaat ke bowl mein rakho`,
-    step: (n) => `Step ${n}`,
-    ingredients: "Saman / Ingredients",
-    startCooking: "Cooking shuru karo",
-    close: "Close",
-    back: "Back",
-    next: "Next step",
-    review: "Review do ☺️",
-    timer: "Timer",
-    min: "min",
-    steps: "steps",
-    chooseLang: "Language choose karo",
-    keyboardHint: "Space = next · ← → navigate · R = repeat",
-    mobileHint: "Next dabao — 🔊 se suno",
-    swipeHint: "Swipe ← → steps",
-  },
 };
 
 export function getCookUI(lang) {
@@ -150,13 +68,11 @@ export function getCookUI(lang) {
 
 export function getRecipeName(recipe, lang) {
   if (lang === "en") return recipe.name;
-  if (lang === "hinglish") return `${recipe.nameHi || recipe.name} (${recipe.name})`;
   return recipe.nameHi || recipe.name;
 }
 
 export function getIngredientLabel(ing, lang) {
   if (lang === "en") return `${ing.name} — ${ing.quantity}`;
-  if (lang === "hinglish") return `${ing.nameHi || ing.name} — ${ing.quantity}`;
   return `${ing.nameHi || ing.name} — ${ing.quantity}`;
 }
 
@@ -204,14 +120,8 @@ export function resolveCookingStep(step, lang, recipe) {
       break;
   }
 
-  if (lang === "hi" || lang === "gu" || lang === "mr") {
+  if (lang === "hi") {
     return { title: step.titleHi || step.title, description: step.descriptionHi || step.description };
-  }
-  if (lang === "hinglish") {
-    return {
-      title: step.titleHi ? `${step.title} — ${step.titleHi}` : step.title,
-      description: step.descriptionHi || step.description,
-    };
   }
   return {
     title: step.title || step.titleHi,

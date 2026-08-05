@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSpeech } from "../hooks/useSpeech";
 
+/** Only Hindi + English — so every Indian user hears a language they
+ * understand, spoken in a real, natural voice. */
 const VOICE_LANGS = [
   { id: "en", label: "English", flag: "🇬🇧", listen: "Listen" },
   { id: "hi", label: "हिंदी", flag: "🇮🇳", listen: "सुनें" },
-  { id: "gu", label: "ગુજરાતી", flag: "🇮🇳", listen: "સાંભળો" },
 ];
 
 export default function StepVoicePanel({ texts, activeLang, onLangChange, onSpeak }) {
-  const speechLang = activeLang === "hinglish" ? "hi" : activeLang;
-  const { speak, stop, speaking, supported } = useSpeech(speechLang);
+  const { speak, stop, speaking, supported } = useSpeech(activeLang);
   const [activeId, setActiveId] = useState(activeLang);
 
   useEffect(() => {
@@ -24,7 +24,9 @@ export default function StepVoicePanel({ texts, activeLang, onLangChange, onSpea
     setActiveId(langId);
     onLangChange?.(langId);
     if (speaking) stop();
-    speak(text);
+    // Pass langId directly so the voice always matches the text just
+    // clicked, instead of the (possibly stale) previously-active language.
+    speak(text, langId);
     onSpeak?.();
   };
 
