@@ -2,6 +2,7 @@
  * Grocery engine — aggregation, dedup, pantry deduction, provider-ready.
  */
 import { getPartnerList, buildPartnerSearchUrl, isPartnerComingSoon } from "./siteConfigService.js";
+import { containsMeatWord } from "../lib/dietNormalize.js";
 
 const INGREDIENT_ALIASES = {
   pyaz: "onion",
@@ -82,7 +83,7 @@ export function getCategory(name) {
   if (/dal|bean|lentil|rajma|chana|moong/.test(lower)) return "Dals & Pulses";
   if (/rice|flour|atta|semolina|suji|poha|bread|roti/.test(lower)) return "Grains";
   if (/paneer|milk|cream|yogurt|dahi|ghee|butter|cheese/.test(lower)) return "Dairy";
-  if (/egg|chicken|fish|mutton|prawn|meat/.test(lower)) return "Protein";
+  if (containsMeatWord(lower)) return "Protein";
   if (/cumin|turmeric|masala|spice|chili|coriander|cardamom|mustard/.test(lower)) return "Spices";
   if (/onion|tomato|potato|spinach|vegetable|cucumber|cauliflower|gobi|palak|carrot|peas/.test(lower)) {
     return "Vegetables";

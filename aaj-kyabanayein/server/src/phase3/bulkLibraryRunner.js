@@ -21,7 +21,7 @@ import { ensureEnterpriseSchema } from "../enterprise/schema.js";
 import { calculateQualityScore } from "../enterprise/qualityScore.js";
 import { upsertRecipe } from "../db/recipeRepository.js";
 import { getDb } from "../db/connection.js";
-import { canonicalizeDiet, browseCategoryFor } from "../lib/dietNormalize.js";
+import { canonicalizeDiet, browseCategoryFor, containsMeatWord } from "../lib/dietNormalize.js";
 
 const TARGET_DEFAULT = 10000;
 
@@ -394,7 +394,7 @@ function NAME_NUTRITION_HINT(name = "") {
   if (/dal|lentil|bean|chana|rajma|besan/i.test(n)) return CATEGORY_NUTRITION.legume;
   if (/oil|ghee|butter/i.test(n)) return CATEGORY_NUTRITION.oil;
   if (/paneer|curd|milk|cream|cheese/i.test(n)) return CATEGORY_NUTRITION.dairy;
-  if (/chicken|mutton|fish|egg|prawn|meat/i.test(n)) return CATEGORY_NUTRITION.protein;
+  if (containsMeatWord(n)) return CATEGORY_NUTRITION.protein;
   if (/onion|tomato|potato|ginger|garlic|chilli|spinach|veg/i.test(n)) return CATEGORY_NUTRITION.vegetable;
   if (/cumin|turmeric|masala|spice|cardamom|cinnamon|clove/i.test(n)) return CATEGORY_NUTRITION.spice;
   if (/salt/i.test(n)) return CATEGORY_NUTRITION.seasoning;

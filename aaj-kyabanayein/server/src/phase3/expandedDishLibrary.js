@@ -4,6 +4,10 @@
  */
 import { PHASE3_TARGETS } from "./importTargets.js";
 import { POPULAR_RECIPES } from "./popularRecipes.js";
+import { containsMeatWord } from "../lib/dietNormalize.js";
+
+const EGG_WORD_RE = /\b(egg|eggs|anda|omelette)\b/i;
+const JAIN_EXCLUDE_RE = /\b(onion|garlic|egg|eggs|chicken|fish|mutton)\b/i;
 
 const CUISINE_META = {
   gujarati: { state: "Gujarat", region: "Gujarat" },
@@ -263,10 +267,8 @@ function makeDish(name, cuisine, category, extras = {}) {
 
 function inferDiet(name, category) {
   if (category === "jain" || /jain/i.test(name)) return ["jain", "vegetarian"];
-  if (/chicken|mutton|fish|prawn|crab|meat|gosht|maas|sorpotel|haleem|nihari|rogan/i.test(name)) {
-    return ["non-vegetarian"];
-  }
-  if (/egg|anda|omelette/i.test(name)) return ["eggetarian"];
+  if (containsMeatWord(name)) return ["non-vegetarian"];
+  if (EGG_WORD_RE.test(name)) return ["eggetarian"];
   if (category === "healthy" && /salad|sprout|quinoa|millet/i.test(name)) return ["vegan", "vegetarian"];
   return ["vegetarian"];
 }
@@ -435,7 +437,7 @@ export function generateUniqueDishLibrary(target = 10000) {
   const snapshot = [...dishes];
 
   // 11. Jain variants of vegetarian dishes
-  const jainBases = snapshot.filter((d) => d.diet?.includes("vegetarian") && !d.diet?.includes("jain") && !/onion|garlic|egg|chicken|fish|mutton/i.test(d.name)).slice(0, 400);
+  const jainBases = snapshot.filter((d) => d.diet?.includes("vegetarian") && !d.diet?.includes("jain") && !JAIN_EXCLUDE_RE.test(d.name)).slice(0, 400);
   for (const base of jainBases) {
     if (dishes.length >= target) break;
     add(makeDish(`Jain ${base.name}`, "jain", "jain", {

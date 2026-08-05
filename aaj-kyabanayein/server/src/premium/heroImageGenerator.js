@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { fileURLToPath } from "url";
 import { findRealFoodPhoto, fetchAndNormalizePhoto } from "./realPhotoFetcher.js";
 import { svgOrThemeToJpeg, getSharp } from "./imageEncode.js";
+import { containsMeatWord } from "../lib/dietNormalize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, "../../data/image-cache");
@@ -95,7 +96,7 @@ function pickTheme(name = "", category = "", templateKey = "") {
   if (/roti|paratha|naan|thepla|dosa|idli|bread/.test(n)) return THEMES.bread;
   if (/sweet|kheer|halwa|jamun|ladoo|dessert/.test(n)) return THEMES.sweet;
   if (/poha|upma|breakfast/.test(n)) return THEMES.breakfast;
-  if (/chicken|mutton|fish|egg|nonveg|meat/.test(n)) return THEMES.nonveg;
+  if (/nonveg/.test(n) || containsMeatWord(n)) return THEMES.nonveg;
   if (/samosa|pakora|snack|tikki|vada/.test(n)) return THEMES.snack;
   if (/curry|sabzi|masala/.test(n)) return THEMES.curry;
   return THEMES.default;

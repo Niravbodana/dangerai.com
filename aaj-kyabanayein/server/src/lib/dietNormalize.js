@@ -46,6 +46,19 @@ export function canonicalizeDiet(diet) {
   return [...new Set(next)];
 }
 
+/**
+ * Whole-word meat/egg/seafood detector. MUST use \b boundaries — several short
+ * tokens here (e.g. "ham", "egg", "meat") are common substrings of innocent
+ * vegetarian dish names (Khaman, Pradhaman, Kuzhambu, Eggplant, Meatless...),
+ * so a naive substring match mislabels real veg dishes as non-veg.
+ */
+const MEAT_WORD_RE =
+  /\b(chicken|mutton|fish|shrimp|prawn|pork|beef|lamb|goat|meat|keema|gosht|maas|egg|eggs|seafood|bacon|ham|turkey|duck|crab|lobster|saltfish|sorpotel|haleem|nihari|rogan|anda|chorizo|salmon|tuna|anchovy)\b/i;
+
+export function containsMeatWord(text) {
+  return MEAT_WORD_RE.test(String(text || ""));
+}
+
 export function browseCategoryFor(recipe) {
   const mealType = recipe.mealType || recipe.meal_type || "lunch";
   if (mealType === "snack") return "snack";

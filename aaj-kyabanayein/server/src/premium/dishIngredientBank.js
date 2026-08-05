@@ -2,6 +2,7 @@
  * Real dish-specific ingredient templates with exact quantities.
  * Names align with premium/ingredientNutrition.js keys for verified macros.
  */
+import { containsMeatWord } from "../lib/dietNormalize.js";
 
 /** @typedef {{ name: string, qty: number, unit: string, nameHi?: string }} Ing */
 
@@ -479,7 +480,7 @@ export function resolveDishIngredients(recipe = {}) {
   const category = String(recipe.category || "").toLowerCase();
   const cuisine = String(recipe.cuisine || "").toLowerCase();
   const diet = recipe.diet || [];
-  const isNonVeg = diet.includes("non-veg") || /chicken|mutton|fish|egg|meat|prawn/i.test(name);
+  const isNonVeg = diet.includes("non-veg") || containsMeatWord(name);
 
   let key = "default_veg";
   for (const [re, k] of PATTERN_MAP) {

@@ -173,7 +173,7 @@ function recipeWantsDish(name = "", dish) {
   return new RegExp(`\\b${escaped}s?\\b`, "i").test(name);
 }
 
-const MEAT_WORDS_RE = /chicken|mutton|fish|meat|egg|prawn|shrimp|beef|pork|lamb|saltfish|chorizo|trout|camaro|poulet/i;
+const MEAT_WORDS_RE = /\b(chicken|mutton|fish|meat|egg|eggs|prawn|shrimp|beef|pork|lamb|saltfish|chorizo|trout|camaro|poulet)\b/i;
 
 /** Word-boundary check — avoids false hits like "car" inside "carrots" / "carbonara". */
 function blobContainsUnwantedDish(blob, recipeName) {
@@ -308,7 +308,7 @@ async function findImageUrl(recipe) {
       if (c.source === "thumb-embedded" || c.source === "curated-thumb") return true;
       if (titleScore < 0.45) return false;
       if (isRawOrWrongImage(c.title || "", c.imageUrl || "", name)) return false;
-      if (isVeg && /chicken|mutton|fish|meat|egg|prawn|shrimp|beef|pork|lamb/i.test(`${c.title || ""} ${c.imageUrl || ""}`)) {
+      if (isVeg && MEAT_WORDS_RE.test(`${c.title || ""} ${c.imageUrl || ""}`)) {
         return false;
       }
       if (blobContainsUnwantedDish(`${c.title || ""} ${c.imageUrl || ""}`, name)) return false;

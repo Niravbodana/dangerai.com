@@ -11,6 +11,7 @@ import {
   FESTIVALS,
   TARGET_RECIPE_COUNT,
 } from "./taxonomy.js";
+import { containsMeatWord } from "../lib/dietNormalize.js";
 
 function slugify(text) {
   return text
@@ -83,11 +84,11 @@ export function getCatalogStats() {
 }
 
 function needsNonVeg(name) {
-  return /chicken|mutton|fish|prawn|egg|meat|seafood|haleem|sorpotel/i.test(name);
+  return containsMeatWord(name) || /\bseafood\b/i.test(name);
 }
 
 function isNonJain(name) {
-  return /onion|garlic|egg|chicken|fish|meat/i.test(name);
+  return /\b(onion|garlic)\b/i.test(name) || containsMeatWord(name);
 }
 
 function hasDairy(name) {
