@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getDb } from "../db/connection.js";
+import { isDatabaseReady } from "../db/migrate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MEALS_FILE = path.join(__dirname, "../data/saved-meals.json");
@@ -22,15 +24,26 @@ function write(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
+function useDb() {
+  return isDatabaseReady();
+}
+
 // --- Saved meals (add to planner) ---
 export function getSavedMeals(userId) {
+  if (useDb()) {
+    return getDb()
+      .prepare(
+        `SELECT id, recipe_id as recipeId, recipe_name as recipeName,
+                meal_date as date, meal_type as mealType, added_at as addedAt
+         FROM saved_meals WHERE user_id = ? ORDER BY added_at DESC`
+      )
+      .all(userId);
+  }
   const data = read(MEALS_FILE);
   return data[userId] || [];
 }
 
 export function addSavedMeal(userId, entry) {
-  const data = read(MEALS_FILE);
-  if (!data[userId]) data[userId] = [];
   const meal = {
     id: `sm-${Date.now()}`,
     recipeId: entry.recipeId,
@@ -39,12 +52,29 @@ export function addSavedMeal(userId, entry) {
     mealType: entry.mealType || "lunch",
     addedAt: new Date().toISOString(),
   };
+
+  if (useDb()) {
+    getDb()
+      .prepare(
+        `INSERT INTO saved_meals (id, user_id, recipe_id, recipe_name, meal_date, meal_type, added_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(meal.id, userId, meal.recipeId, meal.recipeName, meal.date, meal.mealType, meal.addedAt);
+    return meal;
+  }
+
+  const data = read(MEALS_FILE);
+  if (!data[userId]) data[userId] = [];
   data[userId].unshift(meal);
   write(MEALS_FILE, data);
   return meal;
 }
 
 export function removeSavedMeal(userId, mealId) {
+  if (useDb()) {
+    getDb().prepare("DELETE FROM saved_meals WHERE id = ? AND user_id = ?").run(mealId, userId);
+    return getSavedMeals(userId);
+  }
   const data = read(MEALS_FILE);
   if (!data[userId]) return [];
   data[userId] = data[userId].filter((m) => m.id !== mealId);
@@ -54,25 +84,47 @@ export function removeSavedMeal(userId, mealId) {
 
 // --- Custom meals (user-created recipes) ---
 export function getCustomMeals(userId) {
+  if (useDb()) {
+    return getDb()
+      .prepare("SELECT recipe_json FROM custom_meals WHERE user_id = ? ORDER BY created_at DESC")
+      .all(userId)
+      .map((r) => JSON.parse(r.recipe_json));
+  }
   const data = read(CUSTOM_FILE);
   return data[userId] || [];
 }
 
 export function addCustomMeal(userId, recipe) {
-  const data = read(CUSTOM_FILE);
-  if (!data[userId]) data[userId] = [];
   const meal = {
     ...recipe,
     id: recipe.id || `custom-${Date.now()}`,
     isCustom: true,
     createdAt: new Date().toISOString(),
   };
+
+  if (useDb()) {
+    getDb()
+      .prepare(
+        `INSERT INTO custom_meals (id, user_id, recipe_json, created_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET recipe_json = excluded.recipe_json`
+      )
+      .run(meal.id, userId, JSON.stringify(meal), meal.createdAt);
+    return meal;
+  }
+
+  const data = read(CUSTOM_FILE);
+  if (!data[userId]) data[userId] = [];
   data[userId].unshift(meal);
   write(CUSTOM_FILE, data);
   return meal;
 }
 
 export function deleteCustomMeal(userId, recipeId) {
+  if (useDb()) {
+    getDb().prepare("DELETE FROM custom_meals WHERE id = ? AND user_id = ?").run(recipeId, userId);
+    return getCustomMeals(userId);
+  }
   const data = read(CUSTOM_FILE);
   if (!data[userId]) return [];
   data[userId] = data[userId].filter((m) => m.id !== recipeId);
@@ -81,6 +133,12 @@ export function deleteCustomMeal(userId, recipeId) {
 }
 
 export function loadAllCustomMeals() {
+  if (useDb()) {
+    return getDb()
+      .prepare("SELECT recipe_json FROM custom_meals")
+      .all()
+      .map((r) => JSON.parse(r.recipe_json));
+  }
   const data = read(CUSTOM_FILE);
   const all = [];
   for (const meals of Object.values(data)) all.push(...meals);

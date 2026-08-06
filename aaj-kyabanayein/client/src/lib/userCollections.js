@@ -131,7 +131,11 @@ export function sortRecipes(recipes, sortBy = "recent", recipeOrder = []) {
 export function filterRecipes(recipes, filterBy = "all") {
   if (filterBy === "all") return recipes;
   if (filterBy === "veg") {
-    return recipes.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
+    return recipes.filter((r) => {
+      const d = (r.diet || []).map((x) => String(x).toLowerCase());
+      if (d.some((x) => x.includes("non-veg") || x === "non-vegetarian")) return false;
+      return d.some((x) => x === "veg" || x === "vegetarian" || x === "vegan" || x === "jain") || !d.length;
+    });
   }
   if (filterBy === "non-veg") {
     return recipes.filter((r) => r.diet?.includes("non-veg"));

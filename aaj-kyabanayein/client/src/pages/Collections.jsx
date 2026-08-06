@@ -16,6 +16,7 @@ import { breadcrumbSchema } from "../lib/seo";
 
 const COLLECTION_FILTERS = [
   { id: "all", label: "All" },
+  { id: "regional", label: "Regional" },
   { id: "quick", label: "Quick" },
   { id: "festival", label: "Festival" },
   { id: "budget", label: "Budget" },

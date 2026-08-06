@@ -1,12 +1,15 @@
 /**
  * Google Custom Search API — images + recipe web snippets.
- * Set GOOGLE_API_KEY and GOOGLE_CSE_ID in server/.env
+ * Set GOOGLE_CSE_API_KEY and GOOGLE_CSE_ID in server/.env
+ * (falls back to GOOGLE_API_KEY if GOOGLE_CSE_API_KEY isn't set, but a
+ * dedicated key from Google Cloud Console with the "Custom Search API"
+ * enabled is recommended — the Gemini/AI Studio key does NOT work here).
  * Create CSE: https://programmablesearchengine.google.com/
  */
 const USER_AGENT = "RasoiraMealPlanner/1.0";
 
 function getConfig() {
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
   if (!apiKey || !cseId) return null;
   return { apiKey, cseId };

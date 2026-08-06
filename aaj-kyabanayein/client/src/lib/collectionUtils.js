@@ -1,10 +1,21 @@
 /** Helpers for curated collections list */
 
 const FILTER_GROUPS = {
-  quick: ["15-min", "kids-tiffin"],
+  quick: ["15-min", "kids-tiffin", "tamil-tiffin"],
   festival: ["diwali-sweets", "sunday-lunch", "guests-coming"],
   budget: ["budget-50"],
   healthy: ["diabetic-friendly", "protein-power"],
+  regional: [
+    "gujarati-thali",
+    "punjabi-weekend",
+    "maharashtrian-favs",
+    "bengali-comfort",
+    "rajasthani-plate",
+    "hyderabadi-special",
+    "kerala-home",
+    "tamil-tiffin",
+    "south-comfort",
+  ],
 };
 
 export function filterCollections(collections, filterBy = "all") {
@@ -52,7 +63,11 @@ export function sortCollectionRecipes(recipes, sortBy = "name-asc") {
 export function filterCollectionRecipes(recipes, filterBy = "all") {
   if (filterBy === "all") return recipes;
   if (filterBy === "veg") {
-    return recipes.filter((r) => r.diet?.includes("veg") && !r.diet?.includes("non-veg"));
+    return recipes.filter((r) => {
+      const d = (r.diet || []).map((x) => String(x).toLowerCase());
+      if (d.some((x) => x.includes("non-veg") || x === "non-vegetarian")) return false;
+      return d.some((x) => x === "veg" || x === "vegetarian" || x === "vegan" || x === "jain") || !d.length;
+    });
   }
   if (filterBy === "non-veg") {
     return recipes.filter((r) => r.diet?.includes("non-veg"));

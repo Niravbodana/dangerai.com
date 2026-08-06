@@ -155,7 +155,8 @@ export async function fetchCustomMeals(guestId) {
 
 export async function fetchRecipes(params = {}) {
   const query = new URLSearchParams(params).toString();
-  const res = await apiFetch(`${API_BASE}/recipes?${query}`);
+  // Longer timeout for 10k catalog machines; no multi-retry here (page handles retries)
+  const res = await apiFetch(`${API_BASE}/recipes?${query}`, { timeout: 30000, retries: 0 });
   if (!res.ok) throw new Error('Recipes fetch failed');
   return res.json();
 }
@@ -288,5 +289,59 @@ export async function fetchCollections() {
 export async function fetchCollection(id) {
   const res = await apiFetch(`${API_BASE}/collections/${id}`);
   if (!res.ok) throw new Error('Collection not found');
+  return res.json();
+}
+
+export { syncOnLogin, pushCloudSync, pullCloudSync } from './lib/cloudSync.js';
+
+export async function fetchHelpers() {
+  const res = await apiFetch(`${API_BASE}/maid/helpers`, { headers: authHeaders() });
+  return handleResponse(res);
+}
+
+export async function createHelper(body) {
+  const res = await apiFetch(`${API_BASE}/maid/helpers`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteHelper(id) {
+  const res = await apiFetch(`${API_BASE}/maid/helpers/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function generateHelperLink(helperId) {
+  const res = await apiFetch(`${API_BASE}/maid/helpers/${helperId}/token`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({}),
+  });
+  return handleResponse(res);
+}
+
+export async function importRecipeUrl(url) {
+  const res = await apiFetch(`${API_BASE}/recipes/import`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ url }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchImportedRecipes() {
+  const res = await apiFetch(`${API_BASE}/recipes/imported`, { headers: authHeaders() });
+  if (!res.ok) return { recipes: [] };
+  return res.json();
+}
+
+export async function fetchUpcomingFestivals() {
+  const res = await apiFetch(`${API_BASE}/festivals/upcoming`);
+  if (!res.ok) return { festivals: [] };
   return res.json();
 }

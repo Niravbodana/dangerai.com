@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getCuratedWikiTitle } from "../data/curatedRecipeImages.js";
+import { getDirectThumbOverride } from "../data/recipeImageOverrides.js";
 import { buildIngredients, buildStepsEn, buildStepsHi } from "../data/recipeTemplates.js";
 import { isGenericSteps, isEnrichmentWorthCaching, needsEnrichment as needsQualityEnrichment } from "../lib/recipeQuality.js";
 import { searchGoogleImage, searchGoogleRecipeData, isGoogleSearchConfigured } from "./googleSearchService.js";
@@ -160,6 +161,7 @@ function applyWebResults(recipe, webResults) {
 
 async function downloadAndCacheImage(recipe, imageUrl) {
   if (!imageUrl || hasCachedImage(recipe.id)) return;
+  if (getDirectThumbOverride(recipe)) return;
   try {
     await cacheImageFromUrl(recipe.id, imageUrl, "google-enrichment");
   } catch {

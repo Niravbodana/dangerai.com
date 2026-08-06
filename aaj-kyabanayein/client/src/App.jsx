@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthModalProvider, useAuthModal } from './context/AuthModalContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SiteConfigProvider } from './context/SiteConfigContext';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import Footer from './components/Footer';
@@ -12,6 +13,8 @@ import GlobalSeo from './components/GlobalSeo';
 import AuthModal from './components/AuthModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import OfflineBanner from './components/OfflineBanner';
+import FirstVisitCoach from './components/FirstVisitCoach';
+import PlusBenefitsPopup from './components/PlusBenefitsPopup';
 import Home from './pages/Home';
 
 const Recipes = lazy(() => import('./pages/Recipes'));
@@ -31,6 +34,9 @@ const TasteProfilePage = lazy(() => import('./pages/TasteProfile'));
 const Family = lazy(() => import('./pages/Family'));
 const StreakPage = lazy(() => import('./pages/Streak'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Admin = lazy(() => import('./pages/Admin'));
+const KitchenHub = lazy(() => import('./pages/KitchenHub'));
+const HelperView = lazy(() => import('./pages/HelperView'));
 
 function AuthRouteHandler() {
   const [params] = useSearchParams();
@@ -88,13 +94,20 @@ function AppContent() {
             <Route path="/add-meal" element={<AddMeal />} />
             <Route path="/my-meals" element={<MyMeals />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/kitchen" element={<KitchenHub />} />
+            <Route path="/helper/:token" element={<HelperView />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
-      <Footer />
+      <div className="hidden md:block">
+        <Footer />
+      </div>
       <MobileNav />
       <AuthModal />
+      <FirstVisitCoach />
+      <PlusBenefitsPopup />
     </div>
   );
 }
@@ -104,13 +117,15 @@ export default function App() {
 
   const tree = (
     <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <AuthModalProvider>
-            <AppContent />
-          </AuthModalProvider>
-        </AuthProvider>
-      </LanguageProvider>
+      <SiteConfigProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AuthModalProvider>
+              <AppContent />
+            </AuthModalProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </SiteConfigProvider>
     </ThemeProvider>
   );
 

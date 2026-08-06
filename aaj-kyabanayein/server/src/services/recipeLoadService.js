@@ -5,7 +5,7 @@
 import { getRecipeById } from "../data/recipes.js";
 import { enrichRecipeWithFlow } from "./cookingFlowService.js";
 import { getCachedRecipeOverlay, getEnrichedRecipe, enrichRecipeInBackground } from "./recipeEnrichmentService.js";
-import { hasCachedImage, imageUrlForRecipe, warmRecipeImage } from "./recipeImageService.js";
+import { hasCachedImage, imageUrlForRecipe, warmRecipeImage, attachRecipeImageFields } from "./recipeImageService.js";
 
 const ENRICH_BUDGET_MS = 4500;
 
@@ -36,11 +36,11 @@ export async function loadRecipeOnSelect(recipeId) {
   }
 
   return {
-    recipe: {
+    recipe: attachRecipeImageFields({
       ...recipe,
       image: imageUrlForRecipe(recipeId),
       thumbUrl: recipe.thumbUrl || null,
-    },
+    }),
     image: {
       url: imageUrlForRecipe(recipeId),
       ready: hasCachedImage(recipeId),
