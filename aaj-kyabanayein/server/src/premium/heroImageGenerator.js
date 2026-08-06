@@ -331,12 +331,15 @@ export async function generatePremiumHero(recipe, { force = false, preferReal = 
   if (!force && fs.existsSync(dest)) {
     try {
       const existing = JSON.parse(fs.readFileSync(metaFile, "utf8"));
-      if (
-        (existing.source === "premium-hero" ||
-          existing.source === "premium-hero-real" ||
-          existing.source === "rasoira-ai-original") &&
-        (existing.version || 0) >= HERO_VERSION
-      ) {
+      const isStudio =
+        existing.source === "premium-hero" || existing.source === "rasoira-ai-original";
+      const isReal = existing.source === "premium-hero-real";
+      const versionOk = (existing.version || 0) >= HERO_VERSION;
+      if (isReal && versionOk) {
+        return { filePath: dest, meta: existing };
+      }
+      // Never return cached studio art when the caller forbids it (real-photos-only path).
+      if (isStudio && allowStudioArt && versionOk) {
         return { filePath: dest, meta: existing };
       }
     } catch {

@@ -405,6 +405,21 @@ async function downloadImage(url, dest, retries = 3) {
   throw lastErr;
 }
 
+async function tryFetchRealPremiumHero(recipe) {
+  const { generatePremiumHero } = await import("../premium/heroImageGenerator.js");
+  const { filePath } = await generatePremiumHero(recipe, {
+    force: true,
+    preferReal: true,
+    allowStudioArt: false,
+  });
+  if (filePath && fs.existsSync(filePath)) {
+    const audit = auditCachedImage(recipe);
+    if (audit.ok) return filePath;
+    invalidateCachedImage(recipe.id);
+  }
+  return null;
+}
+
 export async function ensureRecipeImage(recipe, { force = false } = {}) {
   ensureDirs();
   const id = recipe.id;
@@ -471,6 +486,15 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
       } catch {
         /* try fallbacks below */
       }
+    }
+
+    // Premium real-photo pipeline (Google/Wikimedia/Wikipedia/Openverse) — broader
+    // than findImageUrl alone; never writes studio art.
+    try {
+      const realHero = await tryFetchRealPremiumHero(recipe);
+      if (realHero) return realHero;
+    } catch {
+      /* no real photo from premium pipeline */
     }
 
     // Deliberately no "copy a similar recipe's photo" fallback here — that
@@ -662,6 +686,16 @@ export async function forceFixRecipePhoto(recipe) {
       /* try next strategy */
     }
     invalidateCachedImage(id);
+  }
+
+  try {
+    const realHero = await tryFetchRealPremiumHero(recipe);
+    if (realHero) {
+      const verified = verify();
+      if (verified) return { ok: true, file: verified, source: "premium-hero-real" };
+    }
+  } catch {
+    /* try scraper path next */
   }
 
   try {
