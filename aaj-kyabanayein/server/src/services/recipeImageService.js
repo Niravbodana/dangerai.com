@@ -26,6 +26,17 @@ const META_DIR = path.join(__dirname, "../../data/image-cache-meta");
 
 import { isPremiumThumbUrl } from "../lib/cdnImage.js";
 
+/** AI/SVG studio art — must never be shown to users; only real photos pass audit. */
+export function isStudioArtSource(source) {
+  const s = String(source || "");
+  return s === "premium-hero" || s === "rasoira-ai-original";
+}
+
+export function isRealPhotoSource(source) {
+  const s = String(source || "");
+  return s === "premium-hero-real" || s === "wikimedia" || s === "wikipedia" || s === "openverse" || s === "google" || s === "curated-thumb" || s === "mealdb" || s === "search";
+}
+
 const USER_AGENT = "RasoiraMealPlanner/1.0 (https://github.com/Niravbodana/dangerai.com)";
 const IMAGE_FETCH_TIMEOUT_MS = 7000;
 const DOWNLOAD_TIMEOUT_MS = 6000;
@@ -402,13 +413,12 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
   const cached = cachePath(id);
   const directThumb = getDirectThumbOverride(recipe);
   const metaExisting = readImageMeta(id);
-  const isPremium =
-    metaExisting?.source === "premium-hero" ||
+  const isRealPhoto =
     metaExisting?.source === "premium-hero-real" ||
-    metaExisting?.source === "rasoira-ai-original";
+    (metaExisting?.source && isRealPhotoSource(metaExisting.source) && !isStudioArtSource(metaExisting.source));
 
-  // Never overwrite premium original heroes unless explicitly regenerating premium
-  if (!force && isPremium && fs.existsSync(cached)) {
+  // Keep verified real photos unless explicitly regenerating
+  if (!force && isRealPhoto && fs.existsSync(cached)) {
     return cached;
   }
 
@@ -428,11 +438,10 @@ export async function ensureRecipeImage(recipe, { force = false } = {}) {
     }
   }
 
-  if (force && fs.existsSync(cached) && !isPremium) {
+  if (force && fs.existsSync(cached) && !isRealPhoto) {
     invalidateCachedImage(id);
   }
-  if (force && isPremium) {
-    // Keep premium heroes — scrapers must not replace them
+  if (force && isRealPhoto) {
     return cached;
   }
 
@@ -500,12 +509,14 @@ export function readImageMeta(recipeId) {
 export function auditCachedImage(recipe) {
   const meta = readImageMeta(recipe.id);
   if (!meta) return { ok: false, issue: "missing-cache" };
-  // Premium original heroes always pass (RASOIRA-AI licensed, dish-specific)
-  if (meta.source === "premium-hero" || meta.source === "premium-hero-real" || meta.source === "rasoira-ai-original") {
+  if (isStudioArtSource(meta.source)) {
+    return { ok: false, issue: "studio-art", meta, titleScore: meta.score || 0 };
+  }
+  if (meta.source === "premium-hero-real") {
     return { ok: true, meta, titleScore: meta.score || 0.99 };
   }
   if (meta.source === "similar-fallback") {
-    return { ok: true, meta, titleScore: meta.score || 0.72 };
+    return { ok: false, issue: "similar-fallback", meta, titleScore: meta.score || 0 };
   }
   const titleScore = scoreTitle(meta.title || "", recipe.name || "");
   if (isRawOrWrongImage(meta.title || "", meta.originalUrl || "", recipe.name || "")) {

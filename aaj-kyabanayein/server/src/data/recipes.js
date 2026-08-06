@@ -32,7 +32,52 @@ export function refreshRecipeInCache(id) {
   return getRecipeById(id);
 }
 
+const KNOWN_CUISINES = new Set([
+  "indian",
+  "north-indian",
+  "south-indian",
+  "gujarati",
+  "punjabi",
+  "bengali",
+  "maharashtrian",
+  "rajasthani",
+  "kerala",
+  "goan",
+  "andhra",
+  "hyderabadi",
+  "karnataka",
+  "tamil",
+  "chettinad",
+  "kashmiri",
+  "awadhi",
+  "mughlai",
+  "jain",
+  "assamese",
+  "sindhi",
+  "street-food",
+  "chinese",
+  "chinese-indian",
+  "thai",
+  "mexican",
+  "italian",
+  "continental",
+  "afghani",
+  "indonesian",
+  "turkish",
+  "japanese",
+  "mediterranean",
+]);
+
 function inferCuisine(recipe) {
+  const dbCuisine = String(recipe.cuisine || "")
+    .toLowerCase()
+    .trim();
+  // Trust the DB/intelligence cuisine when already set — heuristics must not
+  // override e.g. "andhra" just because the dish name contains "curry".
+  if (dbCuisine && KNOWN_CUISINES.has(dbCuisine)) {
+    return dbCuisine;
+  }
+
   const name = (recipe.name || "").toLowerCase();
   const tags = (recipe.tags || []).map((t) => t.toLowerCase());
   const tagStr = tags.join(" ");
@@ -44,15 +89,15 @@ function inferCuisine(recipe) {
     return "north-indian";
   }
   if (tags.includes("gujarati") || /dhokla|thepla|khandvi|fafda/i.test(name)) {
-    return "indian";
+    return "gujarati";
   }
   if (tags.includes("maharashtrian") || /vada pav|pav bhaji|misal|puran/i.test(name)) {
-    return "indian";
+    return "maharashtrian";
   }
-  if (tags.includes("bengali") || /fish curry|rosogolla|mishti/i.test(name)) {
-    return "indian";
+  if (tags.includes("bengali") || /fish curry|rosogolla|mishti|chingri|machher/i.test(name)) {
+    return "bengali";
   }
-  if (/poha|upma|khichdi|dal|paneer|biryani|roti|sabzi|kheer|samosa|lassi|aloo|gobi|masala/i.test(name)) {
+  if (/poha|upma|khichdi|dal|paneer|biryani|roti|sabzi|kheer|samosa|lassi|aloo|gobi|masala|curry|korma/i.test(name)) {
     return "indian";
   }
   if (tagStr.includes("chinese") || /noodle|manchurian|fried rice|dim sum|wonton/i.test(name)) {
@@ -61,7 +106,8 @@ function inferCuisine(recipe) {
   if (tagStr.includes("italian") || /pasta|pizza|risotto|lasagna|carbonara/i.test(name)) {
     return "italian";
   }
-  if (tagStr.includes("thai") || /pad thai|curry|tom yum/i.test(name)) {
+  // Never match bare "curry" — that mislabels every Indian curry as Thai.
+  if (tagStr.includes("thai") || /pad thai|tom yum|massaman|panang|thai curry|green curry|red curry/i.test(name)) {
     return "thai";
   }
   if (tagStr.includes("mexican") || /taco|burrito|quesadilla|nacho/i.test(name)) {

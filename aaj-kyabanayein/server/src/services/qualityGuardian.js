@@ -33,8 +33,7 @@ function yieldEventLoop() {
 
 function isPremiumHero(recipeId) {
   const meta = readImageMeta(recipeId);
-  const source = String(meta?.source || "");
-  return source.startsWith("premium-hero");
+  return meta?.source === "premium-hero-real";
 }
 
 export async function runQualityGuardian({ fix = true } = {}) {

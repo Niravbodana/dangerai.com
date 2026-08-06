@@ -9,7 +9,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getDb } from "../db/connection.js";
 import { canonicalizeDiet, browseCategoryFor, isNonVegDiet, containsMeatWord } from "../lib/dietNormalize.js";
-import { logger } from "../lib/logger.js";
+import { isStudioArtSource } from "./recipeImageService.js";
 import { initRecipeCatalog } from "../data/recipes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -169,7 +169,8 @@ export function repairCatalogOnBoot() {
         // Prefer API/local premium over MealDB/dummyjson remotes
         const remoteJunk = !thumb || /themealdb\.com|dummyjson\.com/i.test(thumb);
         const source = cacheMetaSource(row.id);
-        if (remoteJunk || source?.startsWith("premium-hero")) {
+        const realLocal = source && !isStudioArtSource(source);
+        if (remoteJunk || (realLocal && source?.startsWith("premium-hero"))) {
           const nextThumb = `/api/recipes/image/${row.id}`;
           if (thumb !== nextThumb) {
             thumb = nextThumb;
