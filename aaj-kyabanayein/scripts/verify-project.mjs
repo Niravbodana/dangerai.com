@@ -25,7 +25,7 @@ const required = [
 let ok = 0;
 let fail = 0;
 
-console.log("Rasoira project verify\n");
+console.log("RasoiSaathi project verify\n");
 
 for (const rel of required) {
   const full = path.join(root, rel);

@@ -347,7 +347,7 @@ router.post("/plan", optionalAuth, (req, res) => {
 router.get("/health", (_req, res) => {
   res.json({
     success: true,
-    message: "Rasoira API is running",
+    message: "RasoiSaathi API is running",
     totalRecipes: RECIPE_COUNT,
   });
 });

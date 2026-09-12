@@ -65,7 +65,7 @@ export default function Today() {
         <h1 className="mt-4 font-display text-3xl text-[var(--text-primary)]">Aaj Kya Banaye</h1>
         <p className="mt-3 text-[var(--text-secondary)]">{locked.message}</p>
         <Link to="/pricing" className="premium-btn mt-8 inline-block px-8 py-3 text-sm">
-          Unlock Rasoira Plus
+          Unlock RasoiSaathi Plus
         </Link>
         <Link to="/healthy-week" className="mt-4 block text-sm text-[var(--accent-soft)]">
           Or see healthy week plan →

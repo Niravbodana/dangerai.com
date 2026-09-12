@@ -132,8 +132,8 @@ export default function RecipeDetail() {
     const name = lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name;
     return {
       seo: {
-        title: `${name} Recipe — ${recipe.cookTime || 30} min | Rasoira`,
-        description: `How to make ${recipe.name} at home. ${recipe.ingredients?.length || 0} ingredients, step-by-step cooking on Rasoira.`,
+        title: `${name} Recipe — ${recipe.cookTime || 30} min | RasoiSaathi`,
+        description: `How to make ${recipe.name} at home. ${recipe.ingredients?.length || 0} ingredients, step-by-step cooking on RasoiSaathi.`,
         path: `/recipe/${recipe.id}`,
         image: recipe.thumbUrl || `/api/recipes/image/${recipe.id}`,
         type: "article",

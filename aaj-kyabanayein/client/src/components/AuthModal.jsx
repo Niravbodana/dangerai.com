@@ -16,7 +16,7 @@ const SIGNUP_COPY = {
     subtitle: "Sign up free so your favorites sync across devices and never get lost.",
   },
   default: {
-    title: "Join Rasoira",
+    title: "Join RasoiSaathi",
     subtitle: "Account free for now — save recipes & meal plans.",
   },
 };

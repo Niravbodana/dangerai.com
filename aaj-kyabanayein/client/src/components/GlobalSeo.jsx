@@ -5,33 +5,33 @@ import { faqSchema, orgSchema, websiteSchema } from "../lib/seo";
 
 const STATIC = {
   "/": {
-    title: "Rasoira — Home Cooked Food | 900+ Indian Recipes",
-    description: "Rasoira — India's home-cooking app. 900+ real recipes, Aaj Kya Banaye, voice cook, smart pantry. Free core forever.",
+    title: "RasoiSaathi — Kitchen companion | 900+ Indian Recipes",
+    description: "RasoiSaathi — aapka rasoi saathi. 900+ real recipes, Aaj Kya Banaye, voice cook, smart pantry. Free core forever.",
     path: "/",
   },
   "/recipes": {
-    title: "All Recipes — Search & Cook | Rasoira",
-    description: "Browse 900+ Indian and world recipes with photos, ingredients, and step-by-step cooking on Rasoira.",
+    title: "All Recipes — Search & Cook | RasoiSaathi",
+    description: "Browse 900+ Indian and world recipes with photos, ingredients, and step-by-step cooking on RasoiSaathi.",
     path: "/recipes",
   },
   "/today": {
-    title: "Aaj Kya Banaye — Daily Meal Plan | Rasoira",
+    title: "Aaj Kya Banaye — Daily Meal Plan | RasoiSaathi",
     description: "Roz ka breakfast, lunch, snack aur dinner — personalised Aaj Kya Banaye plan.",
     path: "/today",
   },
   "/collections": {
-    title: "Recipe Collections — Festival, Budget & More | Rasoira",
+    title: "Recipe Collections — Festival, Budget & More | RasoiSaathi",
     description: "Curated recipe collections — Sunday lunch, sweets, 15-minute meals, street chaat and more.",
     path: "/collections",
   },
   "/pantry": {
-    title: "Pantry Recipes — Ghar Mein Kya Pada? | Rasoira",
-    description: "Jo ingredients ghar mein hain, usi se recipe suggestions — smart pantry on Rasoira.",
+    title: "Pantry Recipes — Ghar Mein Kya Pada? | RasoiSaathi",
+    description: "Jo ingredients ghar mein hain, usi se recipe suggestions — smart pantry on RasoiSaathi.",
     path: "/pantry",
   },
   "/pricing": {
-    title: "Rasoira Plus Pricing | Rasoira",
-    description: "Free core recipes forever. Rasoira Plus for unlimited daily plans, offline packs and more.",
+    title: "RasoiSaathi Plus Pricing | RasoiSaathi",
+    description: "Free core recipes forever. RasoiSaathi Plus for unlimited daily plans, offline packs and more.",
     path: "/pricing",
   },
 };
@@ -49,7 +49,7 @@ export default function GlobalSeo() {
       const cuisine = params.get("cuisine");
       if (q) {
         return {
-          title: `${q} Recipes — Rasoira`,
+          title: `${q} Recipes — RasoiSaathi`,
           description: `Search results for "${q}" — Indian home recipes with ingredients and cooking steps.`,
           path: `/recipes?search=${encodeURIComponent(q)}`,
         };
@@ -57,15 +57,15 @@ export default function GlobalSeo() {
       if (cuisine && cuisine !== "all") {
         const label = cuisine.replace(/-/g, " ");
         return {
-          title: `${label} Recipes | Rasoira`,
-          description: `Browse ${label} recipes — photos, ingredients, cook time on Rasoira.`,
+          title: `${label} Recipes | RasoiSaathi`,
+          description: `Browse ${label} recipes — photos, ingredients, cook time on RasoiSaathi.`,
           path: `/recipes?cuisine=${encodeURIComponent(cuisine)}`,
         };
       }
     }
 
     return STATIC[pathname] || {
-      title: "Rasoira — Home Cooked Food",
+      title: "RasoiSaathi — Kitchen companion",
       description: "India's home-cooking app — real recipes, daily plans, pantry search.",
       path: pathname,
       noindex: pathname !== "/" && !STATIC[pathname],

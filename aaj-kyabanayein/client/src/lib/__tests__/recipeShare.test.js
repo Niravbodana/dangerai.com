@@ -21,5 +21,6 @@ describe("recipeShare", () => {
     });
     expect(text).toContain("Poha");
     expect(text).toContain("2 cups");
+    expect(text).toContain("RasoiSaathi");
   });
 });

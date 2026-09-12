@@ -56,8 +56,8 @@ export default function Collections() {
     const c = detail.collection;
     return {
       seo: {
-        title: `${c.name} — Recipe Collection | Rasoira`,
-        description: c.description || `${c.nameHi || c.name} recipes on Rasoira.`,
+        title: `${c.name} — Recipe Collection | RasoiSaathi`,
+        description: c.description || `${c.nameHi || c.name} recipes on RasoiSaathi.`,
         path: `/collections/${id}`,
       },
       jsonLd: [

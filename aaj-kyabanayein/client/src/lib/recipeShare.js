@@ -5,7 +5,7 @@ export function formatIngredientsList(recipe, lang = "en") {
     return `${i + 1}. ${name} — ${ing.quantity || ""}`.trim();
   });
   const title = lang === "hi" ? (recipe.nameHi || recipe.name) : recipe.name;
-  return `🛒 *${title}* — Ingredients\n\n${lines.join("\n")}\n\n— Rasoira`;
+  return `🛒 *${title}* — Ingredients\n\n${lines.join("\n")}\n\n— RasoiSaathi`;
 }
 
 export async function copyIngredients(recipe, lang = "en") {
@@ -46,7 +46,7 @@ export function printRecipe(recipe, lang = "en") {
   <h2>Ingredients</h2>
   <ul>${ingredientRows}</ul>
   ${stepRows ? `<h2>Steps</h2><ol>${stepRows}</ol>` : ""}
-  <p class="footer">Printed from Rasoira — home cooked food</p>
+  <p class="footer">Printed from RasoiSaathi — aapka rasoi saathi</p>
 </body></html>`;
 
   const win = window.open("", "_blank", "noopener,noreferrer");

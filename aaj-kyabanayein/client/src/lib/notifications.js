@@ -201,7 +201,7 @@ export function buildDailyCookingReminder(streak = {}) {
     title: "Aaj Kya Banaye?",
     body: current > 0
       ? `🔥 ${current} din streak — aaj cook karke badhao!`
-      : "Breakfast decide kar lo — Rasoira ready hai.",
+      : "Breakfast decide kar lo — RasoiSaathi ready hai.",
     tag: "daily-cooking",
   };
 }
@@ -349,7 +349,7 @@ export function getSmartNotificationSummary() {
 }
 
 /** Demo local reminder — backward compatible with Today page */
-export function scheduleDemoReminder(title = "Aaj Kya Banaye?", body = "Breakfast decide kar lo — Rasoira ready hai.") {
+export function scheduleDemoReminder(title = "Aaj Kya Banaye?", body = "Breakfast decide kar lo — RasoiSaathi ready hai.") {
   if (!canNotifyNow()) return false;
   setTimeout(() => {
     new Notification(title, { body, icon: "/logo.svg", tag: "rasoira-daily" });

@@ -1,4 +1,4 @@
-# Rasoira
+# RasoiSaathi
 
 Ghar ka khana — free meal planner for Indian home cooks. 5.7 Lakh+ recipes, Hot Makings, pantry suggestions, and step-by-step cooking.
 
