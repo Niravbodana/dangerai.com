@@ -19,8 +19,8 @@ export const PLANS = {
   },
   plus: {
     id: "plus",
-    name: "Rasoira Plus",
-    nameHi: "रसोइरा प्लस",
+    name: "RasoiSaathi Plus",
+    nameHi: "रसोई साथी प्लस",
     price: 99,
     period: "month",
     features: [
@@ -122,7 +122,7 @@ const UPGRADE_PROMPTS = {
     plan: "family",
   },
   plus_required: {
-    title: "Upgrade to Rasoira Plus",
+    title: "Upgrade to RasoiSaathi Plus",
     message: "This feature needs Plus — unlimited plans, offline packs, and more.",
     plan: "plus",
   },

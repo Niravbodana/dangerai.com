@@ -1,7 +1,7 @@
 {
   "name": "aaj-kyabanayein-server",
   "version": "1.0.0",
-  "description": "Rasoira - Meal Planner API",
+  "description": "RasoiSaathi - Meal Planner API",
   "main": "src/index.js",
   "type": "module",
   "scripts": {

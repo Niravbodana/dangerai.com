@@ -65,7 +65,7 @@ export function setPageSeo({ title, description, path = "/", image, type = "webs
   upsertMeta("property", "og:url", url);
   upsertMeta("property", "og:type", type);
   upsertMeta("property", "og:image", img);
-  upsertMeta("property", "og:site_name", "Rasoira");
+  upsertMeta("property", "og:site_name", "RasoiSaathi");
 
   upsertMeta("name", "twitter:card", "summary_large_image");
   upsertMeta("name", "twitter:title", title);
@@ -80,7 +80,7 @@ export function orgSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Rasoira",
+    name: "RasoiSaathi",
     url,
     logo: absoluteUrl("/logo.svg"),
     sameAs: [],
@@ -91,10 +91,10 @@ export function websiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Rasoira",
+    name: "RasoiSaathi",
     url: getSiteUrl(),
     description: "India's home-cooking app — 900+ recipes, Aaj Kya Banaye, pantry & voice cooking.",
-    publisher: { "@type": "Organization", name: "Rasoira" },
+    publisher: { "@type": "Organization", name: "RasoiSaathi" },
     potentialAction: {
       "@type": "SearchAction",
       target: `${getSiteUrl()}/recipes?search={search_term_string}`,
@@ -110,12 +110,12 @@ export function faqSchema() {
     mainEntity: [
       {
         "@type": "Question",
-        name: "Rasoira kya hai?",
-        acceptedAnswer: { "@type": "Answer", text: "Rasoira Indian home-cooking app hai — 900+ recipes, Aaj Kya Banaye daily plan, pantry search aur step-by-step cooking." },
+        name: "RasoiSaathi kya hai?",
+        acceptedAnswer: { "@type": "Answer", text: "RasoiSaathi Indian home-cooking companion hai — 900+ recipes, Aaj Kya Banaye daily plan, pantry search aur step-by-step cooking." },
       },
       {
         "@type": "Question",
-        name: "Kya Rasoira free hai?",
+        name: "Kya RasoiSaathi free hai?",
         acceptedAnswer: { "@type": "Answer", text: "Haan — core recipes, search, cooking mode aur favorites free hain. Plus optional paid plan hai." },
       },
       {
@@ -147,9 +147,9 @@ export function recipeSchema(recipe, rating = {}) {
     "@context": "https://schema.org",
     "@type": "Recipe",
     name,
-    description: `${name} — ${recipe.cookTime || 30} min, ${recipe.cuisine || "Indian"} home recipe on Rasoira.`,
+    description: `${name} — ${recipe.cookTime || 30} min, ${recipe.cuisine || "Indian"} home recipe on RasoiSaathi.`,
     image: [absoluteUrl(img)],
-    author: { "@type": "Organization", name: "Rasoira" },
+    author: { "@type": "Organization", name: "RasoiSaathi" },
     prepTime: `PT${Math.max(5, Math.round((recipe.cookTime || 30) * 0.4))}M`,
     cookTime: `PT${recipe.cookTime || 30}M`,
     recipeCategory: recipe.mealType || "Main course",

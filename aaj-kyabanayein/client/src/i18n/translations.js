@@ -1,7 +1,7 @@
 export const translations = {
   en: {
-    appName: "Rasoira",
-    appTagline: "Home Cooked Food",
+    appName: "RasoiSaathi",
+    appTagline: "Kitchen companion",
     free: "Free for Now",
     veg: "Veg",
     nonVeg: "Non-Veg",
@@ -69,7 +69,7 @@ export const translations = {
     steps: "How to make",
     similarRecipes: "Similar hot recipes",
     howItWorks: "How It Works",
-    howItWorksDesc: "From pantry to plate — your smart kitchen companion",
+    howItWorksDesc: "From pantry to plate — RasoiSaathi, aapka rasoi saathi",
     step1Title: "Tell us what's home",
     step1Desc: "Add ingredients from your pantry and we'll match recipes instantly.",
     step2Title: "Pick your plan",
@@ -97,8 +97,8 @@ export const translations = {
     addedToPlan: "Added!",
   },
   hi: {
-    appName: "Rasoira",
-    appTagline: "Home Cooked Food",
+    appName: "रसोई साथी",
+    appTagline: "Aapka rasoi saathi",
     free: "Abhi Free",
     veg: "शाकाहारी",
     nonVeg: "मांसाहारी",

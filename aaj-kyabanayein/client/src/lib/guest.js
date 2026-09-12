@@ -51,6 +51,6 @@ export async function toggleFavorite(recipeId, { onSignupPrompt } = {}) {
 export const isFavorite = isLocalFavorite;
 
 export function shareOnWhatsApp(recipe) {
-  const text = `${recipe.name}\n\nRasoira — home cooked food, step by step recipe\n${window.location.origin}/recipe/${recipe.id}`;
+  const text = `${recipe.name}\n\nRasoiSaathi — aapka rasoi saathi, step by step recipe\n${window.location.origin}/recipe/${recipe.id}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
 }

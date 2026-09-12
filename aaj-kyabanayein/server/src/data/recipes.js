@@ -287,8 +287,8 @@ export const PRICING_PLANS = [
   },
   {
     id: "plus",
-    name: "Rasoira Plus",
-    nameHi: "रसोइरा प्लस",
+    name: "RasoiSaathi Plus",
+    nameHi: "रसोई साथी प्लस",
     price: 99,
     period: "month",
     popular: true,

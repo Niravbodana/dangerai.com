@@ -99,13 +99,13 @@ export function pantryKeysForSuggest() {
 }
 
 export function buildGroceryWhatsAppText(items = []) {
-  const lines = ["🛒 *Rasoira Bazaar List*", ""];
+  const lines = ["🛒 *RasoiSaathi Bazaar List*", ""];
   for (const item of items) {
     const name = item.nameHi || item.name || item.labelHi || item.label;
     const qty = item.quantity ? ` — ${item.quantity}` : "";
     lines.push(`☐ ${name}${qty}`);
   }
-  lines.push("", "— Rasoira se");
+  lines.push("", "— RasoiSaathi se");
   return lines.join("\n");
 }
 

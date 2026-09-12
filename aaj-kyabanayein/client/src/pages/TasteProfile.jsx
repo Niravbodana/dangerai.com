@@ -59,7 +59,7 @@ export default function TasteProfilePage() {
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="font-display text-3xl text-[var(--text-primary)]">Taste Profile</h1>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Rasoira isko use karke Aaj Kya Banaye aur plans personalise karega.
+        RasoiSaathi isko use karke Aaj Kya Banaye aur plans personalise karega.
       </p>
 
       <div className="glass-strong mt-6 rounded-2xl p-5">

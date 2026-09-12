@@ -1,4 +1,4 @@
-# Rasoira — Aaj Kya Banayein
+# RasoiSaathi — Aaj Kya Banayein
 
 Indian home-cooking app: **900+ recipes**, photos, Aaj Kya Banaye, pantry search, cooking mode + voice.
 

@@ -53,7 +53,7 @@ export default function RecipeReview() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-lg px-4 py-12">
-        <BrandLogo light className="mb-8 h-9 w-auto" />
+        <BrandLogo className="mb-8 h-9 w-auto" />
 
         {done ? (
           <div className="glass-strong rounded-3xl p-8 text-center">

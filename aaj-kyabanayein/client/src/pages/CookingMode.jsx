@@ -264,7 +264,7 @@ export default function CookingMode() {
       <EmptyState
         icon="🍳"
         title="Recipe unavailable"
-        message="Could not load this recipe. Check your connection or save it offline with Rasoira Plus."
+        message="Could not load this recipe. Check your connection or save it offline with RasoiSaathi Plus."
         action={
           <button type="button" onClick={() => navigate(`/recipe/${id}`)} className="premium-btn px-6 py-2.5 text-sm">
             Back to recipe

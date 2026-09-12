@@ -155,7 +155,7 @@ export default function StreakPage() {
 
       <div className="recipe-card mt-8 p-4">
         <h2 className="font-display text-lg text-[var(--text-primary)]">Invite friends</h2>
-        <p className="mt-1 text-xs text-[var(--text-secondary)]">Share Rasoira — referral rewards coming soon</p>
+        <p className="mt-1 text-xs text-[var(--text-secondary)]">Share RasoiSaathi — referral rewards coming soon</p>
         <p className="mt-3 break-all rounded-lg bg-white/5 px-3 py-2 text-xs text-[var(--accent-soft)]">{referralLink}</p>
       </div>
 

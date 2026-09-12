@@ -53,7 +53,7 @@ app.use("/api", mealsRouter);
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "Rasoira API",
+    name: "RasoiSaathi API",
     version: "2.0.0",
     endpoints: [
       "/api/health",
