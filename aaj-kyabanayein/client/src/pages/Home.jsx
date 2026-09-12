@@ -40,7 +40,7 @@ export default function Home() {
         <div className="hero-glow" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 lg:py-20">
           <div className="text-center lg:text-left">
-            <BrandLogo light className="mx-auto mb-4 h-10 w-auto sm:h-12 lg:mx-0" />
+            <BrandLogo className="mx-auto mb-4 h-10 w-auto sm:h-12 lg:mx-0" />
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--accent-soft)]">
               रसोई साथी · kitchen companion
             </p>
